@@ -20,8 +20,6 @@
      workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
 <!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
 
-1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
 
 ## Usage
 
@@ -30,31 +28,44 @@
 > to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline)
 > with `-profile test` before running the workflow on actual data.
 
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
-
-First, prepare a samplesheet with your input data that looks as follows:
-
-`samplesheet.csv`:
-
-```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
+Clone the repository:
+```bash
+git clone https://github.com/REPO4EU/modulediscovery.git
+cd modulediscovery
 ```
 
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
+Install required software e.g. via conda (docker not included):
+```bash
+conda env create -n modulediscovery -f environment.yaml
+conda activate modulediscovery
+```
 
--->
+The pipeline should be run from outside of the code repository since nextflow, by default, will write into the execution directory.
+
+Run with test data (DIAMOnD example data):
+
+```bash
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
+   -profile <docker/singularity>,test \
+   --outdir <OUTDIR>
+```
 
 Now, you can run the pipeline using:
 
 <!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
 
 ```bash
-nextflow run REPO4EU/modulediscovery \
-   -profile <docker/singularity/.../institute> \
-   --input samplesheet.csv \
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
+   -profile <docker/singularity> \
+   --seeds <seed_file> \
+   --network <network_file> \
    --outdir <OUTDIR>
+```
+
+Show all parameter options:
+
+```bash
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
 ```
 
 > **Warning:**
