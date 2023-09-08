@@ -46,7 +46,10 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
+include { GRAPHTOOLPARSER   } from '../modules/local/graphtoolparser/main'
+
+include { INPUT_CHECK       } from '../subworkflows/local/input_check'
+include { GT_DIAMOND        } from '../subworkflows/local/gt_diamond'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -57,7 +60,6 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { DIAMOND                     } from '../modules/local/diamond/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
@@ -74,8 +76,13 @@ workflow MODULEDISCOVERY {
 
     ch_versions = Channel.empty()
 
-    DIAMOND(ch_seeds, ch_network, diamond_n, diamond_alpha)
-    ch_versions = ch_versions.mix(DIAMOND.out.versions.first())
+    GRAPHTOOLPARSER(ch_network, 'gt')
+    ch_network_gt = GRAPHTOOLPARSER.out.network
+    ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions.first())
+
+
+    GT_DIAMOND(ch_seeds, ch_network_gt, diamond_n, diamond_alpha)
+    ch_versions = ch_versions.mix(GT_DIAMOND.out.versions)
 
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
