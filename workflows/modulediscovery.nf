@@ -77,8 +77,8 @@ workflow MODULEDISCOVERY {
     ch_versions = Channel.empty()
 
     GRAPHTOOLPARSER(ch_network, 'gt')
-    ch_network_gt = GRAPHTOOLPARSER.out.network
-    ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions.first())
+    ch_network_gt = GRAPHTOOLPARSER.out.network.collect()
+    ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
 
 
     GT_DIAMOND(ch_seeds, ch_network_gt, diamond_n, diamond_alpha)
