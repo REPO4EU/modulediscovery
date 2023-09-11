@@ -21,7 +21,7 @@ def save_diamond(g, stem):
 
     with open(f"{stem}.diamond.csv", "w") as csv_file:
 
-        writer = csv.writer(csv_file)
+        writer = csv.writer(csv_file, lineterminator="\n")
         for e in g.iter_edges():
             writer.writerow([g.vp["name"][e[0]], g.vp["name"][e[1]]]) # raw edge values are hashed vertex names
 
