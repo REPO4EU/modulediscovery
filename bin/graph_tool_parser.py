@@ -38,6 +38,7 @@ def save(g, stem, format):
         logger.critical(f"Unknown output format: {format}")
         sys.exit(1)
 
+
 def load(file_in, extension):
     """
     Loads a graph_tools Graph object.
