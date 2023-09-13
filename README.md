@@ -73,6 +73,13 @@ nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
 > provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
 > see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
 
+
+## Including a new active module detection tool
+1. Add a function to the bin/graph_tool_parser.py script for preparing the tool specific network input format. The script is built around the [graph-tool](https://graph-tool.skewed.de/) python package. An example is the safe_diamond() function, which saves a simple edge list in CSV format. Add the function as an option in the save() function and add a command line option for `--format` in parse_args().  The output file name has to include the option specified with `--format` since nextflow uses this pattern to check whether the output file was successfully generated. The script expects a .gt file as input. Run the pipeline with the "test" profile, to generate a .gt example file in `<OUTDIR>/graphtoolparser`, which you can use to test the parsing function by executing the parsing script directly via the command line.
+
+2. Create a module for the tool. (Example with comments: `modules/local/diamond/main.nf`)
+3. Create a subworkflow wrapping the tool together with the input parser. (Example with comments: `subworkflows/local/gt_diamond/main.nf`)
+4. Include the subworkflow in the `workflows/modulediscovery.nf` file. Again, DIAMOnD is already included as an example.
 ## Credits
 
 REPO4EU/modulediscovery was originally written by REPO4EU.
