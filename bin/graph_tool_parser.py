@@ -40,6 +40,15 @@ def save_domino(g, stem):
                 ]) # raw edge values are hashed vertex names
 
 
+def save_robust(g, stem):
+
+    with open(f"{stem}.robust.tsv", "w") as file:
+
+        writer = csv.writer(file, lineterminator="\n", delimiter='\t')
+        for e in g.iter_edges():
+            writer.writerow([g.vp["name"][e[0]], g.vp["name"][e[1]]]) # raw edge values are hashed vertex names
+
+
 def save(g, stem, format):
     """
     Saves a graph_tools Graph object in a specified format
@@ -50,6 +59,8 @@ def save(g, stem, format):
         save_diamond(g=g, stem=stem)
     elif format == "domino":
         save_domino(g=g, stem=stem)
+    elif format == "robust":
+        save_robust(g=g, stem=stem)
     else:
         logger.critical(f"Unknown output format: {format}")
         sys.exit(1)
@@ -93,7 +104,7 @@ def parse_args(argv=None):
         "-f",
         "--format",
         help="Output format (default gt).",
-        choices=("gt","diamond", "domino"),
+        choices=("gt","diamond", "domino", "robust"),
         default="gt",
     )
     parser.add_argument(
