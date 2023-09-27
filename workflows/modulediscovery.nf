@@ -50,6 +50,7 @@ include { GRAPHTOOLPARSER   } from '../modules/local/graphtoolparser/main'
 
 include { INPUT_CHECK       } from '../subworkflows/local/input_check'
 include { GT_DIAMOND        } from '../subworkflows/local/gt_diamond'
+include { GT_DOMINO         } from '../subworkflows/local/gt_domino'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,6 +84,10 @@ workflow MODULEDISCOVERY {
 
     GT_DIAMOND(ch_seeds, ch_network_gt, diamond_n, diamond_alpha)
     ch_versions = ch_versions.mix(GT_DIAMOND.out.versions)
+
+
+    GT_DOMINO(ch_seeds, ch_network_gt)
+    ch_versions = ch_versions.mix(GT_DOMINO.out.versions)
 
 
     CUSTOM_DUMPSOFTWAREVERSIONS (

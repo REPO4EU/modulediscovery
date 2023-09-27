@@ -19,11 +19,25 @@ def save_gt(g, stem):
 
 def save_diamond(g, stem):
 
-    with open(f"{stem}.diamond.csv", "w") as csv_file:
+    with open(f"{stem}.diamond.csv", "w") as file:
 
-        writer = csv.writer(csv_file, lineterminator="\n")
+        writer = csv.writer(file, lineterminator="\n")
         for e in g.iter_edges():
             writer.writerow([g.vp["name"][e[0]], g.vp["name"][e[1]]]) # raw edge values are hashed vertex names
+
+
+def save_domino(g, stem):
+
+    with open(f"{stem}.domino.sif", "w") as file:
+
+        writer = csv.writer(file, lineterminator="\n", delimiter="\t")
+        writer.writerow(["node_1", "type" ,"node_2"]) # write header
+        for e in g.iter_edges():
+            writer.writerow([
+                f"entrez.{g.vp['name'][e[0]]}",
+                "ppi",
+                f"entrez.{g.vp['name'][e[1]]}",
+                ]) # raw edge values are hashed vertex names
 
 
 def save(g, stem, format):
@@ -34,6 +48,8 @@ def save(g, stem, format):
         save_gt(g=g,stem=stem)
     elif format == "diamond":
         save_diamond(g=g, stem=stem)
+    elif format == "domino":
+        save_domino(g=g, stem=stem)
     else:
         logger.critical(f"Unknown output format: {format}")
         sys.exit(1)
@@ -77,7 +93,7 @@ def parse_args(argv=None):
         "-f",
         "--format",
         help="Output format (default gt).",
-        choices=("gt","diamond"),
+        choices=("gt","diamond", "domino"),
         default="gt",
     )
     parser.add_argument(

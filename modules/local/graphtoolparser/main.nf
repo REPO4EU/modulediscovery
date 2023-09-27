@@ -1,5 +1,4 @@
 process GRAPHTOOLPARSER {
-    tag "$format"
     label 'process_single'
 
     conda "conda-forge::graph-tool=2.58"
