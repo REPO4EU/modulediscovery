@@ -1,27 +1,22 @@
 
-// Many additional examples for nextflow modules are available at https://github.com/nf-core/modules/tree/master/modules/nf-core
+process ROBUST {
+    label 'process_single'
+    container 'djskelton/robust:cc669c6'
 
-process ROBUST {                           // Process name, should be all upper case
-    label 'process_single'                  // Used to allocate resources, "process_single" uses one thread and 6GB memory, for labels see conf/base.config
-    container 'djskelton/robust:cc669c6'   // The container on docker hub, other repositories are possible, use conda keyword to set a conda environment
-
-    input:                                  // Define the input channels
-    path seeds                              // Path to seeds file
-    path network                            // Path to a network file
+    input:
+    path seeds
+    path network
     // TODO: check whether the values in args should be converted to nextflow values and set defaults via nextflow
 
-    output:                                 // Define output files, "emit" is only used to access the corresponding outputs externally
-    path "${seeds.baseName}.graphml",        emit: module       // Define a pattern for the output file (can also be the full name, if known), emit -> the active module
-    path "versions.yml", emit: versions     // Software versions, this is not essential but nice, the collected versions will be part of the final multiqc report
+    output:
+    path "${seeds.baseName}.graphml",        emit: module
+    path "versions.yml", emit: versions
 
     when:
-    task.ext.when == null || task.ext.when  // Allows to prevent the execution of this process via a workflow logic, just put it in
+    task.ext.when == null || task.ext.when
 
-    // The script for executint DIAMOnD, in this case, the .py script is shipped with the container
-    // Access inputs, parameters, etc. with the "$" operator
-    // The part starting with "cat <<-END_VERSIONS > versions.yml" only collects software versions for the versions.yml file, not essential
     script:
-    def args = task.ext.args ?: ''          // Get possible optional arguments (e.g. turning off visualization, see conf/modules.config)
+    def args = task.ext.args ?: ''          // Get possible alpha, beta, n, and tau arguments for robust, see TODO above
     """
     python3 /robust/robust.py \\
         $network \\
