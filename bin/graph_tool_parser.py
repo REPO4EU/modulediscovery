@@ -80,6 +80,16 @@ def filter_diamond(g, module, filter_column):
     return g
 
 
+def filter_domino(g, module, filter_column):
+    with open(module, "r") as file:
+        module_ids = [id.strip('entrez.') for id in file.readline().strip('[]\n').split(', ')]
+    gt.map_property_values(g.vp.name, g.vp[filter_column], lambda name: name in module_ids)
+    # for id in module_ids:
+    #     v = gt.find_vertex(g, g.vp.name, id)[0]
+    #     g.vp[filter_column][v] = True
+    return g
+
+
 def filter_g(g, format, module):
     """
     Filters a graph_tools Graph object based on a module file in a given format
