@@ -90,6 +90,17 @@ def filter_domino(g, module, filter_column):
     return g
 
 
+def filter_robust(g, module, filter_column):
+    import numpy as np
+    g = gt.load_graph(str(module))
+    g.vp.name = g.vp._graphml_vertex_id.copy()
+    del g.vp['_graphml_vertex_id']
+    del g.ep['_graphml_edge_id']
+    g.vp[filter_column] = g.new_vertex_property("bool")
+    g.vp[filter_column].a = gt.PropertyArray(np.ones(len(g), dtype=np.uint8), g.vp[filter_column])
+    return g
+
+
 def filter_g(g, format, module):
     """
     Filters a graph_tools Graph object based on a module file in a given format
