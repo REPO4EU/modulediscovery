@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an idea for the REPO4EU/modulediscovery pipeline
+description: Suggest an idea for the REPO4EU/repo4eu-modulediscovery pipeline
 labels: enhancement
 body:
   - type: textarea

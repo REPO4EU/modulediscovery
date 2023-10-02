@@ -1,10 +1,10 @@
 Run Name: $runName
 
 <% if (success){
-    out << "## REPO4EU/modulediscovery execution completed successfully! ##"
+    out << "## REPO4EU/repo4eu-modulediscovery execution completed successfully! ##"
 } else {
     out << """####################################################
-## REPO4EU/modulediscovery execution completed unsuccessfully! ##
+## REPO4EU/repo4eu-modulediscovery execution completed unsuccessfully! ##
 ####################################################
 The exit status of the task that caused the workflow execution to fail was: $exitStatus.
 The full error message was:
@@ -27,5 +27,5 @@ Pipeline Configuration:
 <% out << summary.collect{ k,v -> " - $k: $v" }.join("\n") %>
 
 --
-REPO4EU/modulediscovery
-https://github.com/REPO4EU/modulediscovery
+REPO4EU/repo4eu-modulediscovery
+https://github.com/REPO4EU/repo4eu-modulediscovery

@@ -1,11 +1,11 @@
 //
-// This file holds several functions specific to the workflow/modulediscovery.nf in the REPO4EU/modulediscovery pipeline
+// This file holds several functions specific to the workflow/repo4eu-modulediscovery.nf in the REPO4EU/repo4eu-modulediscovery pipeline
 //
 
 import nextflow.Nextflow
 import groovy.text.SimpleTemplateEngine
 
-class WorkflowModulediscovery {
+class WorkflowRepo4eu-modulediscovery {
 
     //
     // Check and validate parameters
@@ -51,7 +51,7 @@ class WorkflowModulediscovery {
 
     public static String toolCitationText(params) {
 
-        // TODO Optionally add in-text citation tools to this list.
+        // TODO nf-core: Optionally add in-text citation tools to this list.
         // Can use ternary operators to dynamically construct based conditions, e.g. params["run_xyz"] ? "Tool (Foo et al. 2023)" : "",
         // Uncomment function in methodsDescriptionText to render in MultiQC report
         def citation_text = [

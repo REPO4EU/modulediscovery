@@ -17,7 +17,7 @@ process SAMPLESHEET_CHECK {
     when:
     task.ext.when == null || task.ext.when
 
-    script: // This script is bundled with the pipeline, in REPO4EU/modulediscovery/bin/
+    script: // This script is bundled with the pipeline, in REPO4EU/repo4eu-modulediscovery/bin/
     """
     check_samplesheet.py \\
         $samplesheet \\

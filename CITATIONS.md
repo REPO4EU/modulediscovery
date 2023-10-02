@@ -1,4 +1,4 @@
-# REPO4EU/modulediscovery: Citations
+# REPO4EU/repo4eu-modulediscovery: Citations
 
 ## [nf-core](https://pubmed.ncbi.nlm.nih.gov/32055031/)
 
@@ -12,7 +12,7 @@
 
 - [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 
-  > Andrews, S. (2010). FastQC: A Quality Control Tool for High Throughput Sequence Data [Online]. Available online https://www.bioinformatics.babraham.ac.uk/projects/fastqc/.
+  > Andrews, S. (2010). FastQC: A Quality Control Tool for High Throughput Sequence Data [Online].
 
 - [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
 
