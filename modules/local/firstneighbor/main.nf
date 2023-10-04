@@ -10,8 +10,6 @@ process FIRSTNEIGHBOR {                     // Process name, should be all upper
     path seeds                              // Path to seeds file
     path network                            // Path to a network file
     path output_file                        // Path to the output network
-    val n                                   // DIAMOnD specific parameter "n"
-    val alpha                               // DIAMOnD spefific parameter "alpha"
 
     output:                                 // Define output files, "emit" is only used to access the corresponding outputs externally
     path "*.gt",        emit: module        // Define a pattern for the output file (can also be the full name, if known), emit -> the active module
