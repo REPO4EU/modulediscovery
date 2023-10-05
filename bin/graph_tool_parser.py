@@ -55,6 +55,8 @@ def save(g, stem, format):
     """
     if format == "gt":
         save_gt(g=g,stem=stem)
+    elif format == "firstneighbor":
+        save_gt(g=g,stem="{}.firstneighbor".format(stem))
     elif format == "diamond":
         save_diamond(g=g, stem=stem)
     elif format == "domino":
@@ -104,7 +106,7 @@ def parse_args(argv=None):
         "-f",
         "--format",
         help="Output format (default gt).",
-        choices=("gt","diamond", "domino", "robust"),
+        choices=("gt","diamond", "domino", "robust", "firstneighbor"),
         default="gt",
     )
     parser.add_argument(
