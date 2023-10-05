@@ -9,18 +9,17 @@ workflow GT_FIRSTNEIGHBOR {
     take:                                   // Workflow inputs
     ch_seeds                                // File with seed genes
     ch_network                              // File with network in gt format
-    ch_output_file                          // File with output network in gt format
 
 
     main:
 
-    ch_versions = Channel.empty()                                                     // For collecting tool versions
+    ch_versions = Channel.empty()                                           // For collecting tool versions
 
-    GRAPHTOOLPARSER(ch_network, "gt")                                                 // Collect gt network file
-    ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)                       // Collect versions
+    GRAPHTOOLPARSER(ch_network, "firstneighbor")                            // Collect gt network file
+    ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)             // Collect versions
 
-    FIRSTNEIGHBOR(ch_seeds, GRAPHTOOLPARSER.out.network.collect(), ch_output_file)    // Run first neighbor
-    ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions.first())               // Collect versions
+    FIRSTNEIGHBOR(ch_seeds, GRAPHTOOLPARSER.out.network.collect())          // Run first neighbor
+    ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions.first())     // Collect versions
 
 
     emit:
