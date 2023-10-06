@@ -78,15 +78,17 @@ workflow MODULEDISCOVERY {
 
     ch_versions = Channel.empty()
 
-    // brach channel, so graphtoolparser runs only, if the network is not already in .gt format
+    // Brach channel, so graphtoolparser runs only, if the network is not already in .gt format
     ch_network_type = ch_network.branch {
         gt: it.extension == "gt"
         other: true
     }
 
+    // Run network parser for non .gt networks
     GRAPHTOOLPARSER(ch_network_type.other, 'gt')
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
 
+    // Mix into one .gt format channel
     ch_network_gt = GRAPHTOOLPARSER.out.network.collect().mix(ch_network_type.gt).collect()
 
 
