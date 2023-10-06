@@ -21,7 +21,7 @@ WorkflowModulediscovery.initialise(params, log)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 ch_seeds = Channel.fromPath(params.seeds, checkIfExists: true)
-ch_network = Channel.fromPath(params.network, checkIfExists: true)
+ch_network = Channel.fromPath(params.network, checkIfExists: true).first()
 
 diamond_n = Channel.value(params.diamond_n)
 diamond_alpha = Channel.value(params.diamond_alpha)
@@ -78,9 +78,16 @@ workflow MODULEDISCOVERY {
 
     ch_versions = Channel.empty()
 
-    GRAPHTOOLPARSER(ch_network, 'gt')
-    ch_network_gt = GRAPHTOOLPARSER.out.network.collect()
+    // brach channel, so graphtoolparser runs only, if the network is not already in .gt format
+    ch_network_type = ch_network.branch {
+        gt: it.extension == "gt"
+        other: true
+    }
+
+    GRAPHTOOLPARSER(ch_network_type.other, 'gt')
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
+
+    ch_network_gt = GRAPHTOOLPARSER.out.network.collect().mix(ch_network_type.gt).collect()
 
 
     GT_DIAMOND(ch_seeds, ch_network_gt, diamond_n, diamond_alpha)
