@@ -15,7 +15,7 @@ workflow GT_FIRSTNEIGHBOR {
     ch_versions = Channel.empty()                                           // For collecting tool versions
 
 
-    FIRSTNEIGHBOR(ch_seeds, GRAPHTOOLPARSER.out.network.collect())          // Run first neighbor
+    FIRSTNEIGHBOR(ch_seeds, ch_network)          // Run first neighbor
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions.first())     // Collect versions
 
 
