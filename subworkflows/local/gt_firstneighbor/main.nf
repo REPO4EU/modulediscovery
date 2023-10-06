@@ -2,7 +2,6 @@
 // Prepares the input for FIRSTNEIGHBOR and runs the tool
 //
 
-include { GRAPHTOOLPARSER   } from '../../../modules/local/graphtoolparser/main'
 include { FIRSTNEIGHBOR     } from '../../../modules/local/firstneighbor/main'
 
 workflow GT_FIRSTNEIGHBOR {
