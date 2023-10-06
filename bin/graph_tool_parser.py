@@ -119,9 +119,10 @@ def filter_g(g, format, module):
     else:
         logger.critical(f"Unknown output format: {format}")
         sys.exit(1)
-    g.set_vertex_filter(g.vp['keep'])
+    g.set_vertex_filter(g.vp[filter_column])
     g.purge_vertices()
     g.clear_filters()
+    del g.vp[filter_column]
     return g
 
 
