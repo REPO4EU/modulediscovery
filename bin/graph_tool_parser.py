@@ -106,7 +106,7 @@ def parse_args(argv=None):
         "-f",
         "--format",
         help="Output format (default gt).",
-        choices=("gt","diamond", "domino", "robust", "firstneighbor"),
+        choices=("gt","diamond", "domino", "robust"),
         default="gt",
     )
     parser.add_argument(
