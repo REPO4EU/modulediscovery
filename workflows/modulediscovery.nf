@@ -53,6 +53,8 @@ include { GT_DIAMOND        } from '../subworkflows/local/gt_diamond'
 include { GT_DOMINO         } from '../subworkflows/local/gt_domino'
 include { GT_ROBUST         } from '../subworkflows/local/gt_robust'
 
+include { GT_BIOPAX         } from '../modules/local/biopax/main'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -77,6 +79,8 @@ def multiqc_report = []
 workflow MODULEDISCOVERY {
 
     ch_versions = Channel.empty()
+    gt_modules = Channel.empty()
+
 
     GRAPHTOOLPARSER(ch_network, 'gt')
     ch_network_gt = GRAPHTOOLPARSER.out.network.collect()
@@ -85,14 +89,26 @@ workflow MODULEDISCOVERY {
 
     GT_DIAMOND(ch_seeds, ch_network_gt, diamond_n, diamond_alpha)
     ch_versions = ch_versions.mix(GT_DIAMOND.out.versions)
+    gt_modules = gt_modules.mix(GT_DIAMOND.out.module)
 
 
     GT_DOMINO(ch_seeds, ch_network_gt)
     ch_versions = ch_versions.mix(GT_DOMINO.out.versions)
+    gt_modules = gt_modules.mix(GT_DOMINO.out.module)
 
 
     GT_ROBUST(ch_seeds, ch_network_gt)
     ch_versions = ch_versions.mix(GT_ROBUST.out.versions)
+    gt_modules = gt_modules.mix(GT_ROBUST.out.module)
+
+
+    GT_FIRSTNEIGHBOR(ch_seeds, ch_network_gt)
+    ch_versions = ch_versions.mix(GT_FIRSTNEIGHBOR.out.versions)
+    gt_modules = gt_modules.mix(GT_FIRSTNEIGHBOR.out.module)
+
+    //TODO add idspace as a parameter
+    GT_BIOPAX(gt_modules, 'entrez')
+    ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
 
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
