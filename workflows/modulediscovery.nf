@@ -79,20 +79,21 @@ workflow MODULEDISCOVERY {
 
     ch_versions = Channel.empty()
 
-    // Brach channel, so graphtoolparser runs only, if the network is not already in .gt format
+    // Brach channel, so, GRAPHTOOLPARSER runs only for supported network formats, which are not already .gt files
     ch_network_type = ch_network.branch {
         gt: it.extension == "gt"
-        other: true
+        parse: true
     }
 
-    // Run network parser for non .gt networks
-    GRAPHTOOLPARSER(ch_network_type.other, 'gt')
+    // Run network parser for non .gt networks, supported by graph-tool
+    GRAPHTOOLPARSER(ch_network_type.parse, 'gt')
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
 
     // Mix into one .gt format channel
     ch_network_gt = GRAPHTOOLPARSER.out.network.collect().mix(ch_network_type.gt).collect()
 
 
+    // Network expansion tools
     GT_DIAMOND(ch_seeds, ch_network_gt, diamond_n, diamond_alpha)
     ch_versions = ch_versions.mix(GT_DIAMOND.out.versions)
 
@@ -109,6 +110,7 @@ workflow MODULEDISCOVERY {
     ch_versions = ch_versions.mix(GT_FIRSTNEIGHBOR.out.versions)
 
 
+    // Collect software versions
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )
