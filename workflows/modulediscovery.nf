@@ -52,6 +52,7 @@ include { INPUT_CHECK       } from '../subworkflows/local/input_check'
 include { GT_DIAMOND        } from '../subworkflows/local/gt_diamond'
 include { GT_DOMINO         } from '../subworkflows/local/gt_domino'
 include { GT_ROBUST         } from '../subworkflows/local/gt_robust'
+include { GT_FIRSTNEIGHBOR  } from '../subworkflows/local/gt_firstneighbor'
 
 include { GT_BIOPAX         } from '../modules/local/biopax/main'
 
@@ -109,6 +110,10 @@ workflow MODULEDISCOVERY {
     //TODO add idspace as a parameter
     GT_BIOPAX(gt_modules, 'entrez')
     ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
+
+
+    GT_FIRSTNEIGHBOR(ch_seeds, ch_network_gt)
+    ch_versions = ch_versions.mix(GT_FIRSTNEIGHBOR.out.versions)
 
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
