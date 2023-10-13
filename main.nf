@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    REPO4EU/repo4eu-modulediscovery
+    REPO4EU/modulediscovery
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/REPO4EU/repo4eu-modulediscovery
+    Github : https://github.com/REPO4EU/modulediscovery
 ----------------------------------------------------------------------------------------
 */
 
@@ -39,13 +39,13 @@ WorkflowMain.initialise(workflow, params, log)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { REPO4EU-MODULEDISCOVERY } from './workflows/repo4eu-modulediscovery'
+include { MODULEDISCOVERY } from './workflows/modulediscovery'
 
 //
-// WORKFLOW: Run main REPO4EU/repo4eu-modulediscovery analysis pipeline
+// WORKFLOW: Run main REPO4EU/modulediscovery analysis pipeline
 //
-workflow REPO4EU_REPO4EU-MODULEDISCOVERY {
-    REPO4EU-MODULEDISCOVERY ()
+workflow REPO4EU_MODULEDISCOVERY {
+    MODULEDISCOVERY ()
 }
 
 /*
@@ -59,7 +59,7 @@ workflow REPO4EU_REPO4EU-MODULEDISCOVERY {
 // See: https://github.com/nf-core/rnaseq/issues/619
 //
 workflow {
-    REPO4EU_REPO4EU-MODULEDISCOVERY ()
+    REPO4EU_MODULEDISCOVERY ()
 }
 
 /*

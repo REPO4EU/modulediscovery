@@ -13,7 +13,7 @@ def summary_params = paramsSummaryMap(workflow)
 // Print parameter summary log to screen
 log.info logo + paramsSummaryLog(workflow) + citation
 
-WorkflowRepo4eu-modulediscovery.initialise(params, log)
+WorkflowModulediscovery.initialise(params, log)
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,7 +59,7 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoft
 // Info required for completion email and summary
 def multiqc_report = []
 
-workflow REPO4EU-MODULEDISCOVERY {
+workflow MODULEDISCOVERY {
 
     ch_versions = Channel.empty()
 
@@ -89,10 +89,10 @@ workflow REPO4EU-MODULEDISCOVERY {
     //
     // MODULE: MultiQC
     //
-    workflow_summary    = WorkflowRepo4eu-modulediscovery.paramsSummaryMultiqc(workflow, summary_params)
+    workflow_summary    = WorkflowModulediscovery.paramsSummaryMultiqc(workflow, summary_params)
     ch_workflow_summary = Channel.value(workflow_summary)
 
-    methods_description    = WorkflowRepo4eu-modulediscovery.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
+    methods_description    = WorkflowModulediscovery.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
     ch_methods_description = Channel.value(methods_description)
 
     ch_multiqc_files = Channel.empty()
@@ -120,7 +120,6 @@ workflow.onComplete {
     if (params.email || params.email_on_fail) {
         NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, multiqc_report)
     }
-    NfcoreTemplate.dump_parameters(workflow, params)
     NfcoreTemplate.summary(workflow, params, log)
     if (params.hook_url) {
         NfcoreTemplate.IM_notification(workflow, params, summary_params, projectDir, log)

@@ -1,5 +1,5 @@
 //
-// This file holds several functions specific to the main.nf workflow in the REPO4EU/repo4eu-modulediscovery pipeline
+// This file holds several functions specific to the main.nf workflow in the REPO4EU/modulediscovery pipeline
 //
 
 import nextflow.Nextflow
