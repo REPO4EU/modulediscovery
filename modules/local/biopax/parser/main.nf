@@ -1,4 +1,4 @@
-process GT_BIOPAX {
+process BIOPAX_PARSER {
     label 'process_single'
 
 //     conda "conda-forge::graph-tool=2.58"
