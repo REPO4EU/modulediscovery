@@ -1,4 +1,0 @@
-prefix: REPO4EU
-skip:
-- ci
-- igenomes

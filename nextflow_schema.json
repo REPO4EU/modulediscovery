@@ -2,7 +2,7 @@
     "$schema": "http://json-schema.org/draft-07/schema",
     "$id": "https://raw.githubusercontent.com/REPO4EU/modulediscovery/master/nextflow_schema.json",
     "title": "REPO4EU/modulediscovery pipeline parameters",
-    "description": "A nextflow pipeline for indication-specific module discovery",
+    "description": "A pipeline for network-based disease module identification",
     "type": "object",
     "definitions": {
         "input_output_options": {
