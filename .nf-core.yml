@@ -24,7 +24,3 @@ lint:
   - manifest.homePage
   multiqc_config:
   - report_comment
-template:
-  prefix: REPO4EU
-  skip:
-  - igenomes
