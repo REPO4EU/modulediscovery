@@ -13,40 +13,37 @@ from pathlib import Path
 
 logger = logging.getLogger()
 
+
 def save_gt(g, stem):
     g.save(f"{stem}.gt")
 
 
 def save_diamond(g, stem):
-
     with open(f"{stem}.diamond.csv", "w") as file:
-
         writer = csv.writer(file, lineterminator="\n")
         for e in g.iter_edges():
-            writer.writerow([g.vp["name"][e[0]], g.vp["name"][e[1]]]) # raw edge values are hashed vertex names
+            writer.writerow([g.vp["name"][e[0]], g.vp["name"][e[1]]])  # raw edge values are hashed vertex names
 
 
 def save_domino(g, stem):
-
     with open(f"{stem}.domino.sif", "w") as file:
-
         writer = csv.writer(file, lineterminator="\n", delimiter="\t")
-        writer.writerow(["node_1", "type" ,"node_2"]) # write header
+        writer.writerow(["node_1", "type", "node_2"])  # write header
         for e in g.iter_edges():
-            writer.writerow([
-                f"entrez.{g.vp['name'][e[0]]}",
-                "ppi",
-                f"entrez.{g.vp['name'][e[1]]}",
-                ]) # raw edge values are hashed vertex names
+            writer.writerow(
+                [
+                    f"entrez.{g.vp['name'][e[0]]}",
+                    "ppi",
+                    f"entrez.{g.vp['name'][e[1]]}",
+                ]
+            )  # raw edge values are hashed vertex names
 
 
 def save_robust(g, stem):
-
     with open(f"{stem}.robust.tsv", "w") as file:
-
-        writer = csv.writer(file, lineterminator="\n", delimiter='\t')
+        writer = csv.writer(file, lineterminator="\n", delimiter="\t")
         for e in g.iter_edges():
-            writer.writerow([g.vp["name"][e[0]], g.vp["name"][e[1]]]) # raw edge values are hashed vertex names
+            writer.writerow([g.vp["name"][e[0]], g.vp["name"][e[1]]])  # raw edge values are hashed vertex names
 
 
 def save(g, stem, format):
@@ -54,7 +51,7 @@ def save(g, stem, format):
     Saves a graph_tools Graph object in a specified format
     """
     if format == "gt":
-        save_gt(g=g,stem=stem)
+        save_gt(g=g, stem=stem)
     elif format == "diamond":
         save_diamond(g=g, stem=stem)
     elif format == "domino":
@@ -77,7 +74,6 @@ def load(file_in, extension):
 
 
 def parse_format(file_in, format):
-
     stem = Path(file_in).stem
     extension = Path(file_in).suffix
     logger.debug(f"{stem=}")
@@ -104,7 +100,7 @@ def parse_args(argv=None):
         "-f",
         "--format",
         help="Output format (default gt).",
-        choices=("gt","diamond", "domino", "robust"),
+        choices=("gt", "diamond", "domino", "robust"),
         default="gt",
     )
     parser.add_argument(
@@ -126,6 +122,7 @@ def main(argv=None):
         sys.exit(2)
     logger.debug(f"{args=}")
     parse_format(args.file_in, args.format)
+
 
 if __name__ == "__main__":
     sys.exit(main())
