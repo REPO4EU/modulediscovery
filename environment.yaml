@@ -1,9 +1,10 @@
 channels:
- - conda-forge
- - bioconda
- - nodefaults
+  - conda-forge
+  - bioconda
+  - nodefaults
 dependencies:
- - nf-core
- - nextflow
- - singularity
-
+  - nf-core
+  - nextflow
+  - singularity
+  - prettier
+  - black

@@ -20,7 +20,7 @@ WorkflowModulediscovery.initialise(params, log)
     PARAMS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-ch_seeds = Channel.fromPath(params.seeds, checkIfExists: true)
+ch_seeds = Channel.fromPath(params.input, checkIfExists: true)
 ch_network = Channel.fromPath(params.network, checkIfExists: true)
 
 diamond_n = Channel.value(params.diamond_n)
@@ -137,6 +137,7 @@ workflow.onComplete {
     if (params.email || params.email_on_fail) {
         NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, multiqc_report)
     }
+    NfcoreTemplate.dump_parameters(workflow, params)
     NfcoreTemplate.summary(workflow, params, log)
     if (params.hook_url) {
         NfcoreTemplate.IM_notification(workflow, params, summary_params, projectDir, log)
