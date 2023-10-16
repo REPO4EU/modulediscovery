@@ -22,9 +22,10 @@
                 },
                 "network": {
                     "type": "string",
-                    "description": "Path to a comma-separated file describing the edges of the input network.",
+                    "description": "Path to a PPI network in gt, csv, graphml, xml, dot, or gml format.",
                     "format": "file-path",
-                    "fa_icon": "fas fa-file-csv"
+                    "fa_icon": "fas fa-file-csv",
+                    "pattern": "^\\S+.[csv|gt|graphml|xml|dot|gml]$"
                 },
                 "outdir": {
                     "type": "string",

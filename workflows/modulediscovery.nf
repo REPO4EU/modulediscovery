@@ -21,7 +21,7 @@ WorkflowModulediscovery.initialise(params, log)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 ch_seeds = Channel.fromPath(params.input, checkIfExists: true)
-ch_network = Channel.fromPath(params.network, checkIfExists: true)
+ch_network = Channel.fromPath(params.network, checkIfExists: true).first()
 
 diamond_n = Channel.value(params.diamond_n)
 diamond_alpha = Channel.value(params.diamond_alpha)
@@ -79,11 +79,21 @@ workflow MODULEDISCOVERY {
 
     ch_versions = Channel.empty()
 
-    GRAPHTOOLPARSER(ch_network, 'gt')
-    ch_network_gt = GRAPHTOOLPARSER.out.network.collect()
+    // Brach channel, so, GRAPHTOOLPARSER runs only for supported network formats, which are not already .gt files
+    ch_network_type = ch_network.branch {
+        gt: it.extension == "gt"
+        parse: true
+    }
+
+    // Run network parser for non .gt networks, supported by graph-tool
+    GRAPHTOOLPARSER(ch_network_type.parse, 'gt')
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
 
+    // Mix into one .gt format channel
+    ch_network_gt = GRAPHTOOLPARSER.out.network.collect().mix(ch_network_type.gt).collect()
 
+
+    // Network expansion tools
     GT_DIAMOND(ch_seeds, ch_network_gt, diamond_n, diamond_alpha)
     ch_versions = ch_versions.mix(GT_DIAMOND.out.versions)
 
@@ -100,6 +110,7 @@ workflow MODULEDISCOVERY {
     ch_versions = ch_versions.mix(GT_FIRSTNEIGHBOR.out.versions)
 
 
+    // Collect software versions
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )
