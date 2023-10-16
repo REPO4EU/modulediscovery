@@ -20,7 +20,7 @@ WorkflowModulediscovery.initialise(params, log)
     PARAMS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-ch_seeds = Channel.fromPath(params.seeds, checkIfExists: true)
+ch_seeds = Channel.fromPath(params.input, checkIfExists: true)
 ch_network = Channel.fromPath(params.network, checkIfExists: true)
 
 diamond_n = Channel.value(params.diamond_n)
