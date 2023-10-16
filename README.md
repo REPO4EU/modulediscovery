@@ -60,7 +60,7 @@ Now, you can run the pipeline using:
 ```bash
 nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
    -profile <docker/singularity> \
-   --seeds <seed_file> \
+   --input <seed_file> \
    --network <network_file> \
    --outdir <OUTDIR>
 ```
