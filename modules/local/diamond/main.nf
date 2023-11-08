@@ -3,7 +3,7 @@
 
 process DIAMOND {                           // Process name, should be all upper case
     label 'process_single'                  // Used to allocate resources, "process_single" uses one thread and 6GB memory, for labels see conf/base.config
-    container 'djskelton/diamond:2437974'   // The container on docker hub, other repositories are possible, use conda keyword to set a conda environment
+    container 'docker.io/djskelton/diamond:2437974'   // The container on docker hub, other repositories are possible, use conda keyword to set a conda environment
 
     input:                                  // Define the input channels
     path seeds                              // Path to seeds file
