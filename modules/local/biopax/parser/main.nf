@@ -2,7 +2,7 @@ process BIOPAX_PARSER {
     label 'process_single'
 
 //     conda "conda-forge::graph-tool=2.58"
-    container "quirinmanz/gt2biopax:latest" //TODO: should be fixed tag
+    container "docker.io/quirinmanz/gt2biopax:latest" //TODO: should be fixed tag
 
     input:
     path network

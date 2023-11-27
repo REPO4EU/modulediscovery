@@ -2,7 +2,7 @@ process BIOPAX_VALIDATOR {
     label 'process_single'
 
 //     conda "conda-forge::graph-tool=2.58"
-    container "quirinmanz/biopax-validator:5.1.0"
+    container "docker.io/quirinmanz/biopax-validator:5.1.0"
 
     input:
     path biopax_files
