@@ -1,7 +1,7 @@
 
 process ROBUST {
     label 'process_single'
-    container 'djskelton/robust:cc669c6'
+    container 'docker.io/djskelton/robust:cc669c6'
 
     input:
     path seeds
