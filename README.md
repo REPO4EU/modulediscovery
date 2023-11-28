@@ -85,11 +85,11 @@ see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
 4. Create a subworkflow wrapping the tool together with the input parser. (Example with comments: `subworkflows/local/gt_diamond/main.nf` and `subworkflows/local/gt_domino/main.nf`)
 5. Include the subworkflow in the `workflows/modulediscovery.nf` file. Again, DIAMOnD and DOMINO are included as examples.
 6. Test checks locally:
-   1. Run tests via, e.g., `nextflow run main.nf -profile singularity,test --outdir results`.
-   2. Run `nf-core lint`.
-   3. Run `prettier . --check`.
-   4. Run `prettier . --write`.
-   5.
+    1. Run tests via, e.g., `nextflow run main.nf -profile singularity,test --outdir results`.
+    2. Run `nf-core lint`.
+    3. Run `prettier . --check`.
+    4. Run `prettier . --write`.
+    5. Run `black .`
 7. Create a pull request against the dev branch.
 
 ### Further information
