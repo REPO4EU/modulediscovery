@@ -65,21 +65,21 @@ def save(g, stem, format):
 
 def filter_diamond(g, module, filter_column):
     # Diamond uses a tab separated file format
-    g.vp['diamond_rank'] = g.new_vertex_property("int")
-    g.vp['diamond_p_hyper'] = g.new_vertex_property("double")
+    g.vp["diamond_rank"] = g.new_vertex_property("int")
+    g.vp["diamond_p_hyper"] = g.new_vertex_property("double")
     with open(module, "r") as file:
         reader = csv.DictReader(file, lineterminator="\n", delimiter="\t")
         for row in reader:
-            v = gt.find_vertex(g, g.vp.name, row['DIAMOnD_node'])[0]
-            g.vp['diamond_rank'][v] = row['#rank']
-            g.vp['diamond_p_hyper'][v] = row['p_hyper']
+            v = gt.find_vertex(g, g.vp.name, row["DIAMOnD_node"])[0]
+            g.vp["diamond_rank"][v] = row["#rank"]
+            g.vp["diamond_p_hyper"][v] = row["p_hyper"]
             g.vp[filter_column][v] = True
     return g
 
 
 def filter_domino(g, module, filter_column):
     with open(module, "r") as file:
-        module_ids = [id.strip('entrez.') for id in file.readline().strip('[]\n').split(', ')]
+        module_ids = [id.strip("entrez.") for id in file.readline().strip("[]\n").split(", ")]
     gt.map_property_values(g.vp.name, g.vp[filter_column], lambda name: name in module_ids)
     # for id in module_ids:
     #     v = gt.find_vertex(g, g.vp.name, id)[0]
@@ -89,10 +89,11 @@ def filter_domino(g, module, filter_column):
 
 def filter_robust(g, module, filter_column):
     import numpy as np
+
     g = gt.load_graph(str(module))
     g.vp.name = g.vp._graphml_vertex_id.copy()
-    del g.vp['_graphml_vertex_id']
-    del g.ep['_graphml_edge_id']
+    del g.vp["_graphml_vertex_id"]
+    del g.ep["_graphml_edge_id"]
     g.vp[filter_column] = g.new_vertex_property("bool")
     g.vp[filter_column].a = gt.PropertyArray(np.ones(len(g), dtype=np.uint8), g.vp[filter_column])
     return g
@@ -102,7 +103,7 @@ def filter_g(g, format, module):
     """
     Filters a graph_tools Graph object based on a module file in a given format
     """
-    filter_column = 'keep'
+    filter_column = "keep"
     g.vp[filter_column] = g.new_vertex_property("bool")
     if format == "gt":
         logger.warning("Module file given, but format is 'gt'. Network was not filtered based on module...")
@@ -172,7 +173,7 @@ def parse_args(argv=None):
         "--module",
         help="Path to the module output. If this is given, the output will be gt. The -f flag is still used to determine the module format. Network must be in .gt format.",
         type=Path,
-        required=False
+        required=False,
     )
     parser.add_argument(
         "-l",
