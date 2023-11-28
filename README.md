@@ -89,7 +89,7 @@ see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
    2. Run `nf-core lint`.
    3. Run `prettier . --check`.
    4. Run `prettier . --write`.
-   5.
+   5. Run `black .`
 7. Create a pull request against the dev branch.
 
 ### Further information
