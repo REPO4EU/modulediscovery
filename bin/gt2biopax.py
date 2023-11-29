@@ -14,13 +14,14 @@ logger = logging.getLogger()
 
 def get_uniprot_from_entrez(entrez_ids: list[str]) -> dict[str, list[str]]:
     import requests
-    response = requests.post('https://api.nedrex.net/open/relations/get_encoded_proteins', json={'nodes': entrez_ids})
+
+    response = requests.post("https://api.nedrex.net/open/relations/get_encoded_proteins", json={"nodes": entrez_ids})
     response.raise_for_status()
     return response.json()
 
 
-class BioPAXFactory():
-    def __init__(self, input_path: Path, id_space: str = 'entrez'):
+class BioPAXFactory:
+    def __init__(self, input_path: Path, id_space: str = "entrez"):
         self.input_path = input_path
         self.id_space = id_space
         self.g = None
@@ -30,7 +31,7 @@ class BioPAXFactory():
         self.entities: dict[str, biopax.BioPaxObject] = {}
 
     def get_owl_path(self) -> Path:
-        return self.input_path.with_suffix('.owl')
+        return self.input_path.with_suffix(".owl")
 
     def load_graph(self):
         self.g = gt.load_graph(str(self.input_path))
@@ -39,33 +40,33 @@ class BioPAXFactory():
     def create_biopax_model(self):
         if not self.g:
             self.load_graph()
-        if self.id_space == 'entrez':
+        if self.id_space == "entrez":
             # entrez_ids = [f"entrez.{self.g.vp['name'][v_i]}" for v_i in self.g.get_vertices()]
             # gene2prot = get_uniprot_from_entrez(entrez_ids)
             # for k, v in gene2prot.items():
             #     [self.add_protein(v_i) for v_i in v]
             #     self.add_gene(k)
             self.add_gene_info()
-        elif self.id_space == 'uniprot':
+        elif self.id_space == "uniprot":
             self.add_protein_info()
         self.biopaxmodel = biopax.BioPaxModel(objects=self.get_bioax_objects())
 
     def add_gene_info(self):
         for v_i in self.g.get_vertices():
-            entrez_id = self.g.vp['name'][v_i]
+            entrez_id = self.g.vp["name"][v_i]
             self.add_gene(entrez_id)
         for e_i, e_j in self.g.get_edges():
-            entrez_id1 = self.g.vp['name'][e_i]
-            entrez_id2 = self.g.vp['name'][e_j]
+            entrez_id1 = self.g.vp["name"][e_i]
+            entrez_id2 = self.g.vp["name"][e_j]
             self.add_GGI(entrez_id1, entrez_id2)
 
     def add_protein_info(self):
         for v_i in self.g.get_vertices():
-            uniprot_id = self.g.vp['name'][v_i]
+            uniprot_id = self.g.vp["name"][v_i]
             self.add_protein(uniprot_id)
         for e_i, e_j in self.g.get_edges():
-            uniprot_id1 = self.g.vp['name'][e_i]
-            uniprot_id2 = self.g.vp['name'][e_j]
+            uniprot_id1 = self.g.vp["name"][e_i]
+            uniprot_id2 = self.g.vp["name"][e_j]
             self.add_PPI(uniprot_id1, uniprot_id2)
 
     def write(self):
@@ -84,10 +85,12 @@ class BioPAXFactory():
         # TODO: add all the other properties
 
         # uniprot_id = self.g.vp['name'][v]
-        uniXRef = self.xRefs.setdefault(uniprot_id,
-                                        biopax.UnificationXref(uid=f"{uniprot_id}.XREF", db='uniprot', id=uniprot_id))
-        entityRef = self.entityRefs.setdefault(uniprot_id,
-                                               biopax.ProteinReference(uid=f"{uniprot_id}.REF", xref=uniXRef))
+        uniXRef = self.xRefs.setdefault(
+            uniprot_id, biopax.UnificationXref(uid=f"{uniprot_id}.XREF", db="uniprot", id=uniprot_id)
+        )
+        entityRef = self.entityRefs.setdefault(
+            uniprot_id, biopax.ProteinReference(uid=f"{uniprot_id}.REF", xref=uniXRef)
+        )
         self.entities[uniprot_id] = biopax.Protein(uid=uniprot_id, entity_reference=entityRef)
 
     def get_bioax_objects(self):
@@ -97,22 +100,21 @@ class BioPAXFactory():
         # uniprot_id1 = self.g.vp['name'][e_i]
         # uniprot_id2 = self.g.vp['name'][e_j]
         interaction_id = f"{uniprot_id1}_{uniprot_id2}"
-        self.entities[interaction_id] = biopax.MolecularInteraction(uid=interaction_id,
-                                                                    participant=[self.entities[uniprot_id1],
-                                                                                 self.entities[
-                                                                                     uniprot_id2]])
+        self.entities[interaction_id] = biopax.MolecularInteraction(
+            uid=interaction_id, participant=[self.entities[uniprot_id1], self.entities[uniprot_id2]]
+        )
 
     def add_gene(self, entrez_id):
-        uniXRef = self.xRefs.setdefault(entrez_id,
-                                        biopax.UnificationXref(uid=f"{entrez_id}.XREF", db='ncbi gene', id=entrez_id))
+        uniXRef = self.xRefs.setdefault(
+            entrez_id, biopax.UnificationXref(uid=f"{entrez_id}.XREF", db="ncbi gene", id=entrez_id)
+        )
         self.entities[entrez_id] = biopax.Gene(uid=entrez_id, xref=uniXRef, organism=None)
 
     def add_GGI(self, entrez_id1, entrez_id2):
         interaction_id = f"{entrez_id1}_{entrez_id2}"
-        self.entities[interaction_id] = biopax.GeneticInteraction(uid=interaction_id,
-                                                                  participant=[self.entities[entrez_id1],
-                                                                               self.entities[
-                                                                                   entrez_id2]])
+        self.entities[interaction_id] = biopax.GeneticInteraction(
+            uid=interaction_id, participant=[self.entities[entrez_id1], self.entities[entrez_id2]]
+        )
 
 
 def parse_args(argv=None):
@@ -139,7 +141,7 @@ def parse_args(argv=None):
         "--idspace",
         help="ID space of the given network.",
         type=str,
-        choices=['entrez', 'uniprot'],
+        choices=["entrez", "uniprot"],
         default="entrez",
     )
     # parser.add_argument(
