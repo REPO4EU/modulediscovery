@@ -3,8 +3,8 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - nf-core
-  - nextflow
-  - singularity
-  - prettier
-  - black
+  - nf-core>=2.10
+  - nextflow>=23.10
+  - singularity>=3.8
+  - prettier>=3.1
+  - black>=23.10

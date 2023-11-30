@@ -63,6 +63,64 @@ def save(g, stem, format):
         sys.exit(1)
 
 
+def filter_diamond(g, module, filter_column):
+    # Diamond uses a tab separated file format
+    g.vp["diamond_rank"] = g.new_vertex_property("int")
+    g.vp["diamond_p_hyper"] = g.new_vertex_property("double")
+    with open(module, "r") as file:
+        reader = csv.DictReader(file, lineterminator="\n", delimiter="\t")
+        for row in reader:
+            v = gt.find_vertex(g, g.vp.name, row["DIAMOnD_node"])[0]
+            g.vp["diamond_rank"][v] = row["#rank"]
+            g.vp["diamond_p_hyper"][v] = row["p_hyper"]
+            g.vp[filter_column][v] = True
+    return g
+
+
+def filter_domino(g, module, filter_column):
+    with open(module, "r") as file:
+        module_ids = [id.strip("entrez.") for id in file.readline().strip("[]\n").split(", ")]
+    gt.map_property_values(g.vp.name, g.vp[filter_column], lambda name: name in module_ids)
+    return g
+
+
+def filter_robust(g, module, filter_column):
+    import numpy as np
+
+    g = gt.load_graph(str(module))
+    g.vp.name = g.vp._graphml_vertex_id.copy()
+    del g.vp["_graphml_vertex_id"]
+    del g.ep["_graphml_edge_id"]
+    g.vp[filter_column] = g.new_vertex_property("bool")
+    g.vp[filter_column].a = gt.PropertyArray(np.ones(len(g), dtype=np.uint8), g.vp[filter_column])
+    return g
+
+
+def filter_g(g, format, module):
+    """
+    Filters a graph_tools Graph object based on a module file in a given format
+    """
+    filter_column = "keep"
+    g.vp[filter_column] = g.new_vertex_property("bool")
+    if format == "gt":
+        logger.warning("Module file given, but format is 'gt'. Network was not filtered based on module...")
+        return g
+    elif format == "diamond":
+        g = filter_diamond(g, module, filter_column)
+    elif format == "domino":
+        g = filter_domino(g, module, filter_column)
+    elif format == "robust":
+        g = filter_robust(g, module, filter_column)
+    else:
+        logger.critical(f"Unknown output format: {format}")
+        sys.exit(1)
+    g.set_vertex_filter(g.vp[filter_column])
+    g.purge_vertices()
+    g.clear_filters()
+    del g.vp[filter_column]
+    return g
+
+
 def load(file_in, extension):
     """
     Loads a graph_tools Graph object.
@@ -73,7 +131,7 @@ def load(file_in, extension):
         return gt.load_graph_from_csv(str(file_in))
 
 
-def parse_format(file_in, format):
+def parse_format(file_in, format, module=None):
     stem = Path(file_in).stem
     extension = Path(file_in).suffix
     logger.debug(f"{stem=}")
@@ -81,6 +139,10 @@ def parse_format(file_in, format):
 
     g = load(file_in=file_in, extension=extension)
     logger.debug(f"{g=}")
+    if module:
+        g = filter_g(g, format, module)
+        stem = format
+        format = "gt"
     save(g=g, stem=stem, format=format)
 
 
@@ -104,6 +166,13 @@ def parse_args(argv=None):
         default="gt",
     )
     parser.add_argument(
+        "-m",
+        "--module",
+        help="Path to the module output. If this is given, the output will be gt. The -f flag is still used to determine the module format. Network must be in .gt format.",
+        type=Path,
+        required=False,
+    )
+    parser.add_argument(
         "-l",
         "--log-level",
         help="The desired log level (default WARNING).",
@@ -121,7 +190,7 @@ def main(argv=None):
         logger.error(f"The given input file {args.file_in} was not found!")
         sys.exit(2)
     logger.debug(f"{args=}")
-    parse_format(args.file_in, args.format)
+    parse_format(args.file_in, args.format, args.module)
 
 
 if __name__ == "__main__":

@@ -2,10 +2,11 @@
 // Prepares the input for DOMINO and runs the tool
 //
 
+include { PREFIXLINES       } from '../../../modules/local/prefixlines/main'
 include { GRAPHTOOLPARSER   } from '../../../modules/local/graphtoolparser/main'
 include { DOMINO_SLICER     } from '../../../modules/local/domino/slicer/main'
 include { DOMINO_DOMINO     } from '../../../modules/local/domino/domino/main'
-include { PREFIXLINES       } from '../../../modules/local/prefixlines/main'
+include { MODULEPARSER      } from '../../../modules/local/moduleparser/main'
 
 workflow GT_DOMINO {                        // Define the subworkflow, usually starts with the main input file format (.gt)
     take:                                   // Workflow inputs
@@ -32,8 +33,11 @@ workflow GT_DOMINO {                        // Define the subworkflow, usually s
     )
     ch_versions = ch_versions.mix(DOMINO_DOMINO.out.versions.first())       // Collect versions
 
+    MODULEPARSER(ch_network, "domino",  DOMINO_DOMINO.out.modules)          // Convert module from domino specific format to gt file
+    ch_versions = ch_versions.mix(MODULEPARSER.out.versions.first())
+
 
     emit:                                                                   // Define, what the subworkflow will return
-    module   = DOMINO_DOMINO.out.modules                                    // channel: [ modules ]             emit the modules discovered by DOMINO
+    module   = MODULEPARSER.out.network                                    // channel: [ modules ]             emit the modules discovered by DOMINO
     versions = ch_versions                                                  // channel: [ versions.yml ]        emit collected versions
 }
