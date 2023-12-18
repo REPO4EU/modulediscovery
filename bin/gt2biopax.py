@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-
+import json
 import argparse
 import logging
 import sys
 from pathlib import Path
-from subprocess import call
 
 from nedrex.core import iter_edges
 from nedrex.core import get_nodes
@@ -32,25 +31,84 @@ def get_uniprot_from_entrez(entrez_ids: list[str]) -> dict[str, list[str]]:
     return response.json()
 
 
-def get_nedrex_data(entrez_ids: list[str]) -> any:
+def get_nedrex_data(entrez_ids: list[str], gene2prot: dict[str, list[str]]) -> any:
     genes = get_nodes(node_type = "gene", node_ids=entrez_ids)
-    edges = [e for e in iter_edges("gene_associated_with_disorder")]
 
-    edges_to_delete = []
-    for e in edges:
-        if e["sourceDomainId"] not in entrez_ids:
-            edges_to_delete.append(e)
-        
-    # delete all edges we are not interested in
-    for e in edges_to_delete:
-        edges.remove(e)
+    genes = {gene['primaryDomainId']: gene for gene in genes}
+
+    file_path = 'relevant_edges.json'
+
+    # edge_types_to_get = ['variant_affects_gene', 'gene_associated_with_disorder']
+    # edges = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
+
+    # edges_relevant = []
+    # for e in edges:
+    #     if e["sourceDomainId"] in genes or e["targetDomainId"] in genes:
+    #         edges_relevant.append(e)
     
-    disorders_to_get = set()
-    for e in edges:
-        disorders_to_get.add(e["targetDomainId"])
-    disorders_to_get = list(disorders_to_get)
+    # edges = edges_relevant
+
+    # variants_to_get = set()
+    # for e in edges:
+    #     if e["type"] == "VariantAffectsGene":
+    #         variants_to_get.add(e["sourceDomainId"])
+    # variants_to_get = list(variants_to_get)
+
+    # batch_size = 300  # Die Anzahl der IDs in jeder Gruppe
+
+    # variants = []
+    # for i in range(0, len(variants_to_get), batch_size):
+    #     batch_ids = variants_to_get[i:i+batch_size]
+
+    #     # get_nodes für die aktuelle Gruppe von IDs aufrufen
+    #     variant_nodes = get_nodes(node_type="genomic_variant", node_ids=batch_ids)
+    #     variants.extend(variant_nodes)
+        
+    # edges_new = [e for e in iter_edges("variant_associated_with_disorder")]
+    
+    # # create dictionary for faster access
+    # variants = {variant['primaryDomainId']: variant for variant in variants}
+
+    # edges_relevant = []
+    # for e in edges_new:
+    #     if e["sourceDomainId"] in variants:
+    #         edges_relevant.append(e)
+    
+    # edges.extend(edges_relevant)
+
+    # # Liste als JSON in die Datei schreiben
+    # with open(file_path, 'w') as json_file:
+    #     json.dump(edges, json_file)
+
+    # just for testing purposes: get saved edges from file
+    with open(file_path, 'r') as json_file:
+        edges = json.load(json_file)
+
+    # variants_to_get = set()
+    # for e in edges:
+    #     if e["type"] == "VariantAffectsGene":
+    #         variants_to_get.add(e["sourceDomainId"])
+    # variants_to_get = list(variants_to_get)
+
     
     batch_size = 300  # Die Anzahl der IDs in jeder Gruppe
+
+    variants = []
+    # for i in range(0, len(variants_to_get), batch_size):
+    #     batch_ids = variants_to_get[i:i+batch_size]
+
+    #     # get_nodes für die aktuelle Gruppe von IDs aufrufen
+    #     variant_nodes = get_nodes(node_type="genomic_variant", node_ids=batch_ids)
+    #     variants.extend(variant_nodes)
+
+    variants = {variant['primaryDomainId']: variant for variant in variants}
+
+    disorders_to_get = set()
+
+    for e in edges:
+        if e["type"] == "GeneAssociatedWithDisorder": # or e["type"] == "VariantAssociatedWithDisorder":
+            disorders_to_get.add(e["targetDomainId"])
+    disorders_to_get = list(disorders_to_get)
 
     disorders = []
     for i in range(0, len(disorders_to_get), batch_size):
@@ -59,22 +117,82 @@ def get_nedrex_data(entrez_ids: list[str]) -> any:
         # get_nodes für die aktuelle Gruppe von IDs aufrufen
         disorder_nodes = get_nodes(node_type="disorder", node_ids=batch_ids)
         disorders.extend(disorder_nodes)
-    
+
     # Dictionary erstellen, wobei die primaryDomainId als Schlüssel verwendet wird für schnellen Zugriff
     disorders = {disorder['primaryDomainId']: disorder for disorder in disorders}
-    genes = {gene['primaryDomainId']: gene for gene in genes}
-    return genes, disorders, edges
+
+    # get drugs that target our associated disorders
+    edges_drugs = [e for e in iter_edges("drug_has_indication")]
+    edges_relevant = []
+    for e in edges_drugs:
+        if e["targetDomainId"] in disorders:
+            edges_relevant.append(e)
+    edges_drugs = edges_relevant
+
+    protein2gene = {"uniprot."+protein: gen for gen, proteins in gene2prot.items() for protein in proteins}
+
+    # get drugs that target a protein encoded by our genes
+    edges_drugs = [e for e in iter_edges("drug_has_target")]
+    edges_relevant = []
+    for e in edges_drugs:
+        if e["targetDomainId"] in protein2gene:
+            edges_relevant.append(e)
+    edges_drugs = edges_relevant
+    
+    drugs_to_get = set()
+    for e in edges_drugs:
+        if e["type"] == "DrugHasIndication" or e["type"] == "DrugHasTarget":
+            drugs_to_get.add(e["sourceDomainId"])
+    drugs_to_get = list(drugs_to_get)
+
+    drugs = []
+    for i in range(0, len(drugs_to_get), batch_size):
+        batch_ids = drugs_to_get[i:i+batch_size]
+
+        # get_nodes für die aktuelle Gruppe von IDs aufrufen
+        drug_nodes = get_nodes(node_type="drug", node_ids=batch_ids)
+        drugs.extend(drug_nodes)
+    
+    print(len(edges_drugs))
+    print(len(edges))
+
+    edges.extend(edges_drugs)
+    print(len(edges))
+
+    return genes, disorders, edges, variants, drugs
     
 
-def get_associated_disorders_for_genes(entrez_ids: list[str]) -> dict[str, list[str]]:
-    genes, disorders, edges = get_nedrex_data(entrez_ids)
+def get_associated_disorders_for_genes(genes, disorders, edges) -> dict[str, list[str]]:
     if genes and disorders and edges:
         gene2disorder = {}
         for edge in edges:
-            gene_id = edge["sourceDomainId"]
-            disorder_id = edge["targetDomainId"]
-            gene2disorder.setdefault(gene_id, []).append({"disorder":disorder_id, "dataSources": edge["dataSources"]})
-        return gene2disorder, genes, disorders
+            if edge["type"] == "GeneAssociatedWithDisorder":
+                gene_id = edge["sourceDomainId"]
+                disorder_id = edge["targetDomainId"]
+                gene2disorder.setdefault(gene_id, []).append({"disorder":disorder_id, "dataSources": edge["dataSources"]})
+        return gene2disorder
+    return None
+
+def get_associated_disorders_for_variants(variants, disorders, edges) -> dict[str, list[str]]:
+    if variants and disorders and edges:
+        variant2disorder = {}
+        for edge in edges:
+            if edge["type"] == "VariantAssociatedWithDisorder":
+                variant_id = edge["sourceDomainId"]
+                disorder_id = edge["targetDomainId"]
+                variant2disorder.setdefault(variant_id, []).append({"disorder":disorder_id, "dataSources": edge["dataSources"]})
+        return variant2disorder
+    return None
+
+def get_variants_to_affect_gene(variants, genes, edges) -> dict[str, list[str]]:
+    if variants and genes and edges:
+        gene2variant = {}
+        for edge in edges:
+            if edge["type"] == "VariantAffectsGene":
+                variant_id = edge["sourceDomainId"]
+                gene_id = edge["targetDomainId"]
+                gene2variant.setdefault(gene_id, []).append({"variant":variant_id, "dataSources": edge["dataSources"]})
+        return gene2variant
     return None
     
 
@@ -102,7 +220,13 @@ class BioPAXFactory:
         if self.id_space == "entrez":
             entrez_ids = [f"entrez.{self.g.vp['name'][v_i]}" for v_i in self.g.get_vertices()]
             gene2prot = get_uniprot_from_entrez(entrez_ids)
-            gene2disorder, genes, disorders = get_associated_disorders_for_genes(entrez_ids)
+
+            # get all data from nedrex
+            genes, disorders, edges, variants, drugs = get_nedrex_data(entrez_ids, gene2prot)
+
+            gene2disorder= get_associated_disorders_for_genes(genes, disorders, edges)
+            variant2disorder = get_associated_disorders_for_variants(variants, disorders, edges)
+            gene2variant = get_variants_to_affect_gene(variants, genes, edges)
 
             # TODO: add disorders as soon as Biopax supports it
 
