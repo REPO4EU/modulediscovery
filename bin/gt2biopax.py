@@ -194,6 +194,17 @@ def get_variants_to_affect_gene(variants, genes, edges) -> dict[str, list[str]]:
                 gene2variant.setdefault(gene_id, []).append({"variant":variant_id, "dataSources": edge["dataSources"]})
         return gene2variant
     return None
+
+def get_drugs_targeting_protein(drugs, edges) -> dict[str, list[str]]:
+    if drugs and edges:
+        protein2drug = {}
+        for edge in edges:
+            if edge["type"] == "DrugHasTarget":
+                drug_id = edge["sourceDomainId"]
+                protein_id = edge["targetDomainId"]
+                protein2drug.setdefault(protein_id, []).append({"drug":drug_id, "dataSources": edge["dataSources"]})
+        return protein2drug
+    return None
     
 
 
@@ -225,8 +236,9 @@ class BioPAXFactory:
             genes, disorders, edges, variants, drugs = get_nedrex_data(entrez_ids, gene2prot)
 
             gene2disorder= get_associated_disorders_for_genes(genes, disorders, edges)
-            variant2disorder = get_associated_disorders_for_variants(variants, disorders, edges)
-            gene2variant = get_variants_to_affect_gene(variants, genes, edges)
+            #variant2disorder = get_associated_disorders_for_variants(variants, disorders, edges)
+            #gene2variant = get_variants_to_affect_gene(variants, genes, edges)
+            protein2drug = get_drugs_targeting_protein(drugs, edges)
 
             # TODO: add disorders as soon as Biopax supports it
 
