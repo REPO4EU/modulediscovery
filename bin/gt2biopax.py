@@ -216,6 +216,15 @@ class BioPAXFactory:
         self.xRefs: dict[str, biopax.Xref] = {}
         self.entityRefs: dict[str, biopax.EntityReference] = {}
         self.entities: dict[str, biopax.BioPaxObject] = {}
+        self.edgeTypes: dict[str, biopax.RelationshipTypeVocabulary] = {
+            "gene_associated_with_disorder": biopax.RelationshipTypeVocabulary(term = ["gene associated with disorder"], uid = "gene_associated_with_disorder.vocab"),
+            #"variant_associated_with_disorder": biopax.RelationshipTypeVocabulary(term = ["variant associated with disorder"], uid = "variant_associated_with_disorder.XREF"),
+            #"variant_affects_gene": biopax.RelationshipTypeVocabulary(term = ["variant affects gene"], uid = "variant_affects_gene.XREF"),
+            "drug_has_target": biopax.RelationshipTypeVocabulary(term = ["drug has target"], uid = "drug_has_target.vocab"),
+            "gene_product": biopax.RelationshipTypeVocabulary(term = ["gene product"], uid = "gene_product.vocab"),
+            #"drug_has_indication": biopax.RelationshipTypeVocabulary(term = ["drug has indication"], uid = "drug_has_indication.XREF")
+        }
+
 
     def get_owl_path(self) -> Path:
         return self.input_path.with_suffix(".owl")
@@ -257,10 +266,6 @@ class BioPAXFactory:
                 self.add_gene(entrez_id, genes["entrez." + entrez_id] ,gene2disorder["entrez." + entrez_id])
             else:
                 self.add_gene(entrez_id, genes["entrez." + entrez_id])
-        for e_i, e_j in self.g.get_edges():
-            entrez_id1 = self.g.vp["name"][e_i]
-            entrez_id2 = self.g.vp["name"][e_j]
-            self.add_GGI(entrez_id1, entrez_id2)
     
     def add_drug_info(self, protein2drug):
         for p, drugs in protein2drug.items():
@@ -274,7 +279,7 @@ class BioPAXFactory:
         )]
         if uniprot_id:
             uniXRef.append(self.xRefs.setdefault(
-                uniprot_id, biopax.RelationshipXref(uid=f"{uniprot_id}.XREF", db="uniprot", id=uniprot_id, relationship_type="drug_has_target")
+                uniprot_id, biopax.RelationshipXref(uid=f"{uniprot_id}.XREF", db="uniprot", id=uniprot_id, relationship_type=self.edgeTypes["drug_has_target"])
             ))
         entityRef = self.entityRefs.setdefault(
             drug_id, biopax.SmallMoleculeReference(uid=f"{drug_id}.REF", xref=uniXRef)
@@ -311,7 +316,7 @@ class BioPAXFactory:
         )]
         if gene_id:
             uniXRef.append(self.xRefs.setdefault(
-                gene_id, biopax.RelationshipXref(uid=f"{gene_id}.XREF", db="NCBI GENE", id=gene_id, relationship_type="gene product")
+                gene_id, biopax.RelationshipXref(uid=f"{gene_id}.XREF", db="NCBI GENE", id=gene_id, relationship_type=self.edgeTypes["gene_product"])
             ))
         entityRef = self.entityRefs.setdefault(
             uniprot_id, biopax.ProteinReference(uid=f"{uniprot_id}.REF", xref=uniXRef)
@@ -319,11 +324,9 @@ class BioPAXFactory:
         self.entities[uniprot_id] = biopax.Protein(uid=uniprot_id, entity_reference=entityRef)
 
     def get_bioax_objects(self):
-        return list(self.xRefs.values()) + list(self.entityRefs.values()) + list(self.entities.values())
+        return list(self.xRefs.values()) + list(self.entityRefs.values()) + list(self.entities.values()) + list(self.edgeTypes.values())
 
     def add_PPI(self, uniprot_id1, uniprot_id2):
-        # uniprot_id1 = self.g.vp['name'][e_i]
-        # uniprot_id2 = self.g.vp['name'][e_j]
         interaction_id = f"{uniprot_id1}_{uniprot_id2}"
         self.entities[interaction_id] = biopax.MolecularInteraction(
             uid=interaction_id, participant=[self.entities[uniprot_id1], self.entities[uniprot_id2]]
@@ -337,15 +340,9 @@ class BioPAXFactory:
             for disorder in associated_disorders:
                 id = disorder["disorder"]
                 uniXRef.append(self.xRefs.setdefault(
-                    id, biopax.RelationshipXref(uid=f"{id}.XREF", db="MONDO", id=id, comment=disorder["dataSources"], relationship_type="inferred-from")
+                    id, biopax.RelationshipXref(uid=f"{id}.XREF", db="MONDO", id=id, comment=disorder["dataSources"], relationship_type= self.edgeTypes["gene_associated_with_disorder"])
                 ))
-        self.entities[entrez_id] = biopax.Gene(uid=entrez_id, xref=uniXRef, organism=None, name=[gene["displayName"]])
-
-    def add_GGI(self, entrez_id1, entrez_id2):
-        interaction_id = f"{entrez_id1}_{entrez_id2}"
-        self.entities[interaction_id] = biopax.GeneticInteraction(
-            uid=interaction_id, participant=[self.entities[entrez_id1], self.entities[entrez_id2]]
-        )
+        self.entities[entrez_id] = biopax.Gene(uid=entrez_id, xref=uniXRef, organism=None, display_name=[gene["displayName"]])
 
 
 def parse_args(argv=None):
