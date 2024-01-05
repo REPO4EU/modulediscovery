@@ -159,7 +159,7 @@ def get_nedrex_data(entrez_ids: list[str], gene2prot: dict[str, list[str]]) -> a
     return genes, disorders, edges, variants, drugs
     
 
-def get_associated_disorders_for_genes(genes, disorders, edges) -> dict[str, list[str]]:
+def get_associated_disorders_for_genes(genes, disorders, edges) -> dict[str, any]:
     if genes and disorders and edges:
         gene2disorder = {}
         for edge in edges:
@@ -171,7 +171,7 @@ def get_associated_disorders_for_genes(genes, disorders, edges) -> dict[str, lis
     return None
 
 # note: not used yet
-def get_associated_disorders_for_variants(variants, disorders, edges) -> dict[str, list[str]]:
+def get_associated_disorders_for_variants(variants, disorders, edges) -> dict[str, any]:
     if variants and disorders and edges:
         variant2disorder = {}
         for edge in edges:
@@ -183,7 +183,7 @@ def get_associated_disorders_for_variants(variants, disorders, edges) -> dict[st
     return None
 
 # note: not used yet
-def get_variants_to_affect_gene(variants, genes, edges) -> dict[str, list[str]]:
+def get_variants_to_affect_gene(variants, genes, edges) -> dict[str, any]:
     if variants and genes and edges:
         gene2variant = {}
         for edge in edges:
@@ -194,7 +194,7 @@ def get_variants_to_affect_gene(variants, genes, edges) -> dict[str, list[str]]:
         return gene2variant
     return None
 
-def get_drugs_targeting_protein(drugs, edges) -> dict[str, list[str]]:
+def get_drugs_targeting_protein(drugs, edges) -> dict[str, any]:
     if drugs and edges:
         protein2drug = {}
         for edge in edges:
