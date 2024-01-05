@@ -69,7 +69,6 @@ def get_nedrex_data(ids: list[str], hasProteinIds = False) -> any:
     proteins = get_proteins(proteins)
 
     genes = get_nodes(node_type = "gene", node_ids=ids)
-
     genes = {gene['primaryDomainId']: gene for gene in genes}
 
     #file_path = 'relevant_edges.json'
@@ -192,8 +191,18 @@ def get_nedrex_data(ids: list[str], hasProteinIds = False) -> any:
     
     drugs = {drug['primaryDomainId']: drug for drug in drugs}
 
-
     edges.extend(edges_drugs)
+
+    edge_types_to_get = ['protein_has_go_annotation']
+    edges_go = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
+
+    edges_relevant = []
+    for e in edges_go:
+        if e["sourceDomainId"] in proteins and "is_active_in" in e["qualifiers"]:
+            edges_relevant.append(e)
+    
+    edges_go = edges_relevant
+    edges.extend(edges_go)
 
     return genes, disorders, edges, variants, drugs, proteins, protein2gene
     
@@ -207,6 +216,17 @@ def get_associated_disorders_for_genes(genes, disorders, edges) -> dict[str, any
                 disorder_id = edge["targetDomainId"]
                 gene2disorder.setdefault(gene_id, []).append({"disorder":disorder_id, "dataSources": edge["dataSources"]})
         return gene2disorder
+    return None
+
+def get_go_to_protein(proteins, edges) -> dict[str, any]:
+    if proteins and edges:
+        protein2go = {}
+        for edge in edges:
+            if edge["type"] == "ProteinHasGOAnnotation":
+                protein_id = edge["sourceDomainId"]
+                go_id = edge["targetDomainId"]
+                protein2go.setdefault(protein_id, []).append({"go":go_id, "dataSources": edge["dataSources"]})
+        return protein2go
     return None
 
 # note: not used yet
@@ -261,6 +281,7 @@ class BioPAXFactory:
             #"variant_affects_gene": biopax.RelationshipTypeVocabulary(term = ["variant affects gene"], uid = "variant_affects_gene.XREF"),
             "drug_has_target": biopax.RelationshipTypeVocabulary(term = ["drug has target"], uid = "drug_has_target.vocab"),
             "gene_product": biopax.RelationshipTypeVocabulary(term = ["gene product"], uid = "gene_product.vocab"),
+            "cellular_component": biopax.RelationshipTypeVocabulary(term = ["cellular component"], uid = "cellular_component.vocab"),
             #"drug_has_indication": biopax.RelationshipTypeVocabulary(term = ["drug has indication"], uid = "drug_has_indication.XREF")
         }
 
@@ -288,11 +309,13 @@ class BioPAXFactory:
     def add_info(self, ids, protein = False):
         if protein:
             genes, disorders, edges, variants, drugs, proteins, protein2gene = get_nedrex_data(ids, True)
-            self.add_protein_info(proteins, protein2gene)
+            protein2go = get_go_to_protein(proteins, edges)
+            self.add_protein_info(proteins, protein2gene, protein2go)
 
         else:
             genes, disorders, edges, variants, drugs, proteins, protein2gene = get_nedrex_data(ids, False)
-            self.add_protein_info(proteins, protein2gene, False)
+            protein2go = get_go_to_protein(proteins, edges)
+            self.add_protein_info(proteins, protein2gene, protein2go, False)
 
         gene2disorder = get_associated_disorders_for_genes(genes, disorders, edges)
         #variant2disorder = get_associated_disorders_for_variants(variants, disorders, edges)
@@ -332,10 +355,13 @@ class BioPAXFactory:
         )
         self.entities[drug_id] = biopax.SmallMolecule(uid=drug_id, entity_reference=entityRef, display_name=display_name)
 
-    def add_protein_info(self, proteins, protein2gene, add_ppi = True):
+    def add_protein_info(self, proteins, protein2gene, protein2go, add_ppi = True):
         for uniprot_id, protein in proteins.items():
             encoding_gene = protein2gene[uniprot_id]
-            self.add_protein(protein, encoding_gene)
+            go_to_protein = []
+            if uniprot_id in protein2go:
+                go_to_protein = protein2go[uniprot_id]
+            self.add_protein(protein, encoding_gene, go_to_protein)
         if add_ppi:
             for e_i, e_j in self.g.get_edges():
                 uniprot_id1 = self.g.vp["name"][e_i]
@@ -354,7 +380,7 @@ class BioPAXFactory:
     #         ["java", "-jar", "paxtools-5.3.0.jar", "validate", owl_path.name,
     #          f"{owl_path.stem}_validation.html", "notstrict"])
 
-    def add_protein(self, protein, gene_id):
+    def add_protein(self, protein, gene_id, go_s):
         # TODO: add all the other properties
         uniprot_id = protein["primaryDomainId"].lstrip("uniprot.")
 
@@ -364,6 +390,11 @@ class BioPAXFactory:
         uniXRef.append(self.xRefs.setdefault(
             gene_id, biopax.RelationshipXref(uid=f"{gene_id}.XREF", db="NCBI GENE", id=gene_id, relationship_type=self.edgeTypes["gene_product"])
         ))
+        for go in go_s:
+            id = go["go"].replace("go.", "GO:")
+            uniXRef.append(self.xRefs.setdefault(
+                id, biopax.RelationshipXref(uid=id, db=go["dataSources"], id=id, relationship_type= self.edgeTypes["cellular_component"])
+            ))
         entityRef = self.entityRefs.setdefault(
             uniprot_id, biopax.ProteinReference(uid=f"{uniprot_id}.REF", xref=uniXRef, display_name=[protein["displayName"]])
         )
