@@ -36,17 +36,17 @@ def get_nedrex_data(entrez_ids: list[str], gene2prot: dict[str, list[str]]) -> a
 
     genes = {gene['primaryDomainId']: gene for gene in genes}
 
-    file_path = 'relevant_edges.json'
+    #file_path = 'relevant_edges.json'
 
-    # edge_types_to_get = ['variant_affects_gene', 'gene_associated_with_disorder']
-    # edges = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
+    edge_types_to_get = ['gene_associated_with_disorder'] #'variant_affects_gene'
+    edges = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
 
-    # edges_relevant = []
-    # for e in edges:
-    #     if e["sourceDomainId"] in genes or e["targetDomainId"] in genes:
-    #         edges_relevant.append(e)
+    edges_relevant = []
+    for e in edges:
+        if e["sourceDomainId"] in genes or e["targetDomainId"] in genes:
+            edges_relevant.append(e)
     
-    # edges = edges_relevant
+    edges = edges_relevant
 
     # variants_to_get = set()
     # for e in edges:
@@ -81,8 +81,8 @@ def get_nedrex_data(entrez_ids: list[str], gene2prot: dict[str, list[str]]) -> a
     #     json.dump(edges, json_file)
 
     # just for testing purposes: get saved edges from file
-    with open(file_path, 'r') as json_file:
-        edges = json.load(json_file)
+    #with open(file_path, 'r') as json_file:
+    #    edges = json.load(json_file)
 
     # variants_to_get = set()
     # for e in edges:
@@ -122,6 +122,7 @@ def get_nedrex_data(entrez_ids: list[str], gene2prot: dict[str, list[str]]) -> a
     disorders = {disorder['primaryDomainId']: disorder for disorder in disorders}
 
     # get drugs that target our associated disorders
+    # note: not used until now bc biopax does not support disorders
     edges_drugs = [e for e in iter_edges("drug_has_indication")]
     edges_relevant = []
     for e in edges_drugs:
@@ -152,12 +153,8 @@ def get_nedrex_data(entrez_ids: list[str], gene2prot: dict[str, list[str]]) -> a
         # get_nodes für die aktuelle Gruppe von IDs aufrufen
         drug_nodes = get_nodes(node_type="drug", node_ids=batch_ids)
         drugs.extend(drug_nodes)
-    
-    print(len(edges_drugs))
-    print(len(edges))
 
     edges.extend(edges_drugs)
-    print(len(edges))
 
     return genes, disorders, edges, variants, drugs
     
@@ -229,6 +226,7 @@ class BioPAXFactory:
         if not self.g:
             self.load_graph()
         if self.id_space == "entrez":
+            # TODO: entrez prefix will already be added in the future
             entrez_ids = [f"entrez.{self.g.vp['name'][v_i]}" for v_i in self.g.get_vertices()]
             gene2prot = get_uniprot_from_entrez(entrez_ids)
 
