@@ -30,9 +30,45 @@ def get_uniprot_from_entrez(entrez_ids: list[str]) -> dict[str, list[str]]:
     response.raise_for_status()
     return response.json()
 
+# so far not needed
+def get_proteins(uniprot_ids: list[str]) -> any:
 
-def get_nedrex_data(entrez_ids: list[str], gene2prot: dict[str, list[str]]) -> any:
-    genes = get_nodes(node_type = "gene", node_ids=entrez_ids)
+    # TODO: bald nicht mehr nötig, das uniprot selbst dranzuhängen
+    ids = ['uniprot.' + id for id in uniprot_ids]
+    batch_size = 200
+
+    proteins = []
+    for i in range(0, len(ids), batch_size):
+        batch_ids = ids[i:i+batch_size]
+
+        # get_nodes für die aktuelle Gruppe von IDs aufrufen
+        proteins_nodes = get_nodes(node_type="protein", node_ids=batch_ids)
+        proteins.extend(proteins_nodes)
+    proteins = {protein['primaryDomainId']: protein for protein in proteins}
+    return proteins
+
+def get_nedrex_data(ids: list[str], hasProteinIds = False) -> any:
+    proteins = []
+
+    if hasProteinIds:
+        edge_types_to_get = ['protein_encoded_by_gene']
+        edges = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
+        genes = []
+        for e in edges:
+            if e["sourceDomainId"] in ids:
+                genes.append(e["targetDomainId"])
+        proteins = get_proteins(ids)
+        ids = genes
+        
+    gene2prot = get_uniprot_from_entrez(ids)
+
+    if not hasProteinIds:
+        all_proteins = [protein for proteins_list in gene2prot.values() for protein in proteins_list]
+        proteins = list(set(all_proteins))
+
+    proteins = get_proteins(proteins)
+
+    genes = get_nodes(node_type = "gene", node_ids=ids)
 
     genes = {gene['primaryDomainId']: gene for gene in genes}
 
@@ -153,10 +189,13 @@ def get_nedrex_data(entrez_ids: list[str], gene2prot: dict[str, list[str]]) -> a
         # get_nodes für die aktuelle Gruppe von IDs aufrufen
         drug_nodes = get_nodes(node_type="drug", node_ids=batch_ids)
         drugs.extend(drug_nodes)
+    
+    drugs = {drug['primaryDomainId']: drug for drug in drugs}
+
 
     edges.extend(edges_drugs)
 
-    return genes, disorders, edges, variants, drugs
+    return genes, disorders, edges, variants, drugs, proteins, protein2gene
     
 
 def get_associated_disorders_for_genes(genes, disorders, edges) -> dict[str, any]:
@@ -239,25 +278,30 @@ class BioPAXFactory:
         if self.id_space == "entrez":
             # TODO: entrez prefix will already be added in the future
             entrez_ids = [f"entrez.{self.g.vp['name'][v_i]}" for v_i in self.g.get_vertices()]
-            gene2prot = get_uniprot_from_entrez(entrez_ids)
-
-            # get all data from nedrex
-            genes, disorders, edges, variants, drugs = get_nedrex_data(entrez_ids, gene2prot)
-
-            gene2disorder= get_associated_disorders_for_genes(genes, disorders, edges)
-            #variant2disorder = get_associated_disorders_for_variants(variants, disorders, edges)
-            #gene2variant = get_variants_to_affect_gene(variants, genes, edges)
-            protein2drug = get_drugs_targeting_protein(drugs, edges)
-            # TODO: add disorders as soon as Biopax supports it
-
-            for k, v in gene2prot.items():
-                [self.add_protein(v_i, k) for v_i in v]
-            self.add_drug_info(protein2drug)
-            self.add_gene_info(gene2disorder, genes)
+            self.add_info(entrez_ids)
         elif self.id_space == "uniprot":
             uniprot_ids = [f"entrez.{self.g.vp['name'][v_i]}" for v_i in self.g.get_vertices()]
-            self.add_protein_info()
+            self.add_info(uniprot_ids, True)
+            
         self.biopaxmodel = biopax.BioPaxModel(objects=self.get_bioax_objects())
+
+    def add_info(self, ids, protein = False):
+        if protein:
+            genes, disorders, edges, variants, drugs, proteins, protein2gene = get_nedrex_data(ids, True)
+            self.add_protein_info(proteins, protein2gene)
+
+        else:
+            genes, disorders, edges, variants, drugs, proteins, protein2gene = get_nedrex_data(ids, False)
+            self.add_protein_info(proteins, protein2gene, False)
+
+        gene2disorder = get_associated_disorders_for_genes(genes, disorders, edges)
+        #variant2disorder = get_associated_disorders_for_variants(variants, disorders, edges)
+        #gene2variant = get_variants_to_affect_gene(variants, genes, edges)
+        protein2drug = get_drugs_targeting_protein(drugs, edges)
+        # TODO: add disorders as soon as Biopax supports it
+
+        self.add_drug_info(protein2drug, drugs)
+        self.add_gene_info(gene2disorder, genes)
 
     def add_gene_info(self, gene2disorder, genes):
         for v_i in self.g.get_vertices():
@@ -267,12 +311,14 @@ class BioPAXFactory:
             else:
                 self.add_gene(entrez_id, genes["entrez." + entrez_id])
     
-    def add_drug_info(self, protein2drug):
+    def add_drug_info(self, protein2drug, drug_nodes):
         for p, drugs in protein2drug.items():
             for drug in drugs:
-                self.add_drug(drug, p)
+                drug_node = drug_nodes[drug["drug"]]
+                
+                self.add_drug(drug, p, drug_node["displayName"])
 
-    def add_drug(self, drug, uniprot_id):
+    def add_drug(self, drug, uniprot_id, display_name):
         drug_id = drug["drug"]
         uniXRef = [self.xRefs.setdefault(
             drug_id, biopax.UnificationXref(uid=f"{drug_id}.XREF", db=drug["dataSources"], id=drug_id)
@@ -282,18 +328,19 @@ class BioPAXFactory:
                 uniprot_id, biopax.RelationshipXref(uid=f"{uniprot_id}.XREF", db="uniprot", id=uniprot_id, relationship_type=self.edgeTypes["drug_has_target"])
             ))
         entityRef = self.entityRefs.setdefault(
-            drug_id, biopax.SmallMoleculeReference(uid=f"{drug_id}.REF", xref=uniXRef)
+            drug_id, biopax.SmallMoleculeReference(uid=f"{drug_id}.REF", xref=uniXRef, display_name=display_name)
         )
-        self.entities[drug_id] = biopax.SmallMolecule(uid=drug_id, entity_reference=entityRef)
+        self.entities[drug_id] = biopax.SmallMolecule(uid=drug_id, entity_reference=entityRef, display_name=display_name)
 
-    def add_protein_info(self):
-        for v_i in self.g.get_vertices():
-            uniprot_id = self.g.vp["name"][v_i]
-            self.add_protein(uniprot_id)
-        for e_i, e_j in self.g.get_edges():
-            uniprot_id1 = self.g.vp["name"][e_i]
-            uniprot_id2 = self.g.vp["name"][e_j]
-            self.add_PPI(uniprot_id1, uniprot_id2)
+    def add_protein_info(self, proteins, protein2gene, add_ppi = True):
+        for uniprot_id, protein in proteins.items():
+            encoding_gene = protein2gene[uniprot_id]
+            self.add_protein(protein, encoding_gene)
+        if add_ppi:
+            for e_i, e_j in self.g.get_edges():
+                uniprot_id1 = self.g.vp["name"][e_i]
+                uniprot_id2 = self.g.vp["name"][e_j]
+                self.add_PPI(uniprot_id1, uniprot_id2)
 
     def write(self):
         if not self.biopaxmodel:
@@ -307,21 +354,20 @@ class BioPAXFactory:
     #         ["java", "-jar", "paxtools-5.3.0.jar", "validate", owl_path.name,
     #          f"{owl_path.stem}_validation.html", "notstrict"])
 
-    def add_protein(self, uniprot_id, gene_id = None):
+    def add_protein(self, protein, gene_id):
         # TODO: add all the other properties
+        uniprot_id = protein["primaryDomainId"].lstrip("uniprot.")
 
-        # uniprot_id = self.g.vp['name'][v]
         uniXRef = [self.xRefs.setdefault(
             uniprot_id, biopax.UnificationXref(uid=f"{uniprot_id}.XREF", db="uniprot", id=uniprot_id)
         )]
-        if gene_id:
-            uniXRef.append(self.xRefs.setdefault(
-                gene_id, biopax.RelationshipXref(uid=f"{gene_id}.XREF", db="NCBI GENE", id=gene_id, relationship_type=self.edgeTypes["gene_product"])
-            ))
+        uniXRef.append(self.xRefs.setdefault(
+            gene_id, biopax.RelationshipXref(uid=f"{gene_id}.XREF", db="NCBI GENE", id=gene_id, relationship_type=self.edgeTypes["gene_product"])
+        ))
         entityRef = self.entityRefs.setdefault(
-            uniprot_id, biopax.ProteinReference(uid=f"{uniprot_id}.REF", xref=uniXRef)
+            uniprot_id, biopax.ProteinReference(uid=f"{uniprot_id}.REF", xref=uniXRef, display_name=[protein["displayName"]])
         )
-        self.entities[uniprot_id] = biopax.Protein(uid=uniprot_id, entity_reference=entityRef)
+        self.entities[uniprot_id] = biopax.Protein(uid=uniprot_id, entity_reference=entityRef, display_name=[protein["displayName"]])
 
     def get_bioax_objects(self):
         return list(self.xRefs.values()) + list(self.entityRefs.values()) + list(self.entities.values()) + list(self.edgeTypes.values())
