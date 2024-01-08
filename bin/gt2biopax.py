@@ -284,6 +284,10 @@ class BioPAXFactory:
             "cellular_component": biopax.RelationshipTypeVocabulary(term = ["cellular component"], uid = "cellular_component.vocab"),
             #"drug_has_indication": biopax.RelationshipTypeVocabulary(term = ["drug has indication"], uid = "drug_has_indication.XREF")
         }
+        self.organism: dict[str, biopax.BioSource] = {
+            "human" : biopax.BioSource(uid="human", display_name="Homo sapiens", standard_name = "human")
+        }
+
 
 
     def get_owl_path(self) -> Path:
@@ -406,17 +410,17 @@ class BioPAXFactory:
                 id, biopax.RelationshipXref(uid=id, db=go["dataSources"], id=id, relationship_type= self.edgeTypes["cellular_component"])
             ))
         entityRef = self.entityRefs.setdefault(
-            uniprot_id, biopax.ProteinReference(uid=f"{uniprot_id}.REF", xref=uniXRef, display_name=[protein["displayName"]])
+            uniprot_id, biopax.ProteinReference(uid=f"{uniprot_id}.REF", xref=uniXRef, display_name=[protein["displayName"]], organism=self.organism["human"])
         )
         self.entities[uniprot_id] = biopax.Protein(uid=uniprot_id, entity_reference=entityRef, display_name=[protein["displayName"]])
 
     def get_bioax_objects(self):
-        return list(self.xRefs.values()) + list(self.entityRefs.values()) + list(self.entities.values()) + list(self.edgeTypes.values())
+        return list(self.xRefs.values()) + list(self.entityRefs.values()) + list(self.entities.values()) + list(self.edgeTypes.values()) + list(self.organism.values())
 
     def add_PPI(self, uniprot_id1, uniprot_id2):
         interaction_id = f"{uniprot_id1}_{uniprot_id2}"
         self.entities[interaction_id] = biopax.MolecularInteraction(
-            uid=interaction_id, participant=[self.entities[uniprot_id1], self.entities[uniprot_id2]]
+            uid=interaction_id, participant=[self.entities[uniprot_id1], self.entities[uniprot_id2]], display_name=[f"{uniprot_id1} interacts with {uniprot_id2}"]
         )
 
     def add_gene(self, entrez_id, gene, associated_disorders = None):
