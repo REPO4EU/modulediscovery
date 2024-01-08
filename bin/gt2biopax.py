@@ -273,15 +273,18 @@ class BioPAXFactory:
         self.g = None
         self.biopaxmodel = None
         self.xRefs: dict[str, biopax.Xref] = {}
-        self.entityRefs: dict[str, biopax.EntityReference] = {}
+        self.entityRefs: dict[str, biopax.EntityReference] = {"gene_associated_with_disorder.vocab": biopax.UnificationXref(uid="gene_associated_with_disorder.XREF", db="PSI-MI", id="MI:0361", comment="gene associated with disorder"),
+                                                              "drug_has_target.vocab": biopax.UnificationXref(uid="drug_has_target.XREF", db="PSI-MI", id="MI:0361", comment="drug has target"),
+                                                              "gene_product.vocab": biopax.UnificationXref(uid="gene_product.XREF", db="PSI-MI", id="MI:0251", comment="gene product"),
+                                                              "cellular_component.vocab": biopax.UnificationXref(uid="cellular_component.XREF", db="PSI-MI", id="MI:0354", comment="cellular component")}
         self.entities: dict[str, biopax.BioPaxObject] = {}
         self.edgeTypes: dict[str, biopax.RelationshipTypeVocabulary] = {
-            "gene_associated_with_disorder": biopax.RelationshipTypeVocabulary(term = ["gene associated with disorder"], uid = "gene_associated_with_disorder.vocab"),
+            "gene_associated_with_disorder": biopax.RelationshipTypeVocabulary(term = ["additional information"], comment = "gene associated with disorder", uid = "gene_associated_with_disorder.vocab", xref = self.entityRefs["gene_associated_with_disorder.vocab"]),
             #"variant_associated_with_disorder": biopax.RelationshipTypeVocabulary(term = ["variant associated with disorder"], uid = "variant_associated_with_disorder.XREF"),
             #"variant_affects_gene": biopax.RelationshipTypeVocabulary(term = ["variant affects gene"], uid = "variant_affects_gene.XREF"),
-            "drug_has_target": biopax.RelationshipTypeVocabulary(term = ["drug has target"], uid = "drug_has_target.vocab"),
-            "gene_product": biopax.RelationshipTypeVocabulary(term = ["gene product"], uid = "gene_product.vocab"),
-            "cellular_component": biopax.RelationshipTypeVocabulary(term = ["cellular component"], uid = "cellular_component.vocab"),
+            "drug_has_target": biopax.RelationshipTypeVocabulary(term = ["additional information"], comment = "drug has target", uid = "drug_has_target.vocab", xref = self.entityRefs["drug_has_target.vocab"]),
+            "gene_product": biopax.RelationshipTypeVocabulary(term = ["gene product"], uid = "gene_product.vocab", xref = self.entityRefs["gene_product.vocab"]),
+            "cellular_component": biopax.RelationshipTypeVocabulary(term = ["cellular component"], uid = "cellular_component.vocab", xref = self.entityRefs["cellular_component.vocab"]),
             #"drug_has_indication": biopax.RelationshipTypeVocabulary(term = ["drug has indication"], uid = "drug_has_indication.XREF")
         }
         self.organism: dict[str, biopax.BioSource] = {
