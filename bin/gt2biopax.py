@@ -204,7 +204,7 @@ def get_nedrex_data(ids: list[str], hasProteinIds = False) -> any:
     edges_go = edges_relevant
     edges.extend(edges_go)
 
-    return genes, disorders, edges, variants, drugs, proteins, protein2gene
+    return genes, disorders, edges, variants, drugs, proteins, protein2gene, gene2prot
     
 
 def get_associated_disorders_for_genes(genes, disorders, edges) -> dict[str, any]:
@@ -308,14 +308,14 @@ class BioPAXFactory:
 
     def add_info(self, ids, protein = False):
         if protein:
-            genes, disorders, edges, variants, drugs, proteins, protein2gene = get_nedrex_data(ids, True)
+            genes, disorders, edges, variants, drugs, proteins, protein2gene, gene2prot = get_nedrex_data(ids, True)
             protein2go = get_go_to_protein(proteins, edges)
             self.add_protein_info(proteins, protein2gene, protein2go)
 
         else:
-            genes, disorders, edges, variants, drugs, proteins, protein2gene = get_nedrex_data(ids, False)
+            genes, disorders, edges, variants, drugs, proteins, protein2gene, gene2prot = get_nedrex_data(ids, False)
             protein2go = get_go_to_protein(proteins, edges)
-            self.add_protein_info(proteins, protein2gene, protein2go, False)
+            self.add_protein_info(proteins, protein2gene, protein2go, False, gene2prot)
 
         gene2disorder = get_associated_disorders_for_genes(genes, disorders, edges)
         #variant2disorder = get_associated_disorders_for_variants(variants, disorders, edges)
@@ -355,19 +355,29 @@ class BioPAXFactory:
         )
         self.entities[drug_id] = biopax.SmallMolecule(uid=drug_id, entity_reference=entityRef, display_name=display_name)
 
-    def add_protein_info(self, proteins, protein2gene, protein2go, add_ppi = True):
+    def add_protein_info(self, proteins, protein2gene, protein2go, uniprot_ids = True, gene2prot = None):
         for uniprot_id, protein in proteins.items():
             encoding_gene = protein2gene[uniprot_id]
             go_to_protein = []
             if uniprot_id in protein2go:
                 go_to_protein = protein2go[uniprot_id]
             self.add_protein(protein, encoding_gene, go_to_protein)
-        if add_ppi:
+        if uniprot_ids:
             for e_i, e_j in self.g.get_edges():
                 uniprot_id1 = self.g.vp["name"][e_i]
                 uniprot_id2 = self.g.vp["name"][e_j]
                 self.add_PPI(uniprot_id1, uniprot_id2)
+        else:
+            for e_i, e_j in self.g.get_edges():
+                entrez_id1 = self.g.vp["name"][e_i]
+                entrez_id2 = self.g.vp["name"][e_j]
+                uniprot_ids1 = gene2prot[entrez_id1]
+                uniprot_ids2 = gene2prot[entrez_id2]
+                for uniprot_id1 in uniprot_ids1:
+                    for uniprot_id2 in uniprot_ids2:
+                        self.add_PPI(uniprot_id1, uniprot_id2)
 
+                
     def write(self):
         if not self.biopaxmodel:
             self.create_biopax_model()
