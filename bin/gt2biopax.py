@@ -201,10 +201,35 @@ def get_nedrex_data(ids: list[str], hasProteinIds = False) -> any:
         if e["sourceDomainId"] in proteins and "is_active_in" in e["qualifiers"]:
             edges_relevant.append(e)
     
-    edges_go = edges_relevant
-    edges.extend(edges_go)
+    edges.extend(edges_relevant)
 
-    return genes, disorders, edges, variants, drugs, proteins, protein2gene, gene2prot
+    edge_types_to_get = ['drug_has_side_effect']
+    edges_side_effect = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
+
+    edges_relevant = []
+    for e in edges_side_effect:
+        if e["sourceDomainId"] in drugs:
+            edges_relevant.append(e)
+    
+    edges.extend(edges_relevant)
+
+    sideeffects_to_get = set()
+    for e in edges_relevant:
+        sideeffects_to_get.add(e["targetDomainId"])
+    sideeffects_to_get = list(sideeffects_to_get)
+
+    sideeffects = []
+    for i in range(0, len(sideeffects_to_get), batch_size):
+        batch_ids = sideeffects_to_get[i:i+batch_size]
+
+        # get_nodes für die aktuelle Gruppe von IDs aufrufen
+        sideeffect_nodes = get_nodes(node_type="side_effect", node_ids=batch_ids)
+        sideeffects.extend(sideeffect_nodes)
+    
+    sideeffects = {sideeffect['primaryDomainId']: sideeffect for sideeffect in sideeffects}
+
+
+    return genes, disorders, edges, variants, drugs, proteins, protein2gene, gene2prot, sideeffects
     
 
 def get_associated_disorders_for_genes(genes, disorders, edges) -> dict[str, any]:
@@ -253,6 +278,17 @@ def get_variants_to_affect_gene(variants, genes, edges) -> dict[str, any]:
         return gene2variant
     return None
 
+def get_sideeffects_to_drug(drugs, sideeffects, edges) -> dict[str, any]:
+    if drugs and sideeffects and edges:
+        drug2sideeffects = {}
+        for edge in edges:
+            if edge["type"] == "DrugHasSideEffect":
+                drug_id = edge["sourceDomainId"]
+                sideeffect_id = edge["targetDomainId"]
+                drug2sideeffects.setdefault(drug_id, []).append({"sideeffect":sideeffect_id, "dataSources": edge["dataSources"]})
+        return drug2sideeffects
+    return None
+
 def get_drugs_targeting_protein(drugs, edges) -> dict[str, any]:
     if drugs and edges:
         protein2drug = {}
@@ -275,6 +311,7 @@ class BioPAXFactory:
         self.xRefs: dict[str, biopax.Xref] = {}
         self.entityRefs: dict[str, biopax.EntityReference] = {"gene_associated_with_disorder.vocab": biopax.UnificationXref(uid="gene_associated_with_disorder.XREF", db="PSI-MI", id="MI:0361", comment="gene associated with disorder"),
                                                               "drug_has_target.vocab": biopax.UnificationXref(uid="drug_has_target.XREF", db="PSI-MI", id="MI:0361", comment="drug has target"),
+                                                              "drug_has_side_effect.vocab": biopax.UnificationXref(uid="drug_has_side_effect.XREF", db="PSI-MI", id="MI:0361", comment="drug has side effect"),
                                                               "gene_product.vocab": biopax.UnificationXref(uid="gene_product.XREF", db="PSI-MI", id="MI:0251", comment="gene product"),
                                                               "cellular_component.vocab": biopax.UnificationXref(uid="cellular_component.XREF", db="PSI-MI", id="MI:0354", comment="cellular component")}
         self.entities: dict[str, biopax.BioPaxObject] = {}
@@ -285,7 +322,8 @@ class BioPAXFactory:
             "drug_has_target": biopax.RelationshipTypeVocabulary(term = ["additional information"], comment = "drug has target", uid = "drug_has_target.vocab", xref = self.entityRefs["drug_has_target.vocab"]),
             "gene_product": biopax.RelationshipTypeVocabulary(term = ["gene product"], uid = "gene_product.vocab", xref = self.entityRefs["gene_product.vocab"]),
             "cellular_component": biopax.RelationshipTypeVocabulary(term = ["cellular component"], uid = "cellular_component.vocab", xref = self.entityRefs["cellular_component.vocab"]),
-            #"drug_has_indication": biopax.RelationshipTypeVocabulary(term = ["drug has indication"], uid = "drug_has_indication.XREF")
+            #"drug_has_indication": biopax.RelationshipTypeVocabulary(term = ["drug has indication"], uid = "drug_has_indication.XREF"),
+            "drug_has_side_effect": biopax.RelationshipTypeVocabulary(term = ["additional information"], comment = "drug has side effect", uid = "drug_has_side_effect.vocab", xref = self.entityRefs["drug_has_side_effect.vocab"])
         }
         self.organism: dict[str, biopax.BioSource] = {
             "human" : biopax.BioSource(uid="human", display_name="Homo sapiens", standard_name = "human")
@@ -315,12 +353,12 @@ class BioPAXFactory:
 
     def add_info(self, ids, protein = False):
         if protein:
-            genes, disorders, edges, variants, drugs, proteins, protein2gene, gene2prot = get_nedrex_data(ids, True)
+            genes, disorders, edges, variants, drugs, proteins, protein2gene, gene2prot, sideeffects = get_nedrex_data(ids, True)
             protein2go = get_go_to_protein(proteins, edges)
             self.add_protein_info(proteins, protein2gene, protein2go)
 
         else:
-            genes, disorders, edges, variants, drugs, proteins, protein2gene, gene2prot = get_nedrex_data(ids, False)
+            genes, disorders, edges, variants, drugs, proteins, protein2gene, gene2prot, sideeffects = get_nedrex_data(ids, False)
             protein2go = get_go_to_protein(proteins, edges)
             self.add_protein_info(proteins, protein2gene, protein2go, False, gene2prot)
 
@@ -328,9 +366,10 @@ class BioPAXFactory:
         #variant2disorder = get_associated_disorders_for_variants(variants, disorders, edges)
         #gene2variant = get_variants_to_affect_gene(variants, genes, edges)
         protein2drug = get_drugs_targeting_protein(drugs, edges)
+        drug2sideeffect = get_sideeffects_to_drug(drugs, sideeffects, edges)
         # TODO: add disorders as soon as Biopax supports it
 
-        self.add_drug_info(protein2drug, drugs)
+        self.add_drug_info(protein2drug, drugs, drug2sideeffect)
         self.add_gene_info(gene2disorder, genes)
 
     def add_gene_info(self, gene2disorder, genes):
@@ -341,14 +380,17 @@ class BioPAXFactory:
             else:
                 self.add_gene(entrez_id, genes["entrez." + entrez_id])
     
-    def add_drug_info(self, protein2drug, drug_nodes):
+    def add_drug_info(self, protein2drug, drug_nodes, drug2sideeffect):
         for p, drugs in protein2drug.items():
             for drug in drugs:
                 drug_node = drug_nodes[drug["drug"]]
-                
-                self.add_drug(drug, p, drug_node["displayName"])
+                id = drug["drug"]
+                sides = []
+                if id in drug2sideeffect:
+                    sides = drug2sideeffect[id]
+                self.add_drug(drug, p, drug_node["displayName"], sides)
 
-    def add_drug(self, drug, uniprot_id, display_name):
+    def add_drug(self, drug, uniprot_id, display_name, sideeffects):
         drug_id = drug["drug"]
         uniXRef = [self.xRefs.setdefault(
             drug_id, biopax.UnificationXref(uid=f"{drug_id}.XREF", db=drug["dataSources"], id=drug_id)
@@ -356,6 +398,12 @@ class BioPAXFactory:
         if uniprot_id:
             uniXRef.append(self.xRefs.setdefault(
                 uniprot_id, biopax.RelationshipXref(uid=f"{uniprot_id}.XREF", db="uniprot", id=uniprot_id, relationship_type=self.edgeTypes["drug_has_target"])
+            ))
+        
+        for sideeffect in sideeffects:
+            id = sideeffect["sideeffect"]
+            uniXRef.append(self.xRefs.setdefault(
+                    id, biopax.RelationshipXref(uid=f"{id}.XREF", db="sider", id=id, comment=sideeffect["dataSources"], relationship_type = self.edgeTypes["drug_has_side_effect"])
             ))
         entityRef = self.entityRefs.setdefault(
             drug_id, biopax.SmallMoleculeReference(uid=f"{drug_id}.REF", xref=uniXRef, display_name=display_name)
