@@ -30,7 +30,6 @@ def get_uniprot_from_entrez(entrez_ids: list[str]) -> dict[str, list[str]]:
     response.raise_for_status()
     return response.json()
 
-# so far not needed
 def get_proteins(uniprot_ids: list[str]) -> any:
 
     # TODO: bald nicht mehr nötig, das uniprot selbst dranzuhängen
@@ -50,6 +49,7 @@ def get_proteins(uniprot_ids: list[str]) -> any:
 def get_nedrex_data(ids: list[str], hasProteinIds = False) -> any:
     proteins = []
 
+    # when uniprot ids are given, we need to get the corresponding entrez ids
     if hasProteinIds:
         edge_types_to_get = ['protein_encoded_by_gene']
         edges = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
@@ -57,22 +57,26 @@ def get_nedrex_data(ids: list[str], hasProteinIds = False) -> any:
         for e in edges:
             if e["sourceDomainId"] in ids:
                 genes.append(e["targetDomainId"])
+        # get all needed protein nodes as dict
         proteins = get_proteins(ids)
         ids = genes
-        
+    
+    # get encoded proteins for entrez ids
     gene2prot = get_uniprot_from_entrez(ids)
 
+    # if entrez ids are given -> collect all protein ids 
     if not hasProteinIds:
         all_proteins = [protein for proteins_list in gene2prot.values() for protein in proteins_list]
         proteins = list(set(all_proteins))
+        # get all needed protein nodes as dict
+        proteins = get_proteins(proteins)
 
-    proteins = get_proteins(proteins)
-
+    # get all needed gene nodes + create dict for faster access
     genes = get_nodes(node_type = "gene", node_ids=ids)
     genes = {gene['primaryDomainId']: gene for gene in genes}
 
     #file_path = 'relevant_edges.json'
-
+ 
     edge_types_to_get = ['gene_associated_with_disorder'] #'variant_affects_gene'
     edges = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
 
@@ -138,6 +142,7 @@ def get_nedrex_data(ids: list[str], hasProteinIds = False) -> any:
 
     variants = {variant['primaryDomainId']: variant for variant in variants}
 
+    # get all disorders that are associated with our genes
     disorders_to_get = set()
 
     for e in edges:
@@ -153,7 +158,7 @@ def get_nedrex_data(ids: list[str], hasProteinIds = False) -> any:
         disorder_nodes = get_nodes(node_type="disorder", node_ids=batch_ids)
         disorders.extend(disorder_nodes)
 
-    # Dictionary erstellen, wobei die primaryDomainId als Schlüssel verwendet wird für schnellen Zugriff
+    # create dictionary for faster access
     disorders = {disorder['primaryDomainId']: disorder for disorder in disorders}
 
     # get drugs that target our associated disorders
@@ -165,6 +170,7 @@ def get_nedrex_data(ids: list[str], hasProteinIds = False) -> any:
             edges_relevant.append(e)
     edges_drugs = edges_relevant
 
+    # dict with encoding gene for each protein
     protein2gene = {"uniprot."+protein: gen for gen, proteins in gene2prot.items() for protein in proteins}
 
     # get drugs that target a protein encoded by our genes
@@ -193,6 +199,8 @@ def get_nedrex_data(ids: list[str], hasProteinIds = False) -> any:
 
     edges.extend(edges_drugs)
 
+
+    # get edges for go annotations; no nodes needed
     edge_types_to_get = ['protein_has_go_annotation']
     edges_go = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
 
@@ -203,6 +211,7 @@ def get_nedrex_data(ids: list[str], hasProteinIds = False) -> any:
     
     edges.extend(edges_relevant)
 
+    # get side effects for drugs
     edge_types_to_get = ['drug_has_side_effect']
     edges_side_effect = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
 
@@ -213,6 +222,7 @@ def get_nedrex_data(ids: list[str], hasProteinIds = False) -> any:
     
     edges.extend(edges_relevant)
 
+    # get side effect nodes for drugs
     sideeffects_to_get = set()
     for e in edges_relevant:
         sideeffects_to_get.add(e["targetDomainId"])
@@ -227,7 +237,6 @@ def get_nedrex_data(ids: list[str], hasProteinIds = False) -> any:
         sideeffects.extend(sideeffect_nodes)
     
     sideeffects = {sideeffect['primaryDomainId']: sideeffect for sideeffect in sideeffects}
-
 
     return genes, disorders, edges, variants, drugs, proteins, protein2gene, gene2prot, sideeffects
     
@@ -367,7 +376,7 @@ class BioPAXFactory:
         #gene2variant = get_variants_to_affect_gene(variants, genes, edges)
         protein2drug = get_drugs_targeting_protein(drugs, edges)
         drug2sideeffect = get_sideeffects_to_drug(drugs, sideeffects, edges)
-        # TODO: add disorders as soon as Biopax supports it
+        # TODO: add disorders + sideeffects as soon as Biopax supports it
 
         self.add_drug_info(protein2drug, drugs, drug2sideeffect)
         self.add_gene_info(gene2disorder, genes)
