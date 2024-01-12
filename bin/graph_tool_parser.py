@@ -78,8 +78,10 @@ def filter_diamond(g, module, filter_column):
 
 
 def filter_domino(g, module, filter_column):
+    module_ids = []
     with open(module, "r") as file:
-        module_ids = [id.strip("entrez.") for id in file.readline().strip("[]\n").split(", ")]
+        for line in file:
+            module_ids += [id.strip("entrez.") for id in line.strip("[]\n").split(", ")]
     gt.map_property_values(g.vp.name, g.vp[filter_column], lambda name: name in module_ids)
     return g
 
