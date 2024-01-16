@@ -36,14 +36,14 @@ def get_proteins(uniprot_ids: list[str]) -> any:
     ids = ['uniprot.' + id for id in uniprot_ids]
     batch_size = 200
 
-    proteins = []
+    proteins = {id: "" for id in ids}
     for i in range(0, len(ids), batch_size):
         batch_ids = ids[i:i+batch_size]
 
         # get_nodes für die aktuelle Gruppe von IDs aufrufen
         proteins_nodes = get_nodes(node_type="protein", node_ids=batch_ids)
-        proteins.extend(proteins_nodes)
-    proteins = {protein['primaryDomainId']: protein for protein in proteins}
+        for protein in proteins_nodes:
+            proteins[protein['primaryDomainId']] = protein
     return proteins
 
 def get_genes_to_proteins(uniprot_ids):
@@ -259,8 +259,8 @@ def get_associated_disorders_for_genes(genes, disorders, edges) -> dict[str, any
         return gene2disorder
     return None
 
-def get_go_to_protein(proteins, edges) -> dict[str, any]:
-    if proteins and edges:
+def get_go_to_protein(edges) -> dict[str, any]:
+    if edges:
         protein2go = {}
         for edge in edges:
             if edge["type"] == "ProteinHasGOAnnotation":
@@ -376,7 +376,7 @@ class BioPAXFactory:
             genes, disorders, edges, variants, drugs, proteins, protein2gene, gene2prot, sideeffects = get_nedrex_data(ids)
 
 
-        protein2go = get_go_to_protein(proteins, edges)
+        protein2go = get_go_to_protein(edges)
 
         
         if protein:
@@ -438,7 +438,10 @@ class BioPAXFactory:
             go_to_protein = []
             if uniprot_id in protein2go:
                 go_to_protein = protein2go[uniprot_id]
-            self.add_protein(protein, encoding_gene, go_to_protein)
+            if protein:
+                self.add_protein(uniprot_id, encoding_gene, go_to_protein, protein)
+            else:
+                self.add_protein(uniprot_id, encoding_gene, go_to_protein)
             prot.append(uniprot_id)
 
         if uniprot_ids:
@@ -469,10 +472,10 @@ class BioPAXFactory:
     #         ["java", "-jar", "paxtools-5.3.0.jar", "validate", owl_path.name,
     #          f"{owl_path.stem}_validation.html", "notstrict"])
 
-    def add_protein(self, protein, gene_id, go_s):
+    def add_protein(self, protein_id, gene_id, go_s, protein = None):
         gene_id = gene_id.lstrip("entrez.")
         # TODO: add all the other properties
-        uniprot_id = protein["primaryDomainId"].lstrip("uniprot.")
+        uniprot_id = protein_id.lstrip("uniprot.")
 
         uniXRef = [self.xRefs.setdefault(
             uniprot_id, biopax.UnificationXref(uid=f"{uniprot_id}.XREF", db="uniprot", id=uniprot_id)
@@ -486,10 +489,15 @@ class BioPAXFactory:
             uniXRef.append(self.xRefs.setdefault(
                 id, biopax.RelationshipXref(uid=id, db=go["dataSources"], id=id, relationship_type= self.edgeTypes["cellular_component"])
             ))
+        if protein:
+            displayName = [protein["displayName"]]
+        else:
+            displayName = [protein_id]
+
         entityRef = self.entityRefs.setdefault(
-            uniprot_id, biopax.ProteinReference(uid=f"{uniprot_id}.REF", xref=uniXRef, display_name=[protein["displayName"]], organism=self.organism["human"])
+            uniprot_id, biopax.ProteinReference(uid=f"{uniprot_id}.REF", xref=uniXRef, display_name=displayName, organism=self.organism["human"])
         )
-        self.entities[uniprot_id] = biopax.Protein(uid=uniprot_id, entity_reference=entityRef, display_name=[protein["displayName"]])
+        self.entities[uniprot_id] = biopax.Protein(uid=uniprot_id, entity_reference=entityRef, display_name=displayName)
 
     def get_bioax_objects(self):
         return list(self.xRefs.values()) + list(self.entityRefs.values()) + list(self.entities.values()) + list(self.edgeTypes.values()) + list(self.organism.values())
@@ -541,7 +549,7 @@ def parse_args(argv=None):
         help="ID space of the given network.",
         type=str,
         choices=["entrez", "uniprot"],
-        default="entrez",
+        default="uniprot",
     )
     # parser.add_argument(
     #     "--no_validate",
