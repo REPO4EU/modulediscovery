@@ -492,7 +492,7 @@ class BioPAXFactory:
         if protein:
             displayName = [protein["displayName"]]
         else:
-            displayName = [protein_id]
+            displayName = []
 
         entityRef = self.entityRefs.setdefault(
             uniprot_id, biopax.ProteinReference(uid=f"{uniprot_id}.REF", xref=uniXRef, display_name=displayName, organism=self.organism["human"])
