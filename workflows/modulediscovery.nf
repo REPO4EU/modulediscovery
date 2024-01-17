@@ -27,6 +27,9 @@ diamond_n = Channel.value(params.diamond_n)
 diamond_alpha = Channel.value(params.diamond_alpha)
 id_space = Channel.value(params.id_space)
 
+rwr_scaling = Channel.value(params.rwr_scaling)
+rwr_symmetrical = Channel.value(params.rwr_symmetrical)
+rwr_r = Channel.value(params.rwr_r)
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     CONFIG FILES
@@ -54,6 +57,7 @@ include { GT_DIAMOND        } from '../subworkflows/local/gt_diamond'
 include { GT_DOMINO         } from '../subworkflows/local/gt_domino'
 include { GT_ROBUST         } from '../subworkflows/local/gt_robust'
 include { GT_FIRSTNEIGHBOR  } from '../subworkflows/local/gt_firstneighbor'
+include { GT_RWR            } from '../subworkflows/local/gt_rwr'
 
 include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
 
@@ -122,6 +126,10 @@ workflow MODULEDISCOVERY {
         GT_BIOPAX(ch_modules, id_space)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
+
+    GT_RWR(ch_seeds, ch_network_gt, rwr_scaling, rwr_symmetrical, rwr_r)
+    ch_versions = ch_versions.mix(GT_RWR.out.versions)
+
 
     // Collect software versions
     CUSTOM_DUMPSOFTWAREVERSIONS (
