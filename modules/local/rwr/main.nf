@@ -1,7 +1,7 @@
 
 // Many additional examples for nextflow modules are available at https://github.com/nf-core/modules/tree/master/modules/nf-core
 
-process RWR {                           // Process name, should be all upper case
+process RWR {                               // Process name, should be all upper case
     label 'process_single'                  // Used to allocate resources, "process_single" uses one thread and 6GB memory, for labels see conf/base.config
     container 'docker.io/djskelton/diamond:2437974'   // The container on docker hub, other repositories are possible, use conda keyword to set a conda environment
 
@@ -24,7 +24,7 @@ process RWR {                           // Process name, should be all upper cas
     // The part starting with "cat <<-END_VERSIONS > versions.yml" only collects software versions for the versions.yml file, not essential
     script:
     """
-    python ../../../bin/rwr.py \\
+    python modulediscovery/bin/rwr.py \\
         $network \\
         $seeds \\
         $scaling \\
