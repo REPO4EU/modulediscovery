@@ -319,8 +319,9 @@ class BioPAXFactory:
             drug_id, biopax.UnificationXref(uid=f"{drug_id}.XREF", db=drug["dataSources"], id=drug_id)
         )]
         if uniprot_id:
+            uniprot_id = uniprot_id.lstrip("uniprot.")
             uniXRef.append(self.xRefs.setdefault(
-                uniprot_id, biopax.RelationshipXref(uid=f"{uniprot_id}.XREF", db="uniprot", id=uniprot_id, relationship_type=self.edgeTypes["drug_has_target"])
+                uniprot_id+"relation", biopax.RelationshipXref(uid=f"{uniprot_id}.RREF", db="uniprot", id=uniprot_id, relationship_type=self.edgeTypes["drug_has_target"])
             ))
         
         for sideeffect in sideeffects:
