@@ -37,16 +37,13 @@ def get_proteins(uniprot_ids: list[str]) -> any:
     proteins = {id: "" for id in uniprot_ids}
     for i in range(0, len(uniprot_ids), batch_size):
         batch_ids = uniprot_ids[i:i+batch_size]
-
-        # get_nodes für die aktuelle Gruppe von IDs aufrufen
         proteins_nodes = get_nodes(node_type="protein", node_ids=batch_ids)
         for protein in proteins_nodes:
             proteins[protein['primaryDomainId']] = protein
     return proteins
 
 def get_genes_to_proteins(uniprot_ids):
-    edge_types_to_get = ['protein_encoded_by_gene']
-    edges = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
+    edges = [e for e in iter_edges("protein_encoded_by_gene")]
     prot2gene = {}
     for uniprot_id in uniprot_ids:
         prot2gene[uniprot_id]  = ""
@@ -57,9 +54,21 @@ def get_genes_to_proteins(uniprot_ids):
             prot2gene[e["sourceDomainId"]] = e["targetDomainId"]
     return genes, prot2gene
 
-def get_nedrex_data(ids: list[str], uniprot_ids = None, protein2gene = None) -> any:
+def get_node_dict(ids, batch_size, node_type):
+    result = []
+    for i in range(0, len(ids), batch_size):
+        batch_ids = ids[i:i+batch_size]
 
-    batch_size = 300  # Die Anzahl der IDs in jeder Gruppe
+        # get_nodes für die aktuelle Gruppe von IDs aufrufen
+        nodes = get_nodes(node_type=node_type, node_ids=batch_ids)
+        result.extend(nodes)
+    result = {res['primaryDomainId']: res for res in result}
+    return result
+
+
+def get_nedrex_data(entrez_ids: list[str], uniprot_ids = None, protein2gene = None) -> any:
+
+    batch_size = 300  # number of ids in each group
 
     proteins = []
 
@@ -67,7 +76,7 @@ def get_nedrex_data(ids: list[str], uniprot_ids = None, protein2gene = None) -> 
 
     if uniprot_ids is None:
         # in gene2prot: without prefix uniprot. / entrez.
-        gene2prot = get_uniprot_from_entrez(ids)
+        gene2prot = get_uniprot_from_entrez(entrez_ids)
         uniprot_ids = ["uniprot." + protein for proteins_list in gene2prot.values() for protein in proteins_list]
         uniprot_ids = list(set(uniprot_ids))
         # dict with encoding gene for each protein
@@ -75,49 +84,35 @@ def get_nedrex_data(ids: list[str], uniprot_ids = None, protein2gene = None) -> 
 
     # get all needed protein nodes as dict
     proteins = get_proteins(uniprot_ids)
+
     # get all needed gene nodes + create dict for faster access
+    genes = get_node_dict(entrez_ids, batch_size, "gene")
 
-    genes = []
-    for i in range(0, len(ids), batch_size):
-        batch_ids = ids[i:i+batch_size]
-
-        # get_nodes für die aktuelle Gruppe von IDs aufrufen
-        gene_nodes = get_nodes(node_type="gene", node_ids=batch_ids)
-        genes.extend(gene_nodes)
-    genes = {gene['primaryDomainId']: gene for gene in genes}
-
-    #file_path = 'relevant_edges.json'
+    # list for all needed edges
+    edges = []
  
     edge_types_to_get = ['gene_associated_with_disorder'] #'variant_affects_gene'
-    edges = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
+    edges_new = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
 
+    # currently relevant edges
     edges_relevant = []
-    for e in edges:
+    for e in edges_new:
         if e["sourceDomainId"] in genes or e["targetDomainId"] in genes:
             edges_relevant.append(e)
     
-    edges = edges_relevant
+    edges.extend(edges_relevant)
 
-    # variants_to_get = set()
-    # for e in edges:
+    # nodes_to_get = set()
+    # for e in edges_relevant:
     #     if e["type"] == "VariantAffectsGene":
-    #         variants_to_get.add(e["sourceDomainId"])
-    # variants_to_get = list(variants_to_get)
+    #         nodes_to_get.add(e["sourceDomainId"])
+    # nodes_to_get = list(nodes_to_get)
 
-    # batch_size = 300  # Die Anzahl der IDs in jeder Gruppe
+    # variants = get_node_dict(nodes_to_get, batch_size, "genomic_variant") # TODO: add variants when api has filter options instead of []
 
-    # variants = []
-    # for i in range(0, len(variants_to_get), batch_size):
-    #     batch_ids = variants_to_get[i:i+batch_size]
+    variants = []
 
-    #     # get_nodes für die aktuelle Gruppe von IDs aufrufen
-    #     variant_nodes = get_nodes(node_type="genomic_variant", node_ids=batch_ids)
-    #     variants.extend(variant_nodes)
-        
     # edges_new = [e for e in iter_edges("variant_associated_with_disorder")]
-    
-    # # create dictionary for faster access
-    # variants = {variant['primaryDomainId']: variant for variant in variants}
 
     # edges_relevant = []
     # for e in edges_new:
@@ -125,6 +120,8 @@ def get_nedrex_data(ids: list[str], uniprot_ids = None, protein2gene = None) -> 
     #         edges_relevant.append(e)
     
     # edges.extend(edges_relevant)
+
+    # file_path = 'relevant_edges.json'
 
     # # Liste als JSON in die Datei schreiben
     # with open(file_path, 'w') as json_file:
@@ -134,186 +131,87 @@ def get_nedrex_data(ids: list[str], uniprot_ids = None, protein2gene = None) -> 
     #with open(file_path, 'r') as json_file:
     #    edges = json.load(json_file)
 
-    # variants_to_get = set()
-    # for e in edges:
-    #     if e["type"] == "VariantAffectsGene":
-    #         variants_to_get.add(e["sourceDomainId"])
-    # variants_to_get = list(variants_to_get)
 
-    variants = []
-    # for i in range(0, len(variants_to_get), batch_size):
-    #     batch_ids = variants_to_get[i:i+batch_size]
-
-    #     # get_nodes für die aktuelle Gruppe von IDs aufrufen
-    #     variant_nodes = get_nodes(node_type="genomic_variant", node_ids=batch_ids)
-    #     variants.extend(variant_nodes)
-
-    variants = {variant['primaryDomainId']: variant for variant in variants}
 
     # get all disorders that are associated with our genes
-    disorders_to_get = set()
+    nodes_to_get = set()
 
-    for e in edges:
+    for e in edges_relevant:
         if e["type"] == "GeneAssociatedWithDisorder": # or e["type"] == "VariantAssociatedWithDisorder":
-            disorders_to_get.add(e["targetDomainId"])
-    disorders_to_get = list(disorders_to_get)
+            nodes_to_get.add(e["targetDomainId"])
+    nodes_to_get = list(nodes_to_get)
 
-    disorders = []
-    for i in range(0, len(disorders_to_get), batch_size):
-        batch_ids = disorders_to_get[i:i+batch_size]
-
-        # get_nodes für die aktuelle Gruppe von IDs aufrufen
-        disorder_nodes = get_nodes(node_type="disorder", node_ids=batch_ids)
-        disorders.extend(disorder_nodes)
-
-    # create dictionary for faster access
-    disorders = {disorder['primaryDomainId']: disorder for disorder in disorders}
+    disorders = get_node_dict(nodes_to_get, batch_size, "disorder")
 
     # get drugs that target our associated disorders
     # note: not used until now bc biopax does not support disorders
-    # edges_drugs = [e for e in iter_edges("drug_has_indication")]
+    # edges_new = [e for e in iter_edges("drug_has_indication")]
     # edges_relevant = []
-    # for e in edges_drugs:
+    # for e in edges_new:
     #     if e["targetDomainId"] in disorders:
     #         edges_relevant.append(e)
-    # edges_drugs = edges_relevant
-
-    # use when those edges are supported
-    # edges.extend(edges_drugs)
+    # edges.extend(edges_relevant)
 
 
     # get drugs that target a protein encoded by our genes
-    edges_drugs = [e for e in iter_edges("drug_has_target")]
+    edges_new = [e for e in iter_edges("drug_has_target")]
     edges_relevant = []
-    for e in edges_drugs:
+    for e in edges_new:
         if e["targetDomainId"] in proteins:
             edges_relevant.append(e)
     edges.extend(edges_relevant)
     
-    drugs_to_get = set()
-    for e in edges_drugs:
+    nodes_to_get = set()
+    for e in edges_new:
         if e["type"] == "DrugHasIndication" or e["type"] == "DrugHasTarget":
-            drugs_to_get.add(e["sourceDomainId"])
-    drugs_to_get = list(drugs_to_get)
+            nodes_to_get.add(e["sourceDomainId"])
+    nodes_to_get = list(nodes_to_get)
 
-    drugs = []
-    for i in range(0, len(drugs_to_get), batch_size):
-        batch_ids = drugs_to_get[i:i+batch_size]
-
-        # get_nodes für die aktuelle Gruppe von IDs aufrufen
-        drug_nodes = get_nodes(node_type="drug", node_ids=batch_ids)
-        drugs.extend(drug_nodes)
-    
-    drugs = {drug['primaryDomainId']: drug for drug in drugs}
+    drugs = get_node_dict(nodes_to_get, batch_size, "drug")
 
     # get edges for go annotations; no nodes needed
-    edge_types_to_get = ['protein_has_go_annotation']
-    edges_go = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
+    new_edges = [e for e in iter_edges("protein_has_go_annotation")]
 
     edges_relevant = []
-    for e in edges_go:
+    for e in new_edges:
         if e["sourceDomainId"] in proteins and "is_active_in" in e["qualifiers"]:
             edges_relevant.append(e)
     
     edges.extend(edges_relevant)
 
     # get side effects for drugs
-    edge_types_to_get = ['drug_has_side_effect']
-    edges_side_effect = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
+    new_edges = [e for e in iter_edges("drug_has_side_effect")]
 
     edges_relevant = []
-    for e in edges_side_effect:
+    for e in new_edges:
         if e["sourceDomainId"] in drugs:
             edges_relevant.append(e)
     
     edges.extend(edges_relevant)
 
     # get side effect nodes for drugs
-    sideeffects_to_get = set()
+    nodes_to_get = set()
     for e in edges_relevant:
-        sideeffects_to_get.add(e["targetDomainId"])
-    sideeffects_to_get = list(sideeffects_to_get)
+        nodes_to_get.add(e["targetDomainId"])
+    nodes_to_get = list(nodes_to_get)
 
-    sideeffects = []
-    for i in range(0, len(sideeffects_to_get), batch_size):
-        batch_ids = sideeffects_to_get[i:i+batch_size]
-
-        # get_nodes für die aktuelle Gruppe von IDs aufrufen
-        sideeffect_nodes = get_nodes(node_type="side_effect", node_ids=batch_ids)
-        sideeffects.extend(sideeffect_nodes)
-    
-    sideeffects = {sideeffect['primaryDomainId']: sideeffect for sideeffect in sideeffects}
+    sideeffects = get_node_dict(nodes_to_get, batch_size, "side_effect")
 
     return genes, disorders, edges, variants, drugs, proteins, protein2gene, gene2prot, sideeffects
     
-
-def get_associated_disorders_for_genes(edges) -> dict[str, any]:
-    if edges:
-        gene2disorder = {}
-        for edge in edges:
-            if edge["type"] == "GeneAssociatedWithDisorder":
-                gene_id = edge["sourceDomainId"]
-                disorder_id = edge["targetDomainId"]
-                gene2disorder.setdefault(gene_id, []).append({"disorder":disorder_id, "dataSources": edge["dataSources"]})
-        return gene2disorder
-    return None
-
-def get_go_to_protein(edges) -> dict[str, any]:
-    if edges:
-        protein2go = {}
-        for edge in edges:
-            if edge["type"] == "ProteinHasGOAnnotation":
-                protein_id = edge["sourceDomainId"]
-                go_id = edge["targetDomainId"]
-                protein2go.setdefault(protein_id, []).append({"go":go_id, "dataSources": edge["dataSources"]})
-        return protein2go
-    return None
-
-# note: not used yet
-def get_associated_disorders_for_variants(edges) -> dict[str, any]:
-    if edges:
-        variant2disorder = {}
-        for edge in edges:
-            if edge["type"] == "VariantAssociatedWithDisorder":
-                variant_id = edge["sourceDomainId"]
-                disorder_id = edge["targetDomainId"]
-                variant2disorder.setdefault(variant_id, []).append({"disorder":disorder_id, "dataSources": edge["dataSources"]})
-        return variant2disorder
-    return None
-
-# note: not used yet
-def get_variants_to_affect_gene(edges) -> dict[str, any]:
-    if edges:
-        gene2variant = {}
-        for edge in edges:
-            if edge["type"] == "VariantAffectsGene":
-                variant_id = edge["sourceDomainId"]
-                gene_id = edge["targetDomainId"]
-                gene2variant.setdefault(gene_id, []).append({"variant":variant_id, "dataSources": edge["dataSources"]})
-        return gene2variant
-    return None
-
-def get_sideeffects_to_drug(edges) -> dict[str, any]:
-    if edges:
-        drug2sideeffects = {}
-        for edge in edges:
-            if edge["type"] == "DrugHasSideEffect":
-                drug_id = edge["sourceDomainId"]
-                sideeffect_id = edge["targetDomainId"]
-                drug2sideeffects.setdefault(drug_id, []).append({"sideeffect":sideeffect_id, "dataSources": edge["dataSources"]})
-        return drug2sideeffects
-    return None
-
-def get_drugs_targeting_protein(edges) -> dict[str, any]:
-    if edges:
-        protein2drug = {}
-        for edge in edges:
-            if edge["type"] == "DrugHasTarget":
-                drug_id = edge["sourceDomainId"]
-                protein_id = edge["targetDomainId"]
-                protein2drug.setdefault(protein_id, []).append({"drug":drug_id, "dataSources": edge["dataSources"]})
-        return protein2drug
-    return None
+# switched mapping decides on the direction of the mapping: True -> target to source, False -> source to target
+# type refers to the type of the edge
+def create_dict_mapping(edges, type, switched_mapping = False):
+    mapping = {}
+    for edge in edges:
+        if edge["type"] == type:
+            source_domain_id = edge["sourceDomainId"]
+            target_id = edge["targetDomainId"]
+            if switched_mapping:
+                mapping.setdefault(target_id, []).append({"id":source_domain_id, "dataSources": edge["dataSources"]})
+            else:
+                mapping.setdefault(source_domain_id, []).append({"id":target_id, "dataSources": edge["dataSources"]})
+    return mapping
     
 
 
@@ -382,18 +280,18 @@ class BioPAXFactory:
 
         # TODO: add disorders + sideeffects as soon as Biopax supports it + variants when api has filter options
 
-        protein2go = get_go_to_protein(edges)
+        protein2go = create_dict_mapping(edges, "ProteinHasGOAnnotation")
    
         if protein:
             self.add_protein_info(proteins, protein2gene, protein2go, True)
         else:
             self.add_protein_info(proteins, protein2gene, protein2go, False, gene2prot)
 
-        gene2disorder = get_associated_disorders_for_genes(edges)
-        #variant2disorder = get_associated_disorders_for_variants(edges)
-        #gene2variant = get_variants_to_affect_gene(edges)
-        protein2drug = get_drugs_targeting_protein(edges)
-        drug2sideeffect = get_sideeffects_to_drug(edges)
+        gene2disorder = create_dict_mapping(edges, "GeneAssociatedWithDisorder")
+        #variant2disorder = create_dict_mapping(edges, "VariantAssociatedWithDisorder")
+        #gene2variant = create_dict_mapping(edges, "VariantAffectsGene", True)
+        protein2drug = create_dict_mapping(edges, "DrugHasTarget", True)
+        drug2sideeffect = create_dict_mapping(edges, "DrugHasSideEffect")
 
         self.add_drug_info(protein2drug, drugs, drug2sideeffect)
         self.add_gene_info(gene2disorder, genes)
@@ -408,15 +306,15 @@ class BioPAXFactory:
     def add_drug_info(self, protein2drug, drug_nodes, drug2sideeffect):
         for p, drugs in protein2drug.items():
             for drug in drugs:
-                drug_node = drug_nodes[drug["drug"]]
-                id = drug["drug"]
+                id = drug["id"]
+                drug_node = drug_nodes[id]
                 sides = []
                 if id in drug2sideeffect:
                     sides = drug2sideeffect[id]
                 self.add_drug(drug, p, drug_node["displayName"], sides)
 
     def add_drug(self, drug, uniprot_id, display_name, sideeffects):
-        drug_id = drug["drug"]
+        drug_id = drug["id"]
         uniXRef = [self.xRefs.setdefault(
             drug_id, biopax.UnificationXref(uid=f"{drug_id}.XREF", db=drug["dataSources"], id=drug_id)
         )]
@@ -426,7 +324,7 @@ class BioPAXFactory:
             ))
         
         for sideeffect in sideeffects:
-            id = sideeffect["sideeffect"]
+            id = sideeffect["id"]
             uniXRef.append(self.xRefs.setdefault(
                     id, biopax.RelationshipXref(uid=f"{id}.XREF", db="sider", id=id, comment=sideeffect["dataSources"], relationship_type = self.edgeTypes["drug_has_side_effect"])
             ))
@@ -481,7 +379,7 @@ class BioPAXFactory:
                 gene_id, biopax.RelationshipXref(uid=f"{gene_id}.XREF", db="NCBI GENE", id=gene_id, relationship_type=self.edgeTypes["gene_product"])
             ))
         for go in go_s:
-            id = go["go"].replace("go.", "GO:")
+            id = go["id"].replace("go.", "GO:")
             uniXRef.append(self.xRefs.setdefault(
                 id, biopax.RelationshipXref(uid=id, db=go["dataSources"], id=id, relationship_type= self.edgeTypes["cellular_component"])
             ))
@@ -501,7 +399,7 @@ class BioPAXFactory:
     def add_PPI(self, uniprot_id1, uniprot_id2):
         interaction_id = f"{uniprot_id1}_{uniprot_id2}"
         self.entities[interaction_id] = biopax.MolecularInteraction(
-            uid=interaction_id, participant=[self.entities[uniprot_id1], self.entities[uniprot_id2]], display_name=[f"{uniprot_id1} interacts with {uniprot_id2}"]
+            uid=interaction_id, participant=[self.entities[uniprot_id1], self.entities[uniprot_id2]], display_name=[f"{uniprot_id1} {uniprot_id2}"]
         )
 
     def add_gene(self, entrez_id, gene, associated_disorders = None):
@@ -512,7 +410,7 @@ class BioPAXFactory:
         )]
         if associated_disorders is not None:
             for disorder in associated_disorders:
-                id = disorder["disorder"]
+                id = disorder["id"]
                 uniXRef.append(self.xRefs.setdefault(
                     id, biopax.RelationshipXref(uid=f"{id}.XREF", db="MONDO", id=id, comment=disorder["dataSources"], relationship_type= self.edgeTypes["gene_associated_with_disorder"])
                 ))
