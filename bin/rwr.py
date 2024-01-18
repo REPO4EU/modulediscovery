@@ -16,7 +16,7 @@ import csv
 def print_usage():
    
     print ('')
-    print ('        usage: ./RWR network_edgelist_file seeds_file scaling symmetrical r(optional) outfile_name(optional)')
+    print ('        usage: ./rwr.py network_edgelist_file seeds_file scaling symmetrical r(optional)')
     print ('        -----------------------------------------------------------------')
     print ('        network_file : The edgelist must be provided as any delimiter-separated')
     print ('                       table. Make sure the delimiter does not exit in gene IDs' )
@@ -288,9 +288,6 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter = 0.8, alpha = 1.
         connected_disease_module: list of genes containing the seed genes and the top-k 
                                   ranked genes that form a connected component on the 
                                   interactomne 
-        d_gene_pvis_sorted:       dictionary of genes and their corresponding visiting 
-                                  probability, sorted by decreasing visiting probability
-
     """
     
     d_entz_idx, d_idx_entz = create_mapping_index_entrezID(G)
@@ -299,7 +296,7 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter = 0.8, alpha = 1.
 
     p0 = np.zeros(n_nodes)
 
-    # check if the seed genes are on the PPI network
+    # select only the seed genes are on the PPI network
     seed_genes_on_PPI = [gene for gene in seed_genes if gene in d_entz_idx.keys()]
 
     # initialize (with optional scaling) of the visiting probability vector
@@ -311,15 +308,15 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter = 0.8, alpha = 1.
             p0[d_entz_idx[gene]] = 1.
 
     # compute the colum-wise or symmetrical RW operator
-    if symmetrical == False:
-        print("doing column-wise")
-        W = colwise_rnd_walk_matrix(G, r=restart_parameter, a=alpha)
-    else:
+    if symmetrical == True or symmetrical == "True":
         print("doing symmetrical")
         W = symmetric_rnd_walk_matrix(G, r=restart_parameter)
+    else:
+        print("doing column-wise")
+        W = colwise_rnd_walk_matrix(G, r=restart_parameter, a=alpha)
         
     # apply the RW operator on the visiting probability vector (with optional scaling)
-    if scaling == True:
+    if scaling == True or scaling == "True":
         Dinvsqrt = create_scaling_matrix(G)
         pinf = np.array(np.dot(Dinvsqrt,np.dot(W,p0)))
     else:
