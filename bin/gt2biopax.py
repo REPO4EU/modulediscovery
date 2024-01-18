@@ -25,20 +25,18 @@ logger = logging.getLogger()
 
 def get_uniprot_from_entrez(entrez_ids: list[str]) -> dict[str, list[str]]:
     import requests
-
+    # returns the ids without the prefixes uniprot. / entrez. 
     response = requests.post("https://api.nedrex.net/open/relations/get_encoded_proteins", json={"nodes": entrez_ids})
     response.raise_for_status()
     return response.json()
 
 def get_proteins(uniprot_ids: list[str]) -> any:
 
-    # TODO: bald nicht mehr nötig, das uniprot selbst dranzuhängen
-    ids = ['uniprot.' + id for id in uniprot_ids]
     batch_size = 200
 
-    proteins = {id: "" for id in ids}
-    for i in range(0, len(ids), batch_size):
-        batch_ids = ids[i:i+batch_size]
+    proteins = {id: "" for id in uniprot_ids}
+    for i in range(0, len(uniprot_ids), batch_size):
+        batch_ids = uniprot_ids[i:i+batch_size]
 
         # get_nodes für die aktuelle Gruppe von IDs aufrufen
         proteins_nodes = get_nodes(node_type="protein", node_ids=batch_ids)
@@ -51,7 +49,7 @@ def get_genes_to_proteins(uniprot_ids):
     edges = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
     prot2gene = {}
     for uniprot_id in uniprot_ids:
-        prot2gene["uniprot."+uniprot_id]  = ""
+        prot2gene[uniprot_id]  = ""
     genes = []
     for e in edges:
         if e["sourceDomainId"] in prot2gene:
@@ -68,11 +66,12 @@ def get_nedrex_data(ids: list[str], uniprot_ids = None, protein2gene = None) -> 
     gene2prot = {}
 
     if uniprot_ids is None:
+        # in gene2prot: without prefix uniprot. / entrez.
         gene2prot = get_uniprot_from_entrez(ids)
-        all_proteins = [protein for proteins_list in gene2prot.values() for protein in proteins_list]
-        uniprot_ids = list(set(all_proteins))
+        uniprot_ids = ["uniprot." + protein for proteins_list in gene2prot.values() for protein in proteins_list]
+        uniprot_ids = list(set(uniprot_ids))
         # dict with encoding gene for each protein
-        protein2gene = {"uniprot."+protein: gen for gen, proteins in gene2prot.items() for protein in proteins}
+        protein2gene = {"uniprot."+protein: "entrez." +gen for gen, proteins in gene2prot.items() for protein in proteins}
 
     # get all needed protein nodes as dict
     proteins = get_proteins(uniprot_ids)
@@ -248,8 +247,8 @@ def get_nedrex_data(ids: list[str], uniprot_ids = None, protein2gene = None) -> 
     return genes, disorders, edges, variants, drugs, proteins, protein2gene, gene2prot, sideeffects
     
 
-def get_associated_disorders_for_genes(genes, disorders, edges) -> dict[str, any]:
-    if genes and disorders and edges:
+def get_associated_disorders_for_genes(edges) -> dict[str, any]:
+    if edges:
         gene2disorder = {}
         for edge in edges:
             if edge["type"] == "GeneAssociatedWithDisorder":
@@ -271,8 +270,8 @@ def get_go_to_protein(edges) -> dict[str, any]:
     return None
 
 # note: not used yet
-def get_associated_disorders_for_variants(variants, disorders, edges) -> dict[str, any]:
-    if variants and disorders and edges:
+def get_associated_disorders_for_variants(edges) -> dict[str, any]:
+    if edges:
         variant2disorder = {}
         for edge in edges:
             if edge["type"] == "VariantAssociatedWithDisorder":
@@ -283,8 +282,8 @@ def get_associated_disorders_for_variants(variants, disorders, edges) -> dict[st
     return None
 
 # note: not used yet
-def get_variants_to_affect_gene(variants, genes, edges) -> dict[str, any]:
-    if variants and genes and edges:
+def get_variants_to_affect_gene(edges) -> dict[str, any]:
+    if edges:
         gene2variant = {}
         for edge in edges:
             if edge["type"] == "VariantAffectsGene":
@@ -294,8 +293,8 @@ def get_variants_to_affect_gene(variants, genes, edges) -> dict[str, any]:
         return gene2variant
     return None
 
-def get_sideeffects_to_drug(drugs, sideeffects, edges) -> dict[str, any]:
-    if drugs and sideeffects and edges:
+def get_sideeffects_to_drug(edges) -> dict[str, any]:
+    if edges:
         drug2sideeffects = {}
         for edge in edges:
             if edge["type"] == "DrugHasSideEffect":
@@ -305,8 +304,8 @@ def get_sideeffects_to_drug(drugs, sideeffects, edges) -> dict[str, any]:
         return drug2sideeffects
     return None
 
-def get_drugs_targeting_protein(drugs, edges) -> dict[str, any]:
-    if drugs and edges:
+def get_drugs_targeting_protein(edges) -> dict[str, any]:
+    if edges:
         protein2drug = {}
         for edge in edges:
             if edge["type"] == "DrugHasTarget":
@@ -359,37 +358,42 @@ class BioPAXFactory:
             self.load_graph()
         if self.id_space == "entrez":
             # TODO: entrez prefix will already be added in the future
-            entrez_ids = [f"entrez.{self.g.vp['name'][v_i]}" for v_i in self.g.get_vertices()]
+            entrez_ids = []
+            for v_i in self.g.get_vertices():
+                präfix = "" if str(self.g.vp['name'][v_i]).startswith("entrez.") else "entrez."
+                entrez_ids.append(präfix+self.g.vp['name'][v_i])
             self.add_info(entrez_ids)
         elif self.id_space == "uniprot":
-            uniprot_ids = [f"{self.g.vp['name'][v_i]}" for v_i in self.g.get_vertices()]
+            # TODO: entrez prefix will already be added in the future
+            uniprot_ids = []
+            for v_i in self.g.get_vertices():
+                präfix = "" if str(self.g.vp['name'][v_i]).startswith("uniprot.") else "uniprot."
+                uniprot_ids.append(präfix+self.g.vp['name'][v_i])
             self.add_info(uniprot_ids, True)
             
         self.biopaxmodel = biopax.BioPaxModel(objects=self.get_bioax_objects())
 
     def add_info(self, ids, protein = False):
         if protein:
-            ids = [id.lstrip("uniprot.") for id in ids]
             entrez_ids, prot2gene = get_genes_to_proteins(ids)
             genes, disorders, edges, variants, drugs, proteins, protein2gene, gene2prot, sideeffects = get_nedrex_data(entrez_ids, ids, prot2gene)
         else:
             genes, disorders, edges, variants, drugs, proteins, protein2gene, gene2prot, sideeffects = get_nedrex_data(ids)
 
+        # TODO: add disorders + sideeffects as soon as Biopax supports it + variants when api has filter options
 
         protein2go = get_go_to_protein(edges)
-
-        
+   
         if protein:
             self.add_protein_info(proteins, protein2gene, protein2go, True)
         else:
             self.add_protein_info(proteins, protein2gene, protein2go, False, gene2prot)
 
-        gene2disorder = get_associated_disorders_for_genes(genes, disorders, edges)
-        #variant2disorder = get_associated_disorders_for_variants(variants, disorders, edges)
-        #gene2variant = get_variants_to_affect_gene(variants, genes, edges)
-        protein2drug = get_drugs_targeting_protein(drugs, edges)
-        drug2sideeffect = get_sideeffects_to_drug(drugs, sideeffects, edges)
-        # TODO: add disorders + sideeffects as soon as Biopax supports it
+        gene2disorder = get_associated_disorders_for_genes(edges)
+        #variant2disorder = get_associated_disorders_for_variants(edges)
+        #gene2variant = get_variants_to_affect_gene(edges)
+        protein2drug = get_drugs_targeting_protein(edges)
+        drug2sideeffect = get_sideeffects_to_drug(edges)
 
         self.add_drug_info(protein2drug, drugs, drug2sideeffect)
         self.add_gene_info(gene2disorder, genes)
@@ -432,7 +436,6 @@ class BioPAXFactory:
         self.entities[drug_id] = biopax.SmallMolecule(uid=drug_id, entity_reference=entityRef, display_name=display_name)
 
     def add_protein_info(self, proteins, protein2gene, protein2go, uniprot_ids = True, gene2prot = None):
-        prot = []
         for uniprot_id, protein in proteins.items():
             encoding_gene = protein2gene[uniprot_id]
             go_to_protein = []
@@ -442,7 +445,6 @@ class BioPAXFactory:
                 self.add_protein(uniprot_id, encoding_gene, go_to_protein, protein)
             else:
                 self.add_protein(uniprot_id, encoding_gene, go_to_protein)
-            prot.append(uniprot_id)
 
         if uniprot_ids:
             for e_i, e_j in self.g.get_edges():
@@ -451,8 +453,9 @@ class BioPAXFactory:
                 self.add_PPI(uniprot_id1, uniprot_id2)
         else:
             for e_i, e_j in self.g.get_edges():
-                entrez_id1 = self.g.vp["name"][e_i]
-                entrez_id2 = self.g.vp["name"][e_j]
+                entrez_id1 = self.g.vp["name"][e_i].lstrip("entrez.")
+                entrez_id2 = self.g.vp["name"][e_j].lstrip("entrez.")
+                # gene2prot is not annotated with the id prefixes uniprot. / entrez.
                 uniprot_ids1 = gene2prot[entrez_id1]
                 uniprot_ids2 = gene2prot[entrez_id2]
                 for uniprot_id1 in uniprot_ids1:
@@ -464,17 +467,10 @@ class BioPAXFactory:
         if not self.biopaxmodel:
             self.create_biopax_model()
         model_to_owl_file(self.biopaxmodel, self.get_owl_path())
-        # if validate:
-        #     self.validate(self.get_owl_path())
-
-    # def validate(self, owl_path: Path):
-    #     call(
-    #         ["java", "-jar", "paxtools-5.3.0.jar", "validate", owl_path.name,
-    #          f"{owl_path.stem}_validation.html", "notstrict"])
 
     def add_protein(self, protein_id, gene_id, go_s, protein = None):
+        # in the biopax file: id-prefix uniprot./entrez. should be removed
         gene_id = gene_id.lstrip("entrez.")
-        # TODO: add all the other properties
         uniprot_id = protein_id.lstrip("uniprot.")
 
         uniXRef = [self.xRefs.setdefault(
@@ -503,14 +499,13 @@ class BioPAXFactory:
         return list(self.xRefs.values()) + list(self.entityRefs.values()) + list(self.entities.values()) + list(self.edgeTypes.values()) + list(self.organism.values())
 
     def add_PPI(self, uniprot_id1, uniprot_id2):
-        uniprot_id1 = uniprot_id1.lstrip("uniprot.")
-        uniprot_id2 = uniprot_id2.lstrip("uniprot.")
         interaction_id = f"{uniprot_id1}_{uniprot_id2}"
         self.entities[interaction_id] = biopax.MolecularInteraction(
             uid=interaction_id, participant=[self.entities[uniprot_id1], self.entities[uniprot_id2]], display_name=[f"{uniprot_id1} interacts with {uniprot_id2}"]
         )
 
     def add_gene(self, entrez_id, gene, associated_disorders = None):
+        # in the biopax file: id-prefix entrez. should be removed
         entrez_id = entrez_id.lstrip("entrez.")
         uniXRef = [self.xRefs.setdefault(
             entrez_id, biopax.UnificationXref(uid=f"{entrez_id}.XREF", db="NCBI GENE", id=entrez_id)
@@ -551,11 +546,7 @@ def parse_args(argv=None):
         choices=["entrez", "uniprot"],
         default="uniprot",
     )
-    # parser.add_argument(
-    #     "--no_validate",
-    #     help="The resulting biopax file is not validated.",
-    #     action="store_false",
-    # )
+ 
     parser.add_argument(
         "-l",
         "--log-level",
