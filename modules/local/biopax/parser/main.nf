@@ -6,7 +6,7 @@ process BIOPAX_PARSER {
 
     input:
     path network
-    val format
+    val idspace
 
     output:
     path "*.owl" , emit: biopax
@@ -17,7 +17,7 @@ process BIOPAX_PARSER {
 
     script:
     """
-    gt2biopax.py $network -i $format -l DEBUG
+    gt2biopax.py $network -i $idspace -l DEBUG
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

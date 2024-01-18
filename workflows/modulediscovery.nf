@@ -25,6 +25,7 @@ ch_network = Channel.fromPath(params.network, checkIfExists: true).first()
 
 diamond_n = Channel.value(params.diamond_n)
 diamond_alpha = Channel.value(params.diamond_alpha)
+id_space = Channel.value(params.id_space)
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -118,7 +119,7 @@ workflow MODULEDISCOVERY {
     ch_modules = ch_modules.mix(GT_FIRSTNEIGHBOR.out.module)
 
     //TODO add idspace as a parameter
-    GT_BIOPAX(ch_modules, 'entrez')
+    GT_BIOPAX(ch_modules, id_space)
     ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
 
 

@@ -66,6 +66,20 @@
                 }
             }
         },
+        "annotation": {
+            "title": "Annotation",
+            "type": "object",
+            "description": "Set parameter regarding the annotation.",
+            "default": "",
+            "properties": {
+                "id_space": {
+                    "type": "string",
+                    "enum": ["entrez", "uniprot"],
+                    "default": "entrez",
+                    "description": "Either give graph with enter ids or uniprot ids."
+                }
+            }
+        },
         "institutional_config_options": {
             "title": "Institutional config options",
             "type": "object",
@@ -267,6 +281,9 @@
         },
         {
             "$ref": "#/definitions/network_expansion"
+        },
+        {
+            "$ref": "#/definitions/annotation"
         },
         {
             "$ref": "#/definitions/institutional_config_options"

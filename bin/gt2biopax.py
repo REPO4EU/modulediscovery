@@ -442,7 +442,7 @@ def parse_args(argv=None):
         help="ID space of the given network.",
         type=str,
         choices=["entrez", "uniprot"],
-        default="uniprot",
+        default="entrez",
     )
  
     parser.add_argument(
