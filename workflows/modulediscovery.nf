@@ -118,10 +118,10 @@ workflow MODULEDISCOVERY {
     ch_versions = ch_versions.mix(GT_FIRSTNEIGHBOR.out.versions)
     ch_modules = ch_modules.mix(GT_FIRSTNEIGHBOR.out.module)
 
-    //TODO add idspace as a parameter
-    GT_BIOPAX(ch_modules, id_space)
-    ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
-
+    if(!params.skip_annotation){
+        GT_BIOPAX(ch_modules, id_space)
+        ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
+    }
 
     // Collect software versions
     CUSTOM_DUMPSOFTWAREVERSIONS (

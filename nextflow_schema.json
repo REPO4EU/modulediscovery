@@ -77,6 +77,10 @@
                     "enum": ["entrez", "uniprot"],
                     "default": "entrez",
                     "description": "Either give graph with enter ids or uniprot ids."
+                },
+                "skip_annotation": {
+                    "type": "boolean",
+                    "description": "Flag for skipping the annotation part of the process."
                 }
             }
         },
