@@ -24,6 +24,7 @@ process BIOPAX_PARSER {
         python: \$(python --version | sed 's/Python //g')
         graph-tool: \$(python -c "import graph_tool; print(graph_tool.__version__)")
         pybiopax: \$(python -c "import pybiopax; print(pybiopax.__version__)")
+        nedrex: \$(python -c "import nedrex; print(nedrex.__version__)")
     END_VERSIONS
     """
 }
