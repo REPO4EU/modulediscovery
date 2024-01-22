@@ -1,8 +1,5 @@
 #! /usr/bin/env python
 
-"""
-
-"""
 
 import networkx as nx
 import numpy as np
@@ -26,10 +23,10 @@ def print_usage():
     print ('        seed_file    : Table containing the seed genes (if table contains')
     print ('                       more than one column they must be tab-separated;')
     print ('                       the first column will be used only).')
-    print ('        scaling      : Boolean value to allow the scaling the nodes\' visiting')
-    print ('                       probabilities by the sqrt of their degree.')
-    print ('        symmetrical  : Boolean value for the use of the symmetric Markov matrix')
-    print ('                       (instead of the column-wise normalized Markov matrix)')
+    print ('        scaling      : (0 or 1) value to allow (1) the scaling the nodes\' visiting')
+    print ('                       probabilities by the sqrt of their degree or not (0).')
+    print ('        symmetrical  : (0 or 1) value for the use of the symmetric Markov matrix (1)')
+    print ('                       (instead of the column-wise normalized Markov matrix (0))')
     print ('        r            : damping factor/restart probability for the random walk,')
     print ('                       default is set to 0.8.')
     print (' ')
@@ -41,17 +38,15 @@ def check_input_style(input_list):
     try:
         network_edgelist_file = input_list[1]
         seeds_file = input_list[2]
-        scaling = input_list[3]
-        symmetrical = input_list[4]
+        scaling = int(input_list[3])
+        symmetrical = int(input_list[4])
     # if no input is given, print out a usage message and exit
     except:
         print_usage()
         sys.exit(0)
         return 
-    
-    r = 0.8
-    outfile_name = f'connected_module_rwr_{r}.txt'
 
+    r = 0.8 
 
     if len(input_list)==6:
         try:
@@ -60,7 +55,11 @@ def check_input_style(input_list):
             print_usage()       
             sys.exit(0)
             return
-            
+
+    sc = ["no_scaling","scaling"]
+    sy = ["columwise", "symmetrical"]
+    
+    outfile_name = f'connected_module_rwr_{sc[scaling]}_{sy[symmetrical]}_{r}.txt'  
         
     return network_edgelist_file, seeds_file, scaling, symmetrical, r, outfile_name
 
@@ -271,8 +270,8 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter = 0.8, alpha = 1.
     Perform the random walk process (column-wise or symmetrical, with scaling or not),
     find the visiting probability to each node and determine the top-k ranked genes
     which connect the seed genes. 
-    The function writes the results (both the connected module and all genes with 
-    their visiting probability) 
+    The function writes the results (all ranked genes with their visiting probability) 
+    and outputs the connected disease module.
 
     Parameters:
         G:                 (networkx graph) input graph
@@ -301,14 +300,14 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter = 0.8, alpha = 1.
 
     # initialize (with optional scaling) of the visiting probability vector
     for gene in seed_genes_on_PPI:
-        if scaling == True:
+        if scaling == 1:
             k = G.degree(gene)
             p0[d_entz_idx[gene]] = 1 * np.sqrt(k)
         else:
             p0[d_entz_idx[gene]] = 1.
 
     # compute the colum-wise or symmetrical RW operator
-    if symmetrical == True or symmetrical == "True":
+    if symmetrical == 1:
         print("doing symmetrical")
         W = symmetric_rnd_walk_matrix(G, r=restart_parameter)
     else:
@@ -316,7 +315,7 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter = 0.8, alpha = 1.
         W = colwise_rnd_walk_matrix(G, r=restart_parameter, a=alpha)
         
     # apply the RW operator on the visiting probability vector (with optional scaling)
-    if scaling == True or scaling == "True":
+    if scaling == 1:
         Dinvsqrt = create_scaling_matrix(G)
         pinf = np.array(np.dot(Dinvsqrt,np.dot(W,p0)))
     else:
@@ -340,13 +339,16 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter = 0.8, alpha = 1.
         i += 1
 
     with open(outfile_name,'w') as fout:
-        fout.write('RWR_node' + '\t')
+        fout.write('\t'.join(['#rank','RWR_node','p_value']))
+        fout.write('\n')
+        # fout.write('RWR_node' + '\t')
         rank = 0
         for g in connected_disease_module:
             rank += 1
             p = d_gene_pvis_sorted[g]
-           # fout.write('\t'.join(map(str,([rank, g, p]))))
-            fout.write(str(g) + '\t')
+            fout.write('\t'.join(map(str,([rank, g, p]))))
+            fout.write('\n')
+            # fout.write(str(g) + '\t')
     
     return connected_disease_module
 
