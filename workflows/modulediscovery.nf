@@ -25,6 +25,7 @@ ch_network = Channel.fromPath(params.network, checkIfExists: true).first()
 
 diamond_n = Channel.value(params.diamond_n)
 diamond_alpha = Channel.value(params.diamond_alpha)
+id_space = Channel.value(params.id_space)
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -54,6 +55,8 @@ include { GT_DOMINO         } from '../subworkflows/local/gt_domino'
 include { GT_ROBUST         } from '../subworkflows/local/gt_robust'
 include { GT_FIRSTNEIGHBOR  } from '../subworkflows/local/gt_firstneighbor'
 
+include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -78,6 +81,8 @@ def multiqc_report = []
 workflow MODULEDISCOVERY {
 
     ch_versions = Channel.empty()
+    ch_modules = Channel.empty()
+
 
     // Brach channel, so, GRAPHTOOLPARSER runs only for supported network formats, which are not already .gt files
     ch_network_type = ch_network.branch {
@@ -96,19 +101,27 @@ workflow MODULEDISCOVERY {
     // Network expansion tools
     GT_DIAMOND(ch_seeds, ch_network_gt, diamond_n, diamond_alpha)
     ch_versions = ch_versions.mix(GT_DIAMOND.out.versions)
+    ch_modules = ch_modules.mix(GT_DIAMOND.out.module)
 
 
     GT_DOMINO(ch_seeds, ch_network_gt)
     ch_versions = ch_versions.mix(GT_DOMINO.out.versions)
+    ch_modules = ch_modules.mix(GT_DOMINO.out.module)
 
 
     GT_ROBUST(ch_seeds, ch_network_gt)
     ch_versions = ch_versions.mix(GT_ROBUST.out.versions)
+    ch_modules = ch_modules.mix(GT_ROBUST.out.module)
 
 
     GT_FIRSTNEIGHBOR(ch_seeds, ch_network_gt)
     ch_versions = ch_versions.mix(GT_FIRSTNEIGHBOR.out.versions)
+    ch_modules = ch_modules.mix(GT_FIRSTNEIGHBOR.out.module)
 
+    if(!params.skip_annotation){
+        GT_BIOPAX(ch_modules, id_space)
+        ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
+    }
 
     // Collect software versions
     CUSTOM_DUMPSOFTWAREVERSIONS (
