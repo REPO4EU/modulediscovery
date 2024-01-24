@@ -10,29 +10,30 @@ import csv
 
 # =============================================================================
 
+
 def print_usage():
-   
-    print ('')
-    print ('        usage: ./rwr.py network_edgelist_file seeds_file scaling symmetrical r(optional)')
-    print ('        -----------------------------------------------------------------')
-    print ('        network_file : The edgelist must be provided as any delimiter-separated')
-    print ('                       table. Make sure the delimiter does not exit in gene IDs' )
-    print ('                       and is consistent across the file.' )
-    print ('                       The first two columns of the table will be')
-    print ('                       interpreted as an interaction gene1 <==> gene2')
-    print ('        seed_file    : Table containing the seed genes (if table contains')
-    print ('                       more than one column they must be tab-separated;')
-    print ('                       the first column will be used only).')
-    print ('        scaling      : (0 or 1) value to allow (1) the scaling the nodes\' visiting')
-    print ('                       probabilities by the sqrt of their degree or not (0).')
-    print ('        symmetrical  : (0 or 1) value for the use of the symmetric Markov matrix (1)')
-    print ('                       (instead of the column-wise normalized Markov matrix (0))')
-    print ('        r            : damping factor/restart probability for the random walk,')
-    print ('                       default is set to 0.8.')
-    print (' ')
+    print("")
+    print("        usage: ./rwr.py network_edgelist_file seeds_file scaling symmetrical r(optional)")
+    print("        -----------------------------------------------------------------")
+    print("        network_file : The edgelist must be provided as any delimiter-separated")
+    print("                       table. Make sure the delimiter does not exit in gene IDs")
+    print("                       and is consistent across the file.")
+    print("                       The first two columns of the table will be")
+    print("                       interpreted as an interaction gene1 <==> gene2")
+    print("        seed_file    : Table containing the seed genes (if table contains")
+    print("                       more than one column they must be tab-separated;")
+    print("                       the first column will be used only).")
+    print("        scaling      : (0 or 1) value to allow (1) the scaling the nodes' visiting")
+    print("                       probabilities by the sqrt of their degree or not (0).")
+    print("        symmetrical  : (0 or 1) value for the use of the symmetric Markov matrix (1)")
+    print("                       (instead of the column-wise normalized Markov matrix (0))")
+    print("        r            : damping factor/restart probability for the random walk,")
+    print("                       default is set to 0.8.")
+    print(" ")
 
 
 # =============================================================================
+
 
 def check_input_style(input_list):
     try:
@@ -44,29 +45,30 @@ def check_input_style(input_list):
     except:
         print_usage()
         sys.exit(0)
-        return 
+        return
 
-    r = 0.8 
+    r = 0.8
 
-    if len(input_list)==6:
+    if len(input_list) == 6:
         try:
             r = float(input_list[5])
         except:
-            print_usage()       
+            print_usage()
             sys.exit(0)
             return
 
-    sc = ["no_scaling","scaling"]
+    sc = ["no_scaling", "scaling"]
     sy = ["columwise", "symmetrical"]
-    
-    outfile_name = f'connected_module_rwr_{sc[scaling]}_{sy[symmetrical]}_{r}.txt'  
-        
+
+    outfile_name = f"connected_module_rwr_{sc[scaling]}_{sy[symmetrical]}_{r}.txt"
+
     return network_edgelist_file, seeds_file, scaling, symmetrical, r, outfile_name
 
 
 # =============================================================================
 
-def read_input(network_file,seed_file):
+
+def read_input(network_file, seed_file):
     """
     Reads the network and the list of seed genes from external files.
 
@@ -83,43 +85,42 @@ def read_input(network_file,seed_file):
 
     sniffer = csv.Sniffer()
     line_delimiter = None
-    for line in open(network_file,'r'):
-        if line[0]=='#':
+    for line in open(network_file, "r"):
+        if line[0] == "#":
             continue
         else:
             dialect = sniffer.sniff(line)
             line_delimiter = dialect.delimiter
             break
     if line_delimiter == None:
-        print ('network_file format not correct')
+        print("network_file format not correct")
         sys.exit(0)
-
 
     # read the network:
     G = nx.Graph()
-    for line in open(network_file,'r'):
+    for line in open(network_file, "r"):
         # lines starting with '#' will be ignored
-        if line[0]=='#':
+        if line[0] == "#":
             continue
         # The first two columns in the line will be interpreted as an
         # interaction gene1 <=> gene2
-        #line_data   = line.strip().split('\t')
+        # line_data   = line.strip().split('\t')
         line_data = line.strip().split(line_delimiter)
         node1 = line_data[0]
         node2 = line_data[1]
-        G.add_edge(node1,node2)
+        G.add_edge(node1, node2)
 
     G_connected = G.subgraph(max(nx.connected_components(G), key=len))  # extract lcc graph
 
     # read the seed genes:
     seed_genes = set()
-    for line in open(seed_file,'r'):
+    for line in open(seed_file, "r"):
         # lines starting with '#' will be ignored
-        if line[0]=='#':
+        if line[0] == "#":
             continue
         # the first column in the line will be interpreted as a seed
         # gene:
-        line_data = line.strip().split('\t')
+        line_data = line.strip().split("\t")
         seed_gene = line_data[0]
         seed_genes.add(seed_gene)
 
@@ -128,10 +129,11 @@ def read_input(network_file,seed_file):
 
 # =============================================================================
 
+
 def colwise_rnd_walk_matrix(G, r, a):
     """
-    Compute the Random Walk Matrix (RWM) for a given graph G with teleportation 
-    probability a and damping factor r using the formula (I-r*M)^-1 where M is 
+    Compute the Random Walk Matrix (RWM) for a given graph G with teleportation
+    probability a and damping factor r using the formula (I-r*M)^-1 where M is
     the column-wise normalized Markov matrix according to M = A D^{-1}
 
     Parameters:
@@ -143,46 +145,47 @@ def colwise_rnd_walk_matrix(G, r, a):
         W: (numpy array) RWM of the input graph G
 
     """
-    
+
     # get the number of nodes in the graph G
-    n = G.number_of_nodes()   
-    # get the adjacency matrix of graph G                       
-    A = nx.adjacency_matrix(G,sorted(G.nodes()))     
+    n = G.number_of_nodes()
+    # get the adjacency matrix of graph G
+    A = nx.adjacency_matrix(G, sorted(G.nodes()))
 
     # calculate the first scaling term
-    factor = float((1-a)/n)                          
+    factor = float((1 - a) / n)
 
     # prepare the second scaling term
-    E = np.multiply(factor,np.ones([n,n]))           
-    A_tele = np.multiply(a,A) + E                    
+    E = np.multiply(factor, np.ones([n, n]))
+    A_tele = np.multiply(a, A) + E
 
     # compute the column-wise normalized Markov matrix
     norm = np.linalg.norm(A_tele, ord=1, axis=0)
-    M = np.array(A_tele / norm)  
+    M = np.array(A_tele / norm)
 
     # mixture of Markov chains
     del A_tele
     del E
 
-    U = np.identity(n,dtype=int) 
-    H = (1-r)*M
-    H1 = np.subtract(U,H)
+    U = np.identity(n, dtype=int)
+    H = (1 - r) * M
+    H1 = np.subtract(U, H)
     del U
     del M
-    del H    
+    del H
 
     # compute the RWM using the formula (I-r*P)^-1
-    W = r*np.linalg.inv(H1)                          
+    W = r * np.linalg.inv(H1)
 
     return W
 
 
 # =============================================================================
 
+
 def symmetric_rnd_walk_matrix(G, r):
     """
-    Compute the Random Walk Matrix (RWM) for a given graph G damping factor r 
-    using the formula (I-r*M_s)^-1 where M_s is the symmetric Markov matrix  
+    Compute the Random Walk Matrix (RWM) for a given graph G damping factor r
+    using the formula (I-r*M_s)^-1 where M_s is the symmetric Markov matrix
     according to M_s = D^{-1/2} A D^{-1/2} = I - Laplace_normalized
 
     Parameters:
@@ -193,28 +196,29 @@ def symmetric_rnd_walk_matrix(G, r):
         W: (numpy array) RWM of the input graph G
 
     """
-    
-    # get the number of nodes in the graph G
-    n = G.number_of_nodes()                          
 
-    # generate symmetric Markov matrix 
-    M_laplace = nx.normalized_laplacian_matrix(G,sorted(G.nodes()))
+    # get the number of nodes in the graph G
+    n = G.number_of_nodes()
+
+    # generate symmetric Markov matrix
+    M_laplace = nx.normalized_laplacian_matrix(G, sorted(G.nodes()))
     Id = sp.identity(n)
     M_s = Id - M_laplace
 
-    H = (1-r)*M_s
-    H1 = np.subtract(Id,H)
+    H = (1 - r) * M_s
+    H1 = np.subtract(Id, H)
     del M_s
-    del H    
-    
+    del H
+
     # compute the RWM using the formula (I-r*M_s)^-1
-    W = r*np.linalg.inv(H1.todense())                         
+    W = r * np.linalg.inv(H1.todense())
     W = np.array(W)
 
     return W
 
 
 # =============================================================================
+
 
 def create_mapping_index_entrezID(G):
     """
@@ -233,12 +237,13 @@ def create_mapping_index_entrezID(G):
     for entz in sorted(G.nodes()):
         d_idx_entz[cc] = entz
         cc += 1
-    d_entz_idx = dict((y,x) for x,y in d_idx_entz.items())  
+    d_entz_idx = dict((y, x) for x, y in d_idx_entz.items())
 
     return d_entz_idx, d_idx_entz
 
 
 # =============================================================================
+
 
 def create_scaling_matrix(G):
     """
@@ -252,12 +257,12 @@ def create_scaling_matrix(G):
 
     """
 
-    n_nodes = G.number_of_nodes()   
-    Dinvsqrt = np.zeros([n_nodes, n_nodes]) # basically dimensions of your graph
+    n_nodes = G.number_of_nodes()
+    Dinvsqrt = np.zeros([n_nodes, n_nodes])  # basically dimensions of your graph
     cc = 0
     for node in sorted(G.nodes()):
         kn = G.degree(node)
-        Dinvsqrt[cc,cc] = np.sqrt(1./kn)
+        Dinvsqrt[cc, cc] = np.sqrt(1.0 / kn)
         cc += 1
 
     return Dinvsqrt
@@ -265,12 +270,13 @@ def create_scaling_matrix(G):
 
 # =============================================================================
 
-def rwr(G, seed_genes, scaling, symmetrical, restart_parameter = 0.8, alpha = 1.):
+
+def rwr(G, seed_genes, scaling, symmetrical, restart_parameter=0.8, alpha=1.0):
     """
     Perform the random walk process (column-wise or symmetrical, with scaling or not),
     find the visiting probability to each node and determine the top-k ranked genes
-    which connect the seed genes. 
-    The function writes the results (all ranked genes with their visiting probability) 
+    which connect the seed genes.
+    The function writes the results (all ranked genes with their visiting probability)
     and outputs the connected disease module.
 
     Parameters:
@@ -282,15 +288,15 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter = 0.8, alpha = 1.
                            the column-wise normalized otherwise
         restart_parameter: (float) damping factor/restart probability (default value 0.8)
         alpha:             (float) teleportation probability (default value 1)
-    
+
     Returns:
-        connected_disease_module: list of genes containing the seed genes and the top-k 
-                                  ranked genes that form a connected component on the 
-                                  interactomne 
+        connected_disease_module: list of genes containing the seed genes and the top-k
+                                  ranked genes that form a connected component on the
+                                  interactomne
     """
-    
+
     d_entz_idx, d_idx_entz = create_mapping_index_entrezID(G)
-        
+
     n_nodes = G.number_of_nodes()
 
     p0 = np.zeros(n_nodes)
@@ -304,7 +310,7 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter = 0.8, alpha = 1.
             k = G.degree(gene)
             p0[d_entz_idx[gene]] = 1 * np.sqrt(k)
         else:
-            p0[d_entz_idx[gene]] = 1.
+            p0[d_entz_idx[gene]] = 1.0
 
     # compute the colum-wise or symmetrical RW operator
     if symmetrical == 1:
@@ -313,60 +319,53 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter = 0.8, alpha = 1.
     else:
         print("doing column-wise")
         W = colwise_rnd_walk_matrix(G, r=restart_parameter, a=alpha)
-        
+
     # apply the RW operator on the visiting probability vector (with optional scaling)
     if scaling == 1:
         Dinvsqrt = create_scaling_matrix(G)
-        pinf = np.array(np.dot(Dinvsqrt,np.dot(W,p0)))
+        pinf = np.array(np.dot(Dinvsqrt, np.dot(W, p0)))
     else:
-        pinf = np.dot(W,p0)
-    
+        pinf = np.dot(W, p0)
+
     # create dictionary of gene IDs and their corresponding visiting probability in sorted order
     d_gene_pvis_sorted = {}
     for p, x in sorted(zip(pinf, range(len(pinf))), reverse=True):
-        d_gene_pvis_sorted[d_idx_entz[x]] = p/len(seed_genes_on_PPI)
+        d_gene_pvis_sorted[d_idx_entz[x]] = p / len(seed_genes_on_PPI)
 
-    # obtain the ranking without seed genes    
+    # obtain the ranking without seed genes
     rwr_rank_without_seed_genes = [g for g in d_gene_pvis_sorted.keys() if g not in seed_genes_on_PPI]
 
     # select the top ranked genes that lead to a connected component with the seed genes
     i = 0
-    subgraph = nx.subgraph(G,seed_genes_on_PPI)
+    subgraph = nx.subgraph(G, seed_genes_on_PPI)
     connected_disease_module = [g for g in seed_genes_on_PPI]
     while not nx.is_connected(subgraph):
         connected_disease_module.append(rwr_rank_without_seed_genes[i])
-        subgraph = nx.subgraph(G,connected_disease_module)
+        subgraph = nx.subgraph(G, connected_disease_module)
         i += 1
 
-    with open(outfile_name,'w') as fout:
-        fout.write('\t'.join(['#rank','RWR_node','p_value']))
-        fout.write('\n')
+    with open(outfile_name, "w") as fout:
+        fout.write("\t".join(["#rank", "RWR_node", "p_value"]))
+        fout.write("\n")
         # fout.write('RWR_node' + '\t')
         rank = 0
         for g in connected_disease_module:
             rank += 1
             p = d_gene_pvis_sorted[g]
-            fout.write('\t'.join(map(str,([rank, g, p]))))
-            fout.write('\n')
+            fout.write("\t".join(map(str, ([rank, g, p]))))
+            fout.write("\n")
             # fout.write(str(g) + '\t')
-    
+
     return connected_disease_module
 
 
 # =============================================================================
 
-if __name__ == '__main__': 
-    
+if __name__ == "__main__":
     input_list = sys.argv
 
     edgelist_file, seeds_file, scaling, sym, r, outfile_name = check_input_style(input_list)
-    
+
     G, seed_genes = read_input(edgelist_file, seeds_file)
 
-    connected_disease_module = rwr(G, 
-                                   seed_genes, 
-                                   scaling, 
-                                   sym, 
-                                   restart_parameter = r, 
-                                   alpha = 1.)
-     
+    connected_disease_module = rwr(G, seed_genes, scaling, sym, restart_parameter=r, alpha=1.0)
