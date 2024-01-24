@@ -27,8 +27,8 @@ diamond_n = Channel.value(params.diamond_n)
 diamond_alpha = Channel.value(params.diamond_alpha)
 id_space = Channel.value(params.id_space)
 
-rwr_scaling = Channel.value(params.rwr_scaling)
-rwr_symmetrical = Channel.value(params.rwr_symmetrical)
+rwr_scaling = Channel.value(params.rwr_scaling).map{it ? 1 : 0}
+rwr_symmetrical = Channel.value(params.rwr_symmetrical).map{it ? 1 : 0}
 rwr_r = Channel.value(params.rwr_r)
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
