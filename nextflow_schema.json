@@ -63,6 +63,21 @@
                     "type": "integer",
                     "default": 1,
                     "description": "Weight of the seeds."
+                },
+                "rwr_scaling": {
+                    "type": "boolean",
+                    "description": "Add a scaling depending on the node's degree."
+                },
+                "rwr_symmetrical": {
+                    "type": "boolean",
+                    "description": "Compute the symmetric instead of column-wise normalized Markov matrix."
+                },
+                "rwr_r": {
+                    "type": "number",
+                    "description": "Damping factor/restart probability.",
+                    "default": 0.8,
+                    "minimum": 0,
+                    "maximum": 1
                 }
             }
         },

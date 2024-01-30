@@ -25,7 +25,13 @@ ch_network = Channel.fromPath(params.network, checkIfExists: true).first()
 
 diamond_n = Channel.value(params.diamond_n)
 diamond_alpha = Channel.value(params.diamond_alpha)
+
+rwr_scaling = Channel.value(params.rwr_scaling).map{it ? 1 : 0}
+rwr_symmetrical = Channel.value(params.rwr_symmetrical).map{it ? 1 : 0}
+rwr_r = Channel.value(params.rwr_r)
+
 id_space = Channel.value(params.id_space)
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,12 +54,13 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { GRAPHTOOLPARSER   } from '../modules/local/graphtoolparser/main'
-
 include { INPUT_CHECK       } from '../subworkflows/local/input_check'
+
 include { GT_DIAMOND        } from '../subworkflows/local/gt_diamond'
 include { GT_DOMINO         } from '../subworkflows/local/gt_domino'
 include { GT_ROBUST         } from '../subworkflows/local/gt_robust'
 include { GT_FIRSTNEIGHBOR  } from '../subworkflows/local/gt_firstneighbor'
+include { GT_RWR            } from '../subworkflows/local/gt_rwr'
 
 include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
 
@@ -118,10 +125,16 @@ workflow MODULEDISCOVERY {
     ch_versions = ch_versions.mix(GT_FIRSTNEIGHBOR.out.versions)
     ch_modules = ch_modules.mix(GT_FIRSTNEIGHBOR.out.module)
 
+
+    GT_RWR(ch_seeds, ch_network_gt, rwr_scaling, rwr_symmetrical, rwr_r)
+    ch_versions = ch_versions.mix(GT_RWR.out.versions)
+
+    // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
         GT_BIOPAX(ch_modules, id_space)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
+
 
     // Collect software versions
     CUSTOM_DUMPSOFTWAREVERSIONS (
