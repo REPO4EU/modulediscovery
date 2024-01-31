@@ -298,19 +298,19 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter=0.8, alpha=1.0):
     and outputs the connected disease module.
 
     Parameters:
-        G:                 (networkx graph) input graph
-        seed_genes:        (list) seed genes
-        scaling:           (boolean) scale the visiting probabilities with the sqrt
-                           of the degree of the corresponding node
-        symmetrical:       (boolean) compute the symmetric Markov matrix if True
-                           the column-wise normalized otherwise
-        restart_parameter: (float) damping factor/restart probability (default value 0.8)
-        alpha:             (float) teleportation probability (default value 1)
+        G:                  (networkx graph) input graph
+        seed_genes:         (list) seed genes
+        scaling:            (boolean) scale the visiting probabilities with the sqrt
+                            of the degree of the corresponding node
+        symmetrical:        (boolean) compute the symmetric Markov matrix if True
+                            the column-wise normalized otherwise
+        restart_parameter:  (float) damping factor/restart probability (default value 0.8)
+        alpha:              (float) teleportation probability (default value 1)
 
     Returns:
-        connected_disease_module: list of genes containing the seed genes and the top-k
-                                  ranked genes that form a connected component on the
-                                  interactomne
+        connected_disease_module:   list of genes containing the seed genes and the top-k
+                                    ranked genes that form a connected component on the
+                                    interactomne
     """
 
     d_entz_idx, d_idx_entz = create_mapping_index_entrezID(G)
