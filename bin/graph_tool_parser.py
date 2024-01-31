@@ -22,7 +22,9 @@ def save_diamond(g, stem):
     with open(f"{stem}.diamond.csv", "w") as file:
         writer = csv.writer(file, lineterminator="\n")
         for e in g.iter_edges():
-            writer.writerow([g.vp["name"][e[0]], g.vp["name"][e[1]]])  # raw edge values are hashed vertex names
+            writer.writerow(
+                [g.vp["name"][e[0]], g.vp["name"][e[1]]]
+            )  # raw edge values are hashed vertex names
 
 
 def save_domino(g, stem):
@@ -43,14 +45,18 @@ def save_robust(g, stem):
     with open(f"{stem}.robust.tsv", "w") as file:
         writer = csv.writer(file, lineterminator="\n", delimiter="\t")
         for e in g.iter_edges():
-            writer.writerow([g.vp["name"][e[0]], g.vp["name"][e[1]]])  # raw edge values are hashed vertex names
+            writer.writerow(
+                [g.vp["name"][e[0]], g.vp["name"][e[1]]]
+            )  # raw edge values are hashed vertex names
 
 
 def save_rwr(g, stem):
     with open(f"{stem}.rwr.csv", "w") as file:
         writer = csv.writer(file, lineterminator="\n")
         for e in g.iter_edges():
-            writer.writerow([g.vp["name"][e[0]], g.vp["name"][e[1]]])  # raw edge values are hashed vertex names
+            writer.writerow(
+                [g.vp["name"][e[0]], g.vp["name"][e[1]]]
+            )  # raw edge values are hashed vertex names
 
 
 def save(g, stem, format):
@@ -91,7 +97,9 @@ def filter_domino(g, module, filter_column):
     with open(module, "r") as file:
         for line in file:
             module_ids += [id.strip("entrez.") for id in line.strip("[]\n").split(", ")]
-    gt.map_property_values(g.vp.name, g.vp[filter_column], lambda name: name in module_ids)
+    gt.map_property_values(
+        g.vp.name, g.vp[filter_column], lambda name: name in module_ids
+    )
     return g
 
 
@@ -103,7 +111,9 @@ def filter_robust(g, module, filter_column):
     del g.vp["_graphml_vertex_id"]
     del g.ep["_graphml_edge_id"]
     g.vp[filter_column] = g.new_vertex_property("bool")
-    g.vp[filter_column].a = gt.PropertyArray(np.ones(len(g), dtype=np.uint8), g.vp[filter_column])
+    g.vp[filter_column].a = gt.PropertyArray(
+        np.ones(len(g), dtype=np.uint8), g.vp[filter_column]
+    )
     return g
 
 
@@ -114,7 +124,9 @@ def filter_g(g, format, module):
     filter_column = "keep"
     g.vp[filter_column] = g.new_vertex_property("bool")
     if format == "gt":
-        logger.warning("Module file given, but format is 'gt'. Network was not filtered based on module...")
+        logger.warning(
+            "Module file given, but format is 'gt'. Network was not filtered based on module..."
+        )
         return g
     elif format == "diamond":
         g = filter_diamond(g, module, filter_column)

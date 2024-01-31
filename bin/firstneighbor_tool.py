@@ -20,9 +20,19 @@ def parse_user_arguments(*args, **kwds):
     description = "First neighbor-based module identification"
     parser = ArgumentParser(description=description)
     parser.add_argument(
-        "-n", "--network_file", type=str, required=True, help="Path to file containing the network in graph-tool format"
+        "-n",
+        "--network_file",
+        type=str,
+        required=True,
+        help="Path to file containing the network in graph-tool format",
     )
-    parser.add_argument("-s", "--seeds_file", type=str, required=True, help="Path to file containing the seeds")
+    parser.add_argument(
+        "-s",
+        "--seeds_file",
+        type=str,
+        required=True,
+        help="Path to file containing the seeds",
+    )
     parser.add_argument(
         "-o",
         "--output_file",
@@ -58,7 +68,9 @@ def run(args):
     for seed in seeds:
         if seed in node_name_to_id.keys():
             first_neighbors.add(node_name_to_id[seed])
-            first_neighbors.update([n for n in g.iter_all_neighbors(node_name_to_id[seed])])
+            first_neighbors.update(
+                [n for n in g.iter_all_neighbors(node_name_to_id[seed])]
+            )
 
     # Create a property map to store a boolean values indicating whether the node is
     # part of the module (seed / neighbor) or not

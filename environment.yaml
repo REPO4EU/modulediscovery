@@ -4,13 +4,8 @@ channels:
   - nodefaults
 
 dependencies:
-  - nf-core>=2.10
+  - nf-core>=2.12
   - nextflow>=23.10
-  - prettier>=3.1
-  - black>=23.10
-  - pip
-  - pip:
-      - spython # This is the pip package equivalent for singularity-cli
-
-# Note: The 'singularity>=3.8' line has been removed as it is not available via Conda channels.
-
+  - prettier==3.1.0
+  - black>=23.11
+  - singularity>=3.8
