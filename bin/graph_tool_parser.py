@@ -116,6 +116,7 @@ def filter_robust(g, module, filter_column):
     )
     return g
 
+
 def filter_rwr(g, module, filter_column):
     # Same format as diamond
     g.vp["rank"] = g.new_vertex_property("int")
