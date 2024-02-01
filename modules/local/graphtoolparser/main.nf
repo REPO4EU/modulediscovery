@@ -1,8 +1,7 @@
 process GRAPHTOOLPARSER {
     label 'process_single'
 
-    conda "conda-forge::graph-tool=2.58"
-    container "docker.io/tiagopeixoto/graph-tool:release-2.58"
+    container "docker.io/quirinmanz/gt2biopax:0.1.0"
 
     input:
     path network
