@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import json
 import argparse
 import logging
 import sys
@@ -65,8 +64,7 @@ def get_node_dict(ids, batch_size, node_type):
     result = []
     for i in range(0, len(ids), batch_size):
         batch_ids = ids[i : i + batch_size]
-
-        # get_nodes für die aktuelle Gruppe von IDs aufrufen
+        # get_nodes for current group of ids
         nodes = get_nodes(node_type=node_type, node_ids=batch_ids)
         result.extend(nodes)
     result = {res["primaryDomainId"]: res for res in result}
@@ -104,80 +102,30 @@ def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) 
 
     # list for all needed edges
     edges = []
-
-    edge_types_to_get = ["gene_associated_with_disorder"]  #'variant_affects_gene'
-    edges_new = [e for edge_type in edge_types_to_get for e in iter_edges(edge_type)]
+    edges_new = [e for e in iter_edges("gene_associated_with_disorder")]
 
     # currently relevant edges
     edges_relevant = []
+    nodes_to_get = set()
     for e in edges_new:
-        if e["sourceDomainId"] in genes or e["targetDomainId"] in genes:
+        if e["sourceDomainId"] in genes:
             edges_relevant.append(e)
+            nodes_to_get.add(e["targetDomainId"])
 
     edges.extend(edges_relevant)
-
-    # nodes_to_get = set()
-    # for e in edges_relevant:
-    #     if e["type"] == "VariantAffectsGene":
-    #         nodes_to_get.add(e["sourceDomainId"])
-    # nodes_to_get = list(nodes_to_get)
-
-    # variants = get_node_dict(nodes_to_get, batch_size, "genomic_variant") # TODO: add variants when api has filter options instead of []
-
-    variants = []
-
-    # edges_new = [e for e in iter_edges("variant_associated_with_disorder")]
-
-    # edges_relevant = []
-    # for e in edges_new:
-    #     if e["sourceDomainId"] in variants:
-    #         edges_relevant.append(e)
-
-    # edges.extend(edges_relevant)
-
-    # file_path = 'relevant_edges.json'
-
-    # # Liste als JSON in die Datei schreiben
-    # with open(file_path, 'w') as json_file:
-    #     json.dump(edges, json_file)
-
-    # just for testing purposes: get saved edges from file
-    # with open(file_path, 'r') as json_file:
-    #    edges = json.load(json_file)
-
-    # get all disorders that are associated with our genes
-    nodes_to_get = set()
-
-    for e in edges_relevant:
-        if (
-            e["type"] == "GeneAssociatedWithDisorder"
-        ):  # or e["type"] == "VariantAssociatedWithDisorder":
-            nodes_to_get.add(e["targetDomainId"])
     nodes_to_get = list(nodes_to_get)
 
     disorders = get_node_dict(nodes_to_get, batch_size, "disorder")
 
-    # get drugs that target our associated disorders
-    # note: not used until now bc biopax does not support disorders
-    # edges_new = [e for e in iter_edges("drug_has_indication")]
-    # edges_relevant = []
-    # for e in edges_new:
-    #     if e["targetDomainId"] in disorders:
-    #         edges_relevant.append(e)
-    # edges.extend(edges_relevant)
-
-    # get drugs that target a protein encoded by our genes
+    # get drugs that target a protein (encoded by our genes)
     edges_new = [e for e in iter_edges("drug_has_target")]
     edges_relevant = []
+    nodes_to_get = set()
     for e in edges_new:
         if e["targetDomainId"] in proteins:
             edges_relevant.append(e)
-    edges.extend(edges_relevant)
-
-    nodes_to_get = set()
-    for e in edges_new:
-        if e["type"] == "DrugHasIndication" or e["type"] == "DrugHasTarget":
             nodes_to_get.add(e["sourceDomainId"])
+    edges.extend(edges_relevant)
     nodes_to_get = list(nodes_to_get)
 
     drugs = get_node_dict(nodes_to_get, batch_size, "drug")
@@ -196,25 +144,22 @@ def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) 
     new_edges = [e for e in iter_edges("drug_has_side_effect")]
 
     edges_relevant = []
+    nodes_to_get = set()
     for e in new_edges:
         if e["sourceDomainId"] in drugs:
             edges_relevant.append(e)
+            nodes_to_get.add(e["targetDomainId"])
 
     edges.extend(edges_relevant)
-
-    # get side effect nodes for drugs
-    nodes_to_get = set()
-    for e in edges_relevant:
-        nodes_to_get.add(e["targetDomainId"])
     nodes_to_get = list(nodes_to_get)
 
+    # get side effect nodes for drugs
     sideeffects = get_node_dict(nodes_to_get, batch_size, "side_effect")
 
     return (
         genes,
         disorders,
         edges,
-        variants,
         drugs,
         proteins,
         protein2gene,
@@ -363,7 +308,6 @@ class BioPAXFactory:
                 genes,
                 disorders,
                 edges,
-                variants,
                 drugs,
                 proteins,
                 protein2gene,
@@ -375,7 +319,6 @@ class BioPAXFactory:
                 genes,
                 disorders,
                 edges,
-                variants,
                 drugs,
                 proteins,
                 protein2gene,
@@ -383,7 +326,7 @@ class BioPAXFactory:
                 sideeffects,
             ) = get_nedrex_data(ids)
 
-        # TODO: add disorders + sideeffects as soon as Biopax supports it + variants when api has filter options
+        # TODO: add disorders + sideeffects as soon as Biopax supports it
 
         protein2go = create_dict_mapping(edges, "ProteinHasGOAnnotation")
 
@@ -393,8 +336,6 @@ class BioPAXFactory:
             self.add_protein_info(proteins, protein2gene, protein2go, False, gene2prot)
 
         gene2disorder = create_dict_mapping(edges, "GeneAssociatedWithDisorder")
-        # variant2disorder = create_dict_mapping(edges, "VariantAssociatedWithDisorder")
-        # gene2variant = create_dict_mapping(edges, "VariantAffectsGene", True)
         protein2drug = create_dict_mapping(edges, "DrugHasTarget", True)
         drug2sideeffect = create_dict_mapping(edges, "DrugHasSideEffect")
 
@@ -615,19 +556,14 @@ def parse_args(argv=None):
         description="Parse network files to different formats.",
         epilog="Example: python gt2biopax.py network.gt --namespace entrez",
     )
+
     parser.add_argument(
         "file_in",
         metavar="FILE_IN",
         type=Path,
         help="Input network.",
     )
-    # parser.add_argument(
-    #     "-f",
-    #     "--format",
-    #     help="Output format (default gt).",
-    #     choices=("gt","diamond", "domino", "robust"),
-    #     default="gt",
-    # )
+
     parser.add_argument(
         "-i",
         "--idspace",
