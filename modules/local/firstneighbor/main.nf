@@ -9,7 +9,7 @@ process FIRSTNEIGHBOR {
     path network
 
     output:
-    path "${seeds.baseName}.gt", emit: module
+    path "firstneighbor.gt", emit: module
     path "versions.yml", emit: versions
 
     when:
@@ -17,7 +17,7 @@ process FIRSTNEIGHBOR {
 
     script:
     """
-    firstneighbor_tool.py -n $network -s $seeds -o "${seeds.baseName}.gt"
+    firstneighbor_tool.py -n $network -s $seeds -o "firstneighbor.gt"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
