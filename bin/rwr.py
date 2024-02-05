@@ -13,37 +13,21 @@ import csv
 
 def print_usage():
     print("")
-    print(
-        "        usage: ./rwr.py network_edgelist_file seeds_file scaling symmetrical r(optional)"
-    )
+    print("        usage: ./rwr.py network_edgelist_file seeds_file scaling symmetrical r(optional)")
     print("        -----------------------------------------------------------------")
-    print(
-        "        network_file : The edgelist must be provided as any delimiter-separated"
-    )
-    print(
-        "                       table. Make sure the delimiter does not exit in gene IDs"
-    )
+    print("        network_file : The edgelist must be provided as any delimiter-separated")
+    print("                       table. Make sure the delimiter does not exit in gene IDs")
     print("                       and is consistent across the file.")
     print("                       The first two columns of the table will be")
     print("                       interpreted as an interaction gene1 <==> gene2")
     print("        seed_file    : Table containing the seed genes (if table contains")
     print("                       more than one column they must be tab-separated;")
     print("                       the first column will be used only).")
-    print(
-        "        scaling      : (0 or 1) value to allow (1) the scaling the nodes' visiting"
-    )
-    print(
-        "                       probabilities by the sqrt of their degree or not (0)."
-    )
-    print(
-        "        symmetrical  : (0 or 1) value for the use of the symmetric Markov matrix (1)"
-    )
-    print(
-        "                       (instead of the column-wise normalized Markov matrix (0))"
-    )
-    print(
-        "        r            : damping factor/restart probability for the random walk,"
-    )
+    print("        scaling      : (0 or 1) value to allow (1) the scaling the nodes' visiting")
+    print("                       probabilities by the sqrt of their degree or not (0).")
+    print("        symmetrical  : (0 or 1) value for the use of the symmetric Markov matrix (1)")
+    print("                       (instead of the column-wise normalized Markov matrix (0))")
+    print("        r            : damping factor/restart probability for the random walk,")
     print("                       default is set to 0.8.")
     print(" ")
 
@@ -126,9 +110,7 @@ def read_input(network_file, seed_file):
         node2 = line_data[1]
         G.add_edge(node1, node2)
 
-    G_connected = G.subgraph(
-        max(nx.connected_components(G), key=len)
-    )  # extract lcc graph
+    G_connected = G.subgraph(max(nx.connected_components(G), key=len))  # extract lcc graph
 
     # read the seed genes:
     seed_genes = set()
@@ -351,9 +333,7 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter=0.8, alpha=1.0):
         d_gene_pvis_sorted[d_idx_entz[x]] = p / len(seed_genes_on_PPI)
 
     # obtain the ranking without seed genes
-    rwr_rank_without_seed_genes = [
-        g for g in d_gene_pvis_sorted.keys() if g not in seed_genes_on_PPI
-    ]
+    rwr_rank_without_seed_genes = [g for g in d_gene_pvis_sorted.keys() if g not in seed_genes_on_PPI]
 
     # select the top ranked genes that lead to a connected component with the seed genes
     i = 0
@@ -384,12 +364,8 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter=0.8, alpha=1.0):
 if __name__ == "__main__":
     input_list = sys.argv
 
-    edgelist_file, seeds_file, scaling, sym, r, outfile_name = check_input_style(
-        input_list
-    )
+    edgelist_file, seeds_file, scaling, sym, r, outfile_name = check_input_style(input_list)
 
     G, seed_genes = read_input(edgelist_file, seeds_file)
 
-    connected_disease_module = rwr(
-        G, seed_genes, scaling, sym, restart_parameter=r, alpha=1.0
-    )
+    connected_disease_module = rwr(G, seed_genes, scaling, sym, restart_parameter=r, alpha=1.0)

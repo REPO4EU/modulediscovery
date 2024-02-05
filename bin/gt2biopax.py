@@ -81,17 +81,11 @@ def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) 
     if uniprot_ids is None:
         # in gene2prot: without prefix uniprot. / entrez.
         gene2prot = get_uniprot_from_entrez(entrez_ids)
-        uniprot_ids = [
-            "uniprot." + protein
-            for proteins_list in gene2prot.values()
-            for protein in proteins_list
-        ]
+        uniprot_ids = ["uniprot." + protein for proteins_list in gene2prot.values() for protein in proteins_list]
         uniprot_ids = list(set(uniprot_ids))
         # dict with encoding gene for each protein
         protein2gene = {
-            "uniprot." + protein: "entrez." + gen
-            for gen, proteins in gene2prot.items()
-            for protein in proteins
+            "uniprot." + protein: "entrez." + gen for gen, proteins in gene2prot.items() for protein in proteins
         }
 
     # get all needed protein nodes as dict
@@ -177,13 +171,9 @@ def create_dict_mapping(edges, type, switched_mapping=False):
             source_domain_id = edge["sourceDomainId"]
             target_id = edge["targetDomainId"]
             if switched_mapping:
-                mapping.setdefault(target_id, []).append(
-                    {"id": source_domain_id, "dataSources": edge["dataSources"]}
-                )
+                mapping.setdefault(target_id, []).append({"id": source_domain_id, "dataSources": edge["dataSources"]})
             else:
-                mapping.setdefault(source_domain_id, []).append(
-                    {"id": target_id, "dataSources": edge["dataSources"]}
-                )
+                mapping.setdefault(source_domain_id, []).append({"id": target_id, "dataSources": edge["dataSources"]})
     return mapping
 
 
@@ -261,9 +251,7 @@ class BioPAXFactory:
             ),
         }
         self.organism: dict[str, biopax.BioSource] = {
-            "human": biopax.BioSource(
-                uid="human", display_name="Homo sapiens", standard_name="human"
-            )
+            "human": biopax.BioSource(uid="human", display_name="Homo sapiens", standard_name="human")
         }
 
     def get_owl_path(self) -> Path:
@@ -280,22 +268,14 @@ class BioPAXFactory:
             # TODO: entrez prefix will already be added in the future
             entrez_ids = []
             for v_i in self.g.get_vertices():
-                präfix = (
-                    ""
-                    if str(self.g.vp["name"][v_i]).startswith("entrez.")
-                    else "entrez."
-                )
+                präfix = "" if str(self.g.vp["name"][v_i]).startswith("entrez.") else "entrez."
                 entrez_ids.append(präfix + self.g.vp["name"][v_i])
             self.add_info(entrez_ids)
         elif self.id_space == "uniprot":
             # TODO: entrez prefix will already be added in the future
             uniprot_ids = []
             for v_i in self.g.get_vertices():
-                präfix = (
-                    ""
-                    if str(self.g.vp["name"][v_i]).startswith("uniprot.")
-                    else "uniprot."
-                )
+                präfix = "" if str(self.g.vp["name"][v_i]).startswith("uniprot.") else "uniprot."
                 uniprot_ids.append(präfix + self.g.vp["name"][v_i])
             self.add_info(uniprot_ids, True)
 
@@ -402,17 +382,13 @@ class BioPAXFactory:
             )
         entityRef = self.entityRefs.setdefault(
             drug_id,
-            biopax.SmallMoleculeReference(
-                uid=f"{drug_id}.REF", xref=uniXRef, display_name=display_name
-            ),
+            biopax.SmallMoleculeReference(uid=f"{drug_id}.REF", xref=uniXRef, display_name=display_name),
         )
         self.entities[drug_id] = biopax.SmallMolecule(
             uid=drug_id, entity_reference=entityRef, display_name=display_name
         )
 
-    def add_protein_info(
-        self, proteins, protein2gene, protein2go, uniprot_ids=True, gene2prot=None
-    ):
+    def add_protein_info(self, proteins, protein2gene, protein2go, uniprot_ids=True, gene2prot=None):
         for uniprot_id, protein in proteins.items():
             encoding_gene = protein2gene[uniprot_id]
             go_to_protein = []
@@ -452,9 +428,7 @@ class BioPAXFactory:
         uniXRef = [
             self.xRefs.setdefault(
                 uniprot_id,
-                biopax.UnificationXref(
-                    uid=f"{uniprot_id}.XREF", db="uniprot", id=uniprot_id
-                ),
+                biopax.UnificationXref(uid=f"{uniprot_id}.XREF", db="uniprot", id=uniprot_id),
             )
         ]
         if gene_id:
@@ -496,9 +470,7 @@ class BioPAXFactory:
                 organism=self.organism["human"],
             ),
         )
-        self.entities[uniprot_id] = biopax.Protein(
-            uid=uniprot_id, entity_reference=entityRef, display_name=displayName
-        )
+        self.entities[uniprot_id] = biopax.Protein(uid=uniprot_id, entity_reference=entityRef, display_name=displayName)
 
     def get_bioax_objects(self):
         return (
@@ -523,9 +495,7 @@ class BioPAXFactory:
         uniXRef = [
             self.xRefs.setdefault(
                 entrez_id,
-                biopax.UnificationXref(
-                    uid=f"{entrez_id}.XREF", db="NCBI GENE", id=entrez_id
-                ),
+                biopax.UnificationXref(uid=f"{entrez_id}.XREF", db="NCBI GENE", id=entrez_id),
             )
         ]
         if associated_disorders is not None:
@@ -540,9 +510,7 @@ class BioPAXFactory:
                             # remove mondo. prefix from id
                             id=id.replace("mondo.", ""),
                             comment=disorder["dataSources"],
-                            relationship_type=self.edgeTypes[
-                                "gene_associated_with_disorder"
-                            ],
+                            relationship_type=self.edgeTypes["gene_associated_with_disorder"],
                         ),
                     )
                 )
