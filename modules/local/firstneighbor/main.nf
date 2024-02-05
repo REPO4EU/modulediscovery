@@ -1,15 +1,14 @@
 process FIRSTNEIGHBOR {
     label 'process_single'
 
-    conda 'conda-forge::graph-tool=2.58'
-    container 'docker.io/tiagopeixoto/graph-tool:release-2.58'
+    container "docker.io/quirinmanz/gt2biopax:0.1.0"
 
     input:
     path seeds
     path network
 
     output:
-    path "${seeds.baseName}.gt", emit: module
+    path "firstneighbor.gt", emit: module
     path "versions.yml", emit: versions
 
     when:
@@ -17,7 +16,7 @@ process FIRSTNEIGHBOR {
 
     script:
     """
-    firstneighbor_tool.py -n $network -s $seeds -o "${seeds.baseName}.gt"
+    firstneighbor_tool.py -n $network -s $seeds -o "firstneighbor.gt"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

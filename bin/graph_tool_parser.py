@@ -80,14 +80,14 @@ def save(g, stem, format):
 
 def filter_diamond(g, module, filter_column):
     # Diamond uses a tab separated file format
-    g.vp["diamond_rank"] = g.new_vertex_property("int")
-    g.vp["diamond_p_hyper"] = g.new_vertex_property("double")
+    g.vp["rank"] = g.new_vertex_property("int")
+    g.vp["p_hyper"] = g.new_vertex_property("double")
     with open(module, "r") as file:
         reader = csv.DictReader(file, lineterminator="\n", delimiter="\t")
         for row in reader:
             v = gt.find_vertex(g, g.vp.name, row["DIAMOnD_node"])[0]
-            g.vp["diamond_rank"][v] = row["#rank"]
-            g.vp["diamond_p_hyper"][v] = row["p_hyper"]
+            g.vp["rank"][v] = row["#rank"]
+            g.vp["p_hyper"][v] = row["p_hyper"]
             g.vp[filter_column][v] = True
     return g
 
@@ -117,6 +117,20 @@ def filter_robust(g, module, filter_column):
     return g
 
 
+def filter_rwr(g, module, filter_column):
+    # Same format as diamond
+    g.vp["rank"] = g.new_vertex_property("int")
+    g.vp["p_value"] = g.new_vertex_property("double")
+    with open(module, "r") as file:
+        reader = csv.DictReader(file, lineterminator="\n", delimiter="\t")
+        for row in reader:
+            v = gt.find_vertex(g, g.vp.name, row["RWR_node"])[0]
+            g.vp["rank"][v] = row["#rank"]
+            g.vp["p_value"][v] = row["p_value"]
+            g.vp[filter_column][v] = True
+    return g
+
+
 def filter_g(g, format, module):
     """
     Filters a graph_tools Graph object based on a module file in a given format
@@ -134,6 +148,8 @@ def filter_g(g, format, module):
         g = filter_domino(g, module, filter_column)
     elif format == "robust":
         g = filter_robust(g, module, filter_column)
+    elif format == "rwr":
+        g = filter_rwr(g, module, filter_column)
     else:
         logger.critical(f"Unknown output format: {format}")
         sys.exit(1)

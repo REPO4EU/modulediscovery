@@ -128,6 +128,8 @@ workflow MODULEDISCOVERY {
 
     GT_RWR(ch_seeds, ch_network_gt, rwr_scaling, rwr_symmetrical, rwr_r)
     ch_versions = ch_versions.mix(GT_RWR.out.versions)
+    ch_modules = ch_modules.mix(GT_RWR.out.module)
+
 
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
