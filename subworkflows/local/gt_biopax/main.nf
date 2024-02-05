@@ -7,6 +7,7 @@ workflow GT_BIOPAX {
     take:                                   // Workflow inputs
     ch_modules
     idspace
+    validate_online
 
     main:
 
@@ -15,11 +16,11 @@ workflow GT_BIOPAX {
     BIOPAX_PARSER(ch_modules, idspace)
     ch_versions = ch_versions.mix(BIOPAX_PARSER.out.versions)
 
-    BIOPAX_VALIDATOR(BIOPAX_PARSER.out.biopax.collect())
+    BIOPAX_VALIDATOR(BIOPAX_PARSER.out.biopax.collect(), validate_online)
     ch_versions = ch_versions.mix(BIOPAX_VALIDATOR.out.versions)
 
 
     emit:
-    module   = BIOPAX_VALIDATOR.out.validation       // channel: [ module ]              emit the module discovered by DIAMOnD
+    module   = BIOPAX_VALIDATOR.out.validation
     versions = ch_versions              // channel: [ versions.yml ]        emit collected versions
 }

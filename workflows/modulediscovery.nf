@@ -31,6 +31,7 @@ rwr_symmetrical = Channel.value(params.rwr_symmetrical).map{it ? 1 : 0}
 rwr_r = Channel.value(params.rwr_r)
 
 id_space = Channel.value(params.id_space)
+validate_online = Channel.value(params.validate_online)
 
 
 /*
@@ -133,7 +134,7 @@ workflow MODULEDISCOVERY {
 
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
-        GT_BIOPAX(ch_modules, id_space)
+        GT_BIOPAX(ch_modules, id_space, validate_online)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
 
