@@ -365,7 +365,10 @@ class BioPAXFactory:
             self.xRefs.setdefault(
                 drug_id,
                 biopax.UnificationXref(
-                    uid=f"{drug_id}.XREF", db=drug["dataSources"], id=drug_id
+                    # remove drugbank.DB prefix from id
+                    uid=f"{drug_id}.XREF",
+                    db=drug["dataSources"],
+                    id=drug_id.replace("drugbank.DB", ""),
                 ),
             )
         ]
@@ -534,7 +537,8 @@ class BioPAXFactory:
                         biopax.RelationshipXref(
                             uid=f"{id}.XREF",
                             db="MONDO",
-                            id=id,
+                            # remove mondo. prefix from id
+                            id=id.replace("mondo.", ""),
                             comment=disorder["dataSources"],
                             relationship_type=self.edgeTypes[
                                 "gene_associated_with_disorder"
