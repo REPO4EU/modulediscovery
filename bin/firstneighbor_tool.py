@@ -68,7 +68,9 @@ def run(args):
     for seed in seeds:
         if seed in node_name_to_id.keys():
             first_neighbors.add(node_name_to_id[seed])
-            first_neighbors.update([n for n in g.iter_all_neighbors(node_name_to_id[seed])])
+            first_neighbors.update(
+                [n for n in g.iter_all_neighbors(node_name_to_id[seed])]
+            )
 
     # Create a property map to store a boolean values indicating whether the node is
     # part of the module (seed / neighbor) or not
