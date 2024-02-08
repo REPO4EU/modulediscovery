@@ -96,6 +96,11 @@
                 "skip_annotation": {
                     "type": "boolean",
                     "description": "Flag for skipping the annotation part of the process."
+                },
+                "validate_online": {
+                    "type": "boolean",
+                    "help_text": "Flag for running the BioPAX validator client, i.e. validating at the baderlab server. If \"false\" will load OBO files locally, which can take some time but is recommended for files > 100Mb.",
+                    "description": "Flag for validating online at baderlab.org."
                 }
             }
         },
