@@ -55,6 +55,9 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 include { GRAPHTOOLPARSER   } from '../modules/local/graphtoolparser/main'
 include { INPUT_CHECK       } from '../subworkflows/local/input_check'
+include { GT2TSV as GT_TO_TSV_Modules} from '../modules/local/gt2tsv/main'    //Evaluation
+include {GT2TSV as GT_TO_TSV_Network} from '../modules/local/gt2tsv/main'    //Evaluation
+include {CHECKINPUT as Check_Input} from '../modules/local/checkinput/main' //Evaluation
 
 include { GT_DIAMOND        } from '../subworkflows/local/gt_diamond'
 include { GT_DOMINO         } from '../subworkflows/local/gt_domino'
@@ -75,6 +78,8 @@ include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
 //
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+nextflow.enable.dsl = 2                                                     //Evaluation
+include { GPROFILER2_GOST } from '../modules/nf-core/gprofiler2/gost/main'  //Evaluation
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -89,6 +94,9 @@ workflow MODULEDISCOVERY {
 
     ch_versions = Channel.empty()
     ch_modules = Channel.empty()
+
+    //ch_all_gt_outputs = Channel.empty() //Evaluation
+    ch_all_tsv = Channel.empty() //Evaluation
 
 
     // Brach channel, so, GRAPHTOOLPARSER runs only for supported network formats, which are not already .gt files
@@ -119,13 +127,12 @@ workflow MODULEDISCOVERY {
     GT_ROBUST(ch_seeds, ch_network_gt)
     ch_versions = ch_versions.mix(GT_ROBUST.out.versions)
     ch_modules = ch_modules.mix(GT_ROBUST.out.module)
-
+   
 
     GT_FIRSTNEIGHBOR(ch_seeds, ch_network_gt)
     ch_versions = ch_versions.mix(GT_FIRSTNEIGHBOR.out.versions)
     ch_modules = ch_modules.mix(GT_FIRSTNEIGHBOR.out.module)
-
-
+    
     GT_RWR(ch_seeds, ch_network_gt, rwr_scaling, rwr_symmetrical, rwr_r)
     ch_versions = ch_versions.mix(GT_RWR.out.versions)
     ch_modules = ch_modules.mix(GT_RWR.out.module)
@@ -136,6 +143,28 @@ workflow MODULEDISCOVERY {
         GT_BIOPAX(ch_modules, id_space)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
+    // Evaluation
+
+    GT_TO_TSV_Modules(ch_modules) 
+    GT_TO_TSV_Network(ch_network_gt) 
+    Check_Input(ch_seeds)
+    
+    ch_all_tsv = ch_all_tsv.mix(GT_TO_TSV_Modules.out)
+    ch_all_tsv = ch_all_tsv.mix(ch_seeds)
+    
+    //ch_all_tsv.first().view()
+
+    //map = [ variable:'treatment', reference:'treated', control:'saline' ]
+    //mapChannel = Channel.from(map)
+
+    ch_gprofiler_input = ch_all_tsv.map{[[id: it.baseName],it]}
+    //ch_gprofiler_input.view()
+
+    GPROFILER2_GOST (
+        ch_gprofiler_input,
+        [],
+        GT_TO_TSV_Network.out
+    )
 
 
     // Collect software versions
