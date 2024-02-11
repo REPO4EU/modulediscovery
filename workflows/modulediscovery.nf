@@ -152,13 +152,8 @@ workflow MODULEDISCOVERY {
     ch_all_tsv = ch_all_tsv.mix(GT_TO_TSV_Modules.out)
     ch_all_tsv = ch_all_tsv.mix(ch_seeds)
     
-    //ch_all_tsv.first().view()
-
-    //map = [ variable:'treatment', reference:'treated', control:'saline' ]
-    //mapChannel = Channel.from(map)
-
     ch_gprofiler_input = ch_all_tsv.map{[[id: it.baseName],it]}
-    //ch_gprofiler_input.view()
+   
 
     GPROFILER2_GOST (
         ch_gprofiler_input,
