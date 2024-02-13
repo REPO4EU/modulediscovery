@@ -160,7 +160,7 @@ workflow MODULEDISCOVERY {
         [],
         GT_TO_TSV_Network.out
     )
-
+    ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
 
     // Collect software versions
     CUSTOM_DUMPSOFTWAREVERSIONS (
