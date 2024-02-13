@@ -120,13 +120,13 @@ def filter_robust(g, module, filter_column):
 def filter_rwr(g, module, filter_column):
     # Same format as diamond
     g.vp["rank"] = g.new_vertex_property("int")
-    g.vp["p_value"] = g.new_vertex_property("double")
+    g.vp["visiting_probability"] = g.new_vertex_property("double")
     with open(module, "r") as file:
         reader = csv.DictReader(file, lineterminator="\n", delimiter="\t")
         for row in reader:
             v = gt.find_vertex(g, g.vp.name, row["RWR_node"])[0]
             g.vp["rank"][v] = row["#rank"]
-            g.vp["p_value"][v] = row["p_value"]
+            g.vp["visiting_probability"][v] = row["visiting_probability"]
             g.vp[filter_column][v] = True
     return g
 
