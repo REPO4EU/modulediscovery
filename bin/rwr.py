@@ -339,7 +339,7 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter = 0.8, alpha = 1.
         i += 1
 
     with open(outfile_name,'w') as fout:
-        fout.write('\t'.join(['#rank','RWR_node','p_value']))
+        fout.write('\t'.join(['#rank','RWR_node','visiting_probability']))
         fout.write('\n')
         # fout.write('RWR_node' + '\t')
         rank = 0
