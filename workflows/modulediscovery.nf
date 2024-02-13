@@ -55,9 +55,9 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 include { GRAPHTOOLPARSER   } from '../modules/local/graphtoolparser/main'
 include { INPUT_CHECK       } from '../subworkflows/local/input_check'
-include { GT2TSV as GT_TO_TSV_Modules} from '../modules/local/gt2tsv/main'    //Evaluation
-include {GT2TSV as GT_TO_TSV_Network} from '../modules/local/gt2tsv/main'    //Evaluation
-include {CHECKINPUT as Check_Input} from '../modules/local/checkinput/main' //Evaluation
+include { GT2TSV as GT2TSV_Modules} from '../modules/local/gt2tsv/main'    //Evaluation
+include {GT2TSV as GT2TSV_Network} from '../modules/local/gt2tsv/main'    //Evaluation
+include {ADDHEADER as Add_Header} from '../modules/local/addheader/main' //Evaluation
 
 include { GT_DIAMOND        } from '../subworkflows/local/gt_diamond'
 include { GT_DOMINO         } from '../subworkflows/local/gt_domino'
@@ -94,9 +94,7 @@ workflow MODULEDISCOVERY {
 
     ch_versions = Channel.empty()
     ch_modules = Channel.empty()
-
-    //ch_all_gt_outputs = Channel.empty() //Evaluation
-    ch_all_tsv = Channel.empty() //Evaluation
+    ch_nodes = Channel.empty() //Evaluation
 
 
     // Brach channel, so, GRAPHTOOLPARSER runs only for supported network formats, which are not already .gt files
@@ -145,12 +143,12 @@ workflow MODULEDISCOVERY {
     }
     // Evaluation
 
-    GT_TO_TSV_Modules(ch_modules) 
-    GT_TO_TSV_Network(ch_network_gt) 
-    Check_Input(ch_seeds)
+    GT2TSV_Modules(ch_modules) 
+    GT2TSV_Network(ch_network_gt) 
+    Add_Header(ch_seeds, "gene_id")
     
     ch_nodes = ch_nodes.mix(GT2TSV_Modules.out)
-    ch_nodes = ch_nodes.mix(ch_seeds)
+    ch_nodes = ch_nodes.mix(Add_Header.out)
     
     ch_gprofiler_input = ch_nodes.map{[[id: it.baseName],it]}
    
@@ -158,7 +156,7 @@ workflow MODULEDISCOVERY {
     GPROFILER2_GOST (
         ch_gprofiler_input,
         [],
-        GT_TO_TSV_Network.out
+        GT2TSV_Network.out
     )
     ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
 
