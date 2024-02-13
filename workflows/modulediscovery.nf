@@ -150,7 +150,7 @@ workflow MODULEDISCOVERY {
     Check_Input(ch_seeds)
     
     ch_nodes = ch_nodes.mix(GT2TSV_Modules.out)
-    ch_all_tsv = ch_all_tsv.mix(ch_seeds)
+    ch_nodes = ch_nodes.mix(ch_seeds)
     
     ch_gprofiler_input = ch_all_tsv.map{[[id: it.baseName],it]}
    
