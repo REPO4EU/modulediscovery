@@ -28,4 +28,4 @@ if __name__ == "__main__":
     input_file = args.input
     output_file = args.output
 
-    process_gt(input_file, output_file)
+    gt_to_tsv(input_file, output_file)
