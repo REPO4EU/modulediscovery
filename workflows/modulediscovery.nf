@@ -147,7 +147,7 @@ workflow MODULEDISCOVERY {
     ADDHEADER(ch_seeds, "gene_id")
     
     ch_nodes = ch_nodes.mix(GT2TSV_Modules.out)
-    ch_nodes = ch_nodes.mix(Add_Header.out)
+    ch_nodes = ch_nodes.mix(ADDHEADER.out)
     
     ch_gprofiler_input = ch_nodes.map{[[id: it.baseName],it]}
    
