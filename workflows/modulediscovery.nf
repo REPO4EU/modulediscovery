@@ -77,8 +77,7 @@ include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
 // MODULE: Installed directly from nf-core/modules
 //
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
-nextflow.enable.dsl = 2                                                     //Evaluation
+include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'                                                   //Evaluation
 include { GPROFILER2_GOST } from '../modules/nf-core/gprofiler2/gost/main'  //Evaluation
 
 /*
