@@ -57,7 +57,7 @@ include { GRAPHTOOLPARSER   } from '../modules/local/graphtoolparser/main'
 include { INPUT_CHECK       } from '../subworkflows/local/input_check'
 include { GT2TSV as GT2TSV_Modules} from '../modules/local/gt2tsv/main'    //Evaluation
 include {GT2TSV as GT2TSV_Network} from '../modules/local/gt2tsv/main'    //Evaluation
-include {ADDHEADER as Add_Header} from '../modules/local/addheader/main' //Evaluation
+include {ADDHEADER} from '../modules/local/addheader/main' //Evaluation
 
 include { GT_DIAMOND        } from '../subworkflows/local/gt_diamond'
 include { GT_DOMINO         } from '../subworkflows/local/gt_domino'
