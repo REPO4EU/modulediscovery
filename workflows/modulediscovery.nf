@@ -144,7 +144,7 @@ workflow MODULEDISCOVERY {
 
     GT2TSV_Modules(ch_modules) 
     GT2TSV_Network(ch_network_gt) 
-    Add_Header(ch_seeds, "gene_id")
+    ADDHEADER(ch_seeds, "gene_id")
     
     ch_nodes = ch_nodes.mix(GT2TSV_Modules.out)
     ch_nodes = ch_nodes.mix(Add_Header.out)
