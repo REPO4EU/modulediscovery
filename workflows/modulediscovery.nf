@@ -115,21 +115,18 @@ workflow MODULEDISCOVERY {
     ch_versions = ch_versions.mix(GT_DIAMOND.out.versions)
     ch_modules = ch_modules.mix(GT_DIAMOND.out.module)
 
-
     GT_DOMINO(ch_seeds, ch_network_gt)
     ch_versions = ch_versions.mix(GT_DOMINO.out.versions)
     ch_modules = ch_modules.mix(GT_DOMINO.out.module)
 
-
     GT_ROBUST(ch_seeds, ch_network_gt)
     ch_versions = ch_versions.mix(GT_ROBUST.out.versions)
     ch_modules = ch_modules.mix(GT_ROBUST.out.module)
-   
 
     GT_FIRSTNEIGHBOR(ch_seeds, ch_network_gt)
     ch_versions = ch_versions.mix(GT_FIRSTNEIGHBOR.out.versions)
     ch_modules = ch_modules.mix(GT_FIRSTNEIGHBOR.out.module)
-    
+
     GT_RWR(ch_seeds, ch_network_gt, rwr_scaling, rwr_symmetrical, rwr_r)
     ch_versions = ch_versions.mix(GT_RWR.out.versions)
     ch_modules = ch_modules.mix(GT_RWR.out.module)
@@ -140,24 +137,24 @@ workflow MODULEDISCOVERY {
         GT_BIOPAX(ch_modules, id_space)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
-    // Evaluation
 
-    GT2TSV_Modules(ch_modules) 
-    GT2TSV_Network(ch_network_gt) 
+
+    // Evaluation
+    GT2TSV_Modules(ch_modules)
+    GT2TSV_Network(ch_network_gt)
     ADDHEADER(ch_seeds, "gene_id")
-    
+
     ch_nodes = ch_nodes.mix(GT2TSV_Modules.out)
     ch_nodes = ch_nodes.mix(ADDHEADER.out)
-    
-    ch_gprofiler_input = ch_nodes.map{[[id: it.baseName],it]}
-   
 
+    ch_gprofiler_input = ch_nodes.map{[[id: it.baseName],it]}
     GPROFILER2_GOST (
         ch_gprofiler_input,
         [],
         GT2TSV_Network.out
     )
     ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
+
 
     // Collect software versions
     CUSTOM_DUMPSOFTWAREVERSIONS (
