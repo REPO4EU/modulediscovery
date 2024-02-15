@@ -56,6 +56,9 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 include { GRAPHTOOLPARSER   } from '../modules/local/graphtoolparser/main'
 include { INPUT_CHECK       } from '../subworkflows/local/input_check'
+include { GT2TSV as GT2TSV_Modules} from '../modules/local/gt2tsv/main'    //Evaluation
+include {GT2TSV as GT2TSV_Network} from '../modules/local/gt2tsv/main'    //Evaluation
+include {ADDHEADER} from '../modules/local/addheader/main' //Evaluation
 
 include { GT_DIAMOND        } from '../subworkflows/local/gt_diamond'
 include { GT_DOMINO         } from '../subworkflows/local/gt_domino'
@@ -75,7 +78,8 @@ include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
 // MODULE: Installed directly from nf-core/modules
 //
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'                                                   //Evaluation
+include { GPROFILER2_GOST } from '../modules/nf-core/gprofiler2/gost/main'  //Evaluation
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -90,6 +94,7 @@ workflow MODULEDISCOVERY {
 
     ch_versions = Channel.empty()
     ch_modules = Channel.empty()
+    ch_nodes = Channel.empty() //Evaluation
 
 
     // Brach channel, so, GRAPHTOOLPARSER runs only for supported network formats, which are not already .gt files
@@ -111,21 +116,17 @@ workflow MODULEDISCOVERY {
     ch_versions = ch_versions.mix(GT_DIAMOND.out.versions)
     ch_modules = ch_modules.mix(GT_DIAMOND.out.module)
 
-
     GT_DOMINO(ch_seeds, ch_network_gt)
     ch_versions = ch_versions.mix(GT_DOMINO.out.versions)
     ch_modules = ch_modules.mix(GT_DOMINO.out.module)
-
 
     GT_ROBUST(ch_seeds, ch_network_gt)
     ch_versions = ch_versions.mix(GT_ROBUST.out.versions)
     ch_modules = ch_modules.mix(GT_ROBUST.out.module)
 
-
     GT_FIRSTNEIGHBOR(ch_seeds, ch_network_gt)
     ch_versions = ch_versions.mix(GT_FIRSTNEIGHBOR.out.versions)
     ch_modules = ch_modules.mix(GT_FIRSTNEIGHBOR.out.module)
-
 
     GT_RWR(ch_seeds, ch_network_gt, rwr_scaling, rwr_symmetrical, rwr_r)
     ch_versions = ch_versions.mix(GT_RWR.out.versions)
@@ -137,6 +138,23 @@ workflow MODULEDISCOVERY {
         GT_BIOPAX(ch_modules, id_space, validate_online)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
+
+
+    // Evaluation
+    GT2TSV_Modules(ch_modules)
+    GT2TSV_Network(ch_network_gt)
+    ADDHEADER(ch_seeds, "gene_id")
+
+    ch_nodes = ch_nodes.mix(GT2TSV_Modules.out)
+    ch_nodes = ch_nodes.mix(ADDHEADER.out)
+
+    ch_gprofiler_input = ch_nodes.map{[[id: it.baseName],it]}
+    GPROFILER2_GOST (
+        ch_gprofiler_input,
+        [],
+        GT2TSV_Network.out
+    )
+    ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
 
 
     // Collect software versions

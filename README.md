@@ -68,6 +68,12 @@ Show all parameter options:
 nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
 ```
 
+If you want to contribute to the pipeline, it is useful to set up pre-commit for code linting and quality checks:
+
+```bash
+pre-commit install
+```
+
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
 > see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
@@ -82,9 +88,7 @@ nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
 6. Test checks locally:
    1. Run tests via, e.g., `nextflow run main.nf -profile singularity,test --outdir results`.
    2. Run `nf-core lint`.
-   3. Run `prettier . --check`.
-   4. Run `prettier . --write`.
-   5. Run `black .`
+   3. Check your code style. This will automatically happen before you commit, if you use pre-commit, which can be set up with: `pre-commit install`. After each commit, it will automatically check your code style and fix it where possible. If changes were made, you have to commit again.
 7. Create a pull request against the dev branch.
 
 ### Further information
