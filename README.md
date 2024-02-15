@@ -88,9 +88,7 @@ pre-commit install
 6. Test checks locally:
    1. Run tests via, e.g., `nextflow run main.nf -profile singularity,test --outdir results`.
    2. Run `nf-core lint`.
-   3. Run `prettier . --check`.
-   4. Run `prettier . --write`.
-   5. Run `black .`
+   3. Check your code style. This will automatically happen before you commit, if you use pre-commit, which can be set up with: `pre-commit install`. After each commit, it will automatically check your code style and fix it where possible. If changes were made, you have to commit again.
 7. Create a pull request against the dev branch.
 
 ### Further information

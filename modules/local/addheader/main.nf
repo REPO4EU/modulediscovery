@@ -1,12 +1,12 @@
 process ADDHEADER {
-    
+
     container 'docker.io/quirinmanz/gt2biopax:0.1.0'
 
     input:
     path file
     val header
-    
-     output:
+
+    output:
     file("${file.baseName}.withHeader.txt")
 
     script:

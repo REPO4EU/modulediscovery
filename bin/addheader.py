@@ -26,5 +26,5 @@ if __name__ == "__main__":
     input_file = args.input_file
     header = args.header
     output_file = args.output_file
-    
+
     add_header(input_file, header, output_file)

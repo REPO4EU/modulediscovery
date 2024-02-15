@@ -6,7 +6,7 @@ import argparse
 
 
 def gt_to_tsv(input_file, output_file):
-    
+
     graph = load_graph(input_file)
 
     name_property = graph.vertex_properties["name"]
