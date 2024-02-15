@@ -68,6 +68,12 @@ Show all parameter options:
 nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
 ```
 
+If you want to contribute to the pipeline, it is useful to set up pre-commit for code linting and quality checks:
+
+```bash
+pre-commit install
+```
+
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
 > see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
