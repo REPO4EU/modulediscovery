@@ -9,7 +9,7 @@ process SPD {
     val cutoff
 
     output:
-    path "spd.gt", emit: module
+    path "${subnetwork.baseName}_spd.gt", emit: module
     path "versions.yml", emit: versions
 
     when:
@@ -17,7 +17,7 @@ process SPD {
 
     script:
     """
-    firstneighbor_tool.py -s $subnetwork -n $network -c $cutoff -o "spd.gt"
+    spd_tool.py -s $subnetwork -n $network -o "${subnetwork.baseName}_spd.gt" -c $cutoff
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
