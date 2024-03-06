@@ -66,13 +66,42 @@ def run(args):
     name_to_degree_sub = create_name_to_degree_map(subnetwork)
 
     # Calculate SPD for each node in the subnetwork
-    spd = subnetwork.new_vertex_property('float')
-    for v in subnetwork.vertices():
-        name = subnetwork.vp["name"][v]
-        full_degree = name_to_degree_full.get(name, 0)
-        sub_degree = name_to_degree_sub.get(name, 0)
-        spd[v] = sub_degree / full_degree if full_degree > 0 else 0
+    spd = calculate_spd_subnetwork(subnetwork, name_to_degree_sub, name_to_degree_full)
     print(f"Max. SPD: {max(spd)}. Min. SPD: {min(spd)}")
+
+    ## Calculate the SPD average for each subnetwork, starting from the top-ranked nodes
+    # Sort nodes based on SPD from high to low
+    sorted_nodes = sorted(subnetwork.vertices(), key=lambda v: spd[v], reverse=True)
+
+    # Initialize variables for the subsubnetworks
+    subsubnetwork_property = subnetwork.new_vertex_property("bool")
+    mean_spd_list = []
+    median_spd_list = []
+
+    # Iterate, add to subnetwork, recalculate SPD, and calculate mean SPD
+    for v in sorted_nodes:
+
+        # Add node to subsubnetwork
+        subsubnetwork_property[v] = True
+
+        # Extract the subgraph containing the subsubnetwork nodes
+        subsubnetwork = gt.GraphView(subnetwork, vfilt=subsubnetwork_property)
+        subsubnetwork.purge_vertices()
+
+        # Create name to degree mappings for the subsubnetwork
+        name_to_degree_subsub = create_name_to_degree_map(subsubnetwork)
+
+        # Recalculate SPD for each node in the subsubnetwork
+        subsub_spd = calculate_spd_subnetwork(subsubnetwork, name_to_degree_subsub, name_to_degree_full)
+
+        # Calculate mean SPD so far
+        mean_spd_list.append(np.mean(list(subsub_spd)))
+        median_spd_list.append(np.median(list(subsub_spd)))
+        #print(f"Node ID {v} and name {subsubnetwork.vp["name"][v]}. SPD: {spd[v]}. Num nodes in subnetwork: {subsubnetwork.num_vertices()}. Mean SPD: {np.mean(list(subsub_spd))}. Median SPD: {np.median(list(subsub_spd))}")
+
+    print(mean_spd_list)
+    #print(median_spd_list)
+    print(np.mean(mean_spd_list))
 
     # Calculate the SPD cutoff
     sorted_spd = sorted(spd.a, reverse=True)
@@ -111,9 +140,33 @@ def create_name_to_degree_map(graph):
     Creates a dictionary mapping names to network degrees
     """
     degrees = graph.degree_property_map('total').a
-    names = [graph.vp["name"][v] for v in graph.vertices()]
+    names = graph.vp["name"]
     return dict(zip(names, degrees))
 
+def calculate_spd_subnetwork(subnetwork, name_to_degree_sub, name_to_degree_full):
+    """
+    Calculates the spd of all the nodes in a subnetwork.
+    Returns the spd in form of graph_tool vertex property.
+    """
+
+    spd = subnetwork.new_vertex_property('float')
+    names = subnetwork.vp["name"]
+    full_degrees = np.array([name_to_degree_full.get(name, 0) for name in names])
+    sub_degrees = np.array([name_to_degree_sub.get(name, 0) for name in names])
+
+    # Avoid division by zero and calculate SPD
+    with np.errstate(divide='ignore', invalid='ignore'):
+        spd_values = np.true_divide(sub_degrees, full_degrees)
+        spd_values[full_degrees == 0] = 0  # Set SPD to 0 where full_degree is 0
+
+    # Check for SPD values greater than 1
+    if np.any(spd_values > 1):
+        raise Exception("ERROR: Node with SPD higher than 1 detected.")
+
+    # Assign the values back to the graph-tool property map
+    spd.get_array()[:] = spd_values
+
+    return spd
 
 if __name__ == "__main__":
     main()
