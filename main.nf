@@ -37,8 +37,9 @@ workflow REPO4EU_MODULEDISCOVERY {
     //
     // WORKFLOW: Run pipeline
     //
-    ch_seeds = Channel.fromPath(params.input, checkIfExists: true)
+    ch_seeds = Channel.fromPath(params.input.split(',').flatten(), checkIfExists: true)
     ch_network = Channel.fromPath(params.network, checkIfExists: true).first()
+
     MODULEDISCOVERY (
         ch_seeds,
         ch_network
