@@ -1,22 +1,23 @@
 process FIRSTNEIGHBOR {
+    tag "$meta.id"
     label 'process_single'
 
     container "docker.io/quirinmanz/gt2biopax:0.1.0"
 
     input:
-    path seeds
+    tuple val(meta), path(seeds)
     path network
 
     output:
-    path "firstneighbor.gt", emit: module
-    path "versions.yml", emit: versions
+    tuple val(meta), path("${meta.id}.firstneighbor.gt"), emit: module
+    path "versions.yml"                                 , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     """
-    firstneighbor_tool.py -n $network -s $seeds -o "firstneighbor.gt"
+    firstneighbor_tool.py -n $network -s $seeds -o "${meta.id}.firstneighbor.gt"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
