@@ -13,8 +13,8 @@ process DIAMOND {                           // Process name, should be all upper
     val alpha                               // DIAMOnD spefific parameter "alpha"
 
     output:                                 // Define output files, "emit" is only used to access the corresponding outputs externally
-    tuple val(meta), path("*.txt"),     emit: module       // Define a pattern for the output file (can also be the full name, if known), emit -> the active module
-    path "versions.yml",                emit: versions     // Software versions, this is not essential but nice, the collected versions will be part of the final multiqc report
+    tuple val(meta), path("${meta.id}.first_${n}_added_nodes_weight_${alpha}.txt")  , emit: module       // Define a pattern for the output file (can also be the full name, if known), emit -> the active module
+    path "versions.yml"                                                             , emit: versions     // Software versions, this is not essential but nice, the collected versions will be part of the final multiqc report
 
     when:
     task.ext.when == null || task.ext.when  // Allows to prevent the execution of this process via a workflow logic, just put it in
@@ -28,7 +28,8 @@ process DIAMOND {                           // Process name, should be all upper
         $network \\
         $seeds \\
         $n \\
-        $alpha
+        $alpha \\
+        ${meta.id}.first_${n}_added_nodes_weight_${alpha}.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
