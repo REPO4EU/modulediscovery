@@ -125,7 +125,7 @@ workflow MODULEDISCOVERY {
     // Evaluation
     if(!params.skip_gprofiler){
         GT2TSV_Modules(ch_modules)
-        GT2TSV_Network(ch_network_gt.map{ it -> [ [ id: it.baseName ], it ] })
+        GT2TSV_Network(ch_network_gt.flatten().map{ it -> [ [ id: it.baseName ], it ] })
         ADDHEADER(ch_seeds, "gene_id")
 
         ch_nodes = GT2TSV_Modules.out
@@ -134,7 +134,7 @@ workflow MODULEDISCOVERY {
         GPROFILER2_GOST (
             ch_nodes,
             [],
-            GT2TSV_Network.out.map{it[1]}
+            GT2TSV_Network.out.map{it[1]}.first()
         )
         ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
     }
