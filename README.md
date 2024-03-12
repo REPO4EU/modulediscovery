@@ -43,7 +43,7 @@ conda activate modulediscovery
 
 The pipeline should be run from outside of the code repository since nextflow, by default, will write into the execution directory.
 
-Run with test data (DIAMOnD example data):
+Run with test data:
 
 ```bash
 nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
