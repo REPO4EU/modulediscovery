@@ -22,7 +22,7 @@ workflow GT_ROBUST {
     ROBUST(ch_seeds, GRAPHTOOLPARSER.out.network.collect())
     ch_versions = ch_versions.mix(ROBUST.out.versions.first())
 
-    ch_module = ROBUST.out.module                                   // Extract the module
+    ch_module = ROBUST.out.module
         .map{meta, path ->
             def dup = meta.clone()
             dup.id = meta.id + ".robust"
