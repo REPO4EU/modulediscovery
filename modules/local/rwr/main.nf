@@ -1,18 +1,19 @@
 
 process RWR {
+    tag "$meta.id"
     label 'process_single'
     container 'docker.io/djskelton/diamond:2437974'
 
     input:
-    path seeds                              // Path to seeds file
+    tuple val(meta), path(seeds)            // Path to seeds file
     path network                            // Path to a network file
     val scaling                             // RWR specific parameter "sclaing"
     val symmetrical                         // RWR spefific parameter "symmetrical"
     val r                                   // RWR specific parameter "r"
 
     output:
-    path "*.txt",        emit: module
-    path "versions.yml", emit: versions
+    tuple val(meta), path("*.txt") , emit: module
+    path "versions.yml"            , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

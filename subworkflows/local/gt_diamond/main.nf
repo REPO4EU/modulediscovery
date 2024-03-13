@@ -22,9 +22,15 @@ workflow GT_DIAMOND {
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)             // Collect versions
 
     DIAMOND(ch_seeds, GRAPHTOOLPARSER.out.network.collect(), n, alpha)      // Run diamond on parsed network
-    ch_versions = ch_versions.mix(DIAMOND.out.versions.first())             // Collect versions
+    ch_versions = ch_versions.mix(DIAMOND.out.versions.first())
 
-    MODULEPARSER(ch_network, "diamond", DIAMOND.out.module)                 // Convert module from diamond specific format to gt file
+    ch_module = DIAMOND.out.module                                   // Extract the module
+        .map{meta, path ->
+            def dup = meta.clone()
+            dup.id = meta.id + ".diamond"
+            [ dup, path ]
+        }
+    MODULEPARSER(ch_network, "diamond", ch_module)                 // Convert module from diamond specific format to gt file
     ch_versions = ch_versions.mix(MODULEPARSER.out.versions.first())
 
 

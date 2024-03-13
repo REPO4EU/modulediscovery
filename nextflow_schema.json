@@ -14,11 +14,8 @@
             "properties": {
                 "input": {
                     "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "mimetype": "text/csv",
-                    "description": "Path to a file with seed genes with one line per gene.",
-                    "fa_icon": "fas fa-file-csv"
+                    "description": "Seed gene files (comma separated paths)",
+                    "help_text": "Multiple paths to seed gene files separated by commas. Each file must have one line per gene."
                 },
                 "network": {
                     "type": "string",

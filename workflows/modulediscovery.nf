@@ -69,7 +69,6 @@ workflow MODULEDISCOVERY {
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
     ch_modules = Channel.empty()
-    ch_nodes = Channel.empty()
 
 
     // Brach channel, so, GRAPHTOOLPARSER runs only for supported network formats, which are not already .gt files
@@ -83,7 +82,7 @@ workflow MODULEDISCOVERY {
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
 
     // Mix into one .gt format channel
-    ch_network_gt = GRAPHTOOLPARSER.out.network.collect().mix(ch_network_type.gt).collect()
+    ch_network_gt = GRAPHTOOLPARSER.out.network.collect().mix(ch_network_type.gt).first()
 
 
     // Network expansion tools
@@ -123,21 +122,19 @@ workflow MODULEDISCOVERY {
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
 
-
     // Evaluation
     if(!params.skip_gprofiler){
         GT2TSV_Modules(ch_modules)
-        GT2TSV_Network(ch_network_gt)
+        GT2TSV_Network(ch_network_gt.flatten().map{ it -> [ [ id: it.baseName ], it ] })
         ADDHEADER(ch_seeds, "gene_id")
 
-        ch_nodes = ch_nodes.mix(GT2TSV_Modules.out)
+        ch_nodes = GT2TSV_Modules.out
         ch_nodes = ch_nodes.mix(ADDHEADER.out)
 
-        ch_gprofiler_input = ch_nodes.map{[[id: it.baseName],it]}
         GPROFILER2_GOST (
-            ch_gprofiler_input,
+            ch_nodes,
             [],
-            GT2TSV_Network.out
+            GT2TSV_Network.out.map{it[1]}.first()
         )
         ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
     }
