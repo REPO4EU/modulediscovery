@@ -11,6 +11,8 @@ include { GRAPHTOOLPARSER         } from '../modules/local/graphtoolparser/main'
 include { GT2TSV as GT2TSV_Modules} from '../modules/local/gt2tsv/main'
 include { GT2TSV as GT2TSV_Network} from '../modules/local/gt2tsv/main'
 include { ADDHEADER               } from '../modules/local/addheader/main'
+include { DIGEST as DIGEST} from '../modules/local/digest/main'
+
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -139,6 +141,8 @@ workflow MODULEDISCOVERY {
         ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
     }
 
+    DIGEST (ch_nodes.map{it[1]}, id_space, ch_network_gt, id_space)
+    //DIGEST (ch_nodes.map{it[1]}, "uniprot", ch_network_gt, "uniprot")
 
     //
     // Collate and save software versions
