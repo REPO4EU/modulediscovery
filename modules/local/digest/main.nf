@@ -13,6 +13,6 @@ process DIGEST {
 
     script:
     """
-    digest.py --target_file $target_file  --target_type $target_type   --network $network  --network_type $network_type 
+    digest.py --target_file $target_file  --target_type $target_type   --network $network  --network_type $network_type
     """
 }
