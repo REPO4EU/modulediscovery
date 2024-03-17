@@ -16,7 +16,7 @@ def run_analysis (target_set, target_type, network, network_type, output_directo
     network_data = {"network_file":network, "prop_name":"name", "id_type": network_type}
 
     # ==== define optional input influencing results ====
-    distance_measure="jaccard" 
+    distance_measure="jaccard"
     background_model="network" # for subnetwork mode the only option so it is set fixed
     runs = 1000 # how many random runs for empirical p-value estimation
     perc = 100 # how many % of the original input should be perturbated for the background model
@@ -27,9 +27,7 @@ def run_analysis (target_set, target_type, network, network_type, output_directo
     verbose=True # printing additional information during the run
     prefix="subnetwork"
 
-    results = single_validation(tar=tar_set, tar_id=tar_id_type, mode=mode, 
-                                runs=runs, background_model=background_model, verbose=verbose, enriched=enriched, 
-                                distance=distance_measure, network_data=network_data)
+    results = single_validation(tar=tar_set, tar_id=tar_id_type, mode=mode, runs=runs, background_model=background_model, verbose=verbose, enriched=enriched, distance=distance_measure, network_data=network_data)
 
     pd.DataFrame(results["p_values"]['values'])
 
