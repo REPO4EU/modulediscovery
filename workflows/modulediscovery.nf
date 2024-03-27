@@ -141,10 +141,10 @@ workflow MODULEDISCOVERY {
         ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
     }
 
-    DIGEST (ch_nodes.map{it[1]}, id_space, ch_network_gt, id_space)
-    //DIGEST (ch_nodes.map{it[1]}, "uniprot", ch_network_gt, "uniprot")
-
-    //
+    //DIGEST (ch_nodes.map{it[1]}, id_space, ch_network_gt, id_space)
+    DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
+    
+    
     // Collate and save software versions
     //
     softwareVersionsToYAML(ch_versions)
