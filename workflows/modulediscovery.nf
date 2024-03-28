@@ -144,7 +144,6 @@ workflow MODULEDISCOVERY {
     //DIGEST (ch_nodes.map{it[1]}, id_space, ch_network_gt, id_space)
     DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
     
-    
     // Collate and save software versions
     //
     softwareVersionsToYAML(ch_versions)

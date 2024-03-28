@@ -51,7 +51,7 @@ if __name__ == "__main__":
     target_file = args.target_file
     target_type = args.target_type
     network = args.network
-    network_type = args.network_type   
+    network_type = args.network_type
     output_directory = os.path.splitext(os.path.basename(target_file))[0]
     os.makedirs(output_directory, exist_ok=True)
 
