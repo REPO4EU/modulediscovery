@@ -7,7 +7,7 @@ process RWR {
     input:
     tuple val(meta), path(seeds)            // Path to seeds file
     path network                            // Path to a network file
-    val scaling                             // RWR specific parameter "sclaing"
+    val scaling                             // RWR specific parameter "scaling"
     val symmetrical                         // RWR spefific parameter "symmetrical"
     val r                                   // RWR specific parameter "r"
 
