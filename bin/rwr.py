@@ -188,7 +188,7 @@ def colwise_rnd_walk_matrix(G, r, a):
 
     U = sp.identity(n, dtype=int)
     H = (1 - r) * M
-    H1 = U, H
+    H1 = U - H
     del U
     del M
     del H
