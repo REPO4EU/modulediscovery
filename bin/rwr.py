@@ -224,7 +224,7 @@ def symmetric_rnd_walk_matrix(G, r):
     M_laplace = nx.normalized_laplacian_matrix(G, sorted(G.nodes()))
     M_Laplace = sp.csc_matrix(M_laplace)
     del M_laplace
-    
+
     Id = sp.identity(n)
     M_s = Id - M_Laplace
     del M_Laplace
@@ -351,7 +351,7 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter=0.8, alpha=1.0):
         pinf = np.dot(W, p0)
 
     del W
-    
+
     # create dictionary of gene IDs and their corresponding visiting probability in sorted order
     d_gene_pvis_sorted = {}
     for p, x in sorted(zip(pinf, range(len(pinf))), reverse=True):
