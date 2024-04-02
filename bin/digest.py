@@ -56,4 +56,3 @@ if __name__ == "__main__":
     os.makedirs(output_directory, exist_ok=True)
 
     run_analysis(target_file, target_type, network, network_type, output_directory)
-    
