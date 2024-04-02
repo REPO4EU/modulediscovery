@@ -141,11 +141,9 @@ workflow MODULEDISCOVERY {
         ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
     }
 
-    DIGEST (ch_nodes.map{it[1]}, id_space, ch_network_gt, id_space)
-    //DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
+    DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
     
     // Collate and save software versions
-    //
     softwareVersionsToYAML(ch_versions)
         .collectFile(storeDir: "${params.outdir}/pipeline_info", name: 'nf_core_pipeline_software_mqc_versions.yml', sort: true, newLine: true)
         .set { ch_collated_versions }
