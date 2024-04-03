@@ -1,13 +1,13 @@
 
 process RWR {
     tag "$meta.id"
-    label 'process_single'
-    container 'docker.io/djskelton/diamond:2437974'
+    label 'process_low'
+    container 'docker.io/chloebubu/rwr'
 
     input:
     tuple val(meta), path(seeds)            // Path to seeds file
     path network                            // Path to a network file
-    val scaling                             // RWR specific parameter "sclaing"
+    val scaling                             // RWR specific parameter "scaling"
     val symmetrical                         // RWR spefific parameter "symmetrical"
     val r                                   // RWR specific parameter "r"
 

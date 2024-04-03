@@ -4,6 +4,7 @@
 import networkx as nx
 import numpy as np
 import scipy.sparse as sp
+from scipy.sparse import linalg
 import sys
 import csv
 
@@ -168,31 +169,32 @@ def colwise_rnd_walk_matrix(G, r, a):
     n = G.number_of_nodes()
     # get the adjacency matrix of graph G
     A = nx.adjacency_matrix(G, sorted(G.nodes()))
+    A = sp.csc_matrix(A)
 
     # calculate the first scaling term
     factor = float((1 - a) / n)
 
     # prepare the second scaling term
-    E = np.multiply(factor, np.ones([n, n]))
-    A_tele = np.multiply(a, A) + E
+    E = sp.csc_matrix(factor * np.ones([n, n]))
+    A_tele = (a * A) + E
 
     # compute the column-wise normalized Markov matrix
-    norm = np.linalg.norm(A_tele, ord=1, axis=0)
-    M = np.array(A_tele / norm)
+    norm = linalg.norm(A_tele, ord=1, axis=0)
+    M = A_tele / norm
 
     # mixture of Markov chains
     del A_tele
     del E
 
-    U = np.identity(n, dtype=int)
+    U = sp.identity(n, dtype=int)
     H = (1 - r) * M
-    H1 = np.subtract(U, H)
+    H1 = U - H
     del U
     del M
     del H
 
     # compute the RWM using the formula (I-r*P)^-1
-    W = r * np.linalg.inv(H1)
+    W = r * np.linalg.inv(H1.toarray())
 
     return W
 
@@ -220,17 +222,20 @@ def symmetric_rnd_walk_matrix(G, r):
 
     # generate symmetric Markov matrix
     M_laplace = nx.normalized_laplacian_matrix(G, sorted(G.nodes()))
+    M_Laplace = sp.csc_matrix(M_laplace)
+    del M_laplace
+
     Id = sp.identity(n)
-    M_s = Id - M_laplace
+    M_s = Id - M_Laplace
+    del M_Laplace
 
     H = (1 - r) * M_s
-    H1 = np.subtract(Id, H)
+    H1 = Id - H
     del M_s
     del H
 
     # compute the RWM using the formula (I-r*M_s)^-1
-    W = r * np.linalg.inv(H1.todense())
-    W = np.array(W)
+    W = r * np.linalg.inv(H1.toarray())
 
     return W
 
@@ -310,7 +315,7 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter=0.8, alpha=1.0):
     Returns:
         connected_disease_module:   list of genes containing the seed genes and the top-k
                                     ranked genes that form a connected component on the
-                                    interactomne
+                                    interactome
     """
 
     d_entz_idx, d_idx_entz = create_mapping_index_entrezID(G)
@@ -345,6 +350,8 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter=0.8, alpha=1.0):
     else:
         pinf = np.dot(W, p0)
 
+    del W
+
     # create dictionary of gene IDs and their corresponding visiting probability in sorted order
     d_gene_pvis_sorted = {}
     for p, x in sorted(zip(pinf, range(len(pinf))), reverse=True):
@@ -352,14 +359,14 @@ def rwr(G, seed_genes, scaling, symmetrical, restart_parameter=0.8, alpha=1.0):
 
     # obtain the ranking without seed genes
     rwr_rank_without_seed_genes = [
-        g for g in d_gene_pvis_sorted.keys() if g not in seed_genes_on_PPI
+        g for g in list(d_gene_pvis_sorted.keys()) if g not in seed_genes
     ]
 
     # select the top ranked genes that lead to a connected component with the seed genes
     i = 0
     subgraph = nx.subgraph(G, seed_genes_on_PPI)
     connected_disease_module = [g for g in seed_genes_on_PPI]
-    while not nx.is_connected(subgraph):
+    while not nx.is_connected(subgraph) and i < len(rwr_rank_without_seed_genes):
         connected_disease_module.append(rwr_rank_without_seed_genes[i])
         subgraph = nx.subgraph(G, connected_disease_module)
         i += 1
