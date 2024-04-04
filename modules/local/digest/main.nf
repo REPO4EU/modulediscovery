@@ -10,7 +10,8 @@ process DIGEST {
     val network_type
 
     output:
-    path("${target_file.baseName}")
+    tuple val(meta), path("${meta.id}"), emit: outdir
+    path "versions.yml",                         emit: versions
 
     script:
     """
