@@ -1,5 +1,6 @@
 process DIGEST {
-
+    tag "$meta.id"
+    label 'process_single'
     container 'biocontainers/biodigest:0.2.16--pyhdfd78af_2'
 
     input:
