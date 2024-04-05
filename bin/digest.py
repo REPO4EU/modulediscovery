@@ -9,10 +9,9 @@ from biodigest.evaluation.d_utils.plotting_utils import (
     create_extended_plots,
 )
 
-
 def run_analysis(target_set, target_type, network, network_type, output_directory):
     # ==== define required input ====
-    tar_set = pd.read_csv(target_set, header=None, sep="\t", dtype=str)[0]
+    tar_set = pd.read_csv(target_set, header=0, sep="\t", dtype=str)['gene_id']
     tar_id_type = target_type
     mode = "subnetwork"
 
@@ -30,12 +29,12 @@ def run_analysis(target_set, target_type, network, network_type, output_director
     )
     runs = 1000  # how many random runs for empirical p-value estimation
     perc = 100  # how many % of the original input should be perturbated for the background model
-    enriched = False
+    enriched = False #Set True, if only enriched attributes of the reference set should be used (Only for set-set)
 
     # ==== define optional input influencing saving of results ====
     out_dir = output_directory
     verbose = True  # printing additional information during the run
-    prefix = "subnetwork"
+    prefix = output_directory
 
     results = single_validation(
         tar=tar_set,
@@ -82,6 +81,7 @@ if __name__ == "__main__":
     parser.add_argument("--target_type", required=True, help="Input target id")
     parser.add_argument("--network", required=True, help="Input network")
     parser.add_argument("--network_type", required=True, help="Input network id")
+    parser.add_argument("--outdir", required=True, help="Name for output directory")
 
     args = parser.parse_args()
     target_file = args.target_file
@@ -89,6 +89,7 @@ if __name__ == "__main__":
     network = args.network
     network_type = args.network_type
     output_directory = os.path.splitext(os.path.basename(target_file))[0]
+    output_directory = args.outdir
     os.makedirs(output_directory, exist_ok=True)
 
     run_analysis(target_file, target_type, network, network_type, output_directory)

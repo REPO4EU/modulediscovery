@@ -11,7 +11,7 @@ include { GRAPHTOOLPARSER         } from '../modules/local/graphtoolparser/main'
 include { GT2TSV as GT2TSV_Modules} from '../modules/local/gt2tsv/main'
 include { GT2TSV as GT2TSV_Network} from '../modules/local/gt2tsv/main'
 include { ADDHEADER               } from '../modules/local/addheader/main'
-include { DIGEST as DIGEST} from '../modules/local/digest/main'
+include { DIGEST                  } from '../modules/local/digest/main'
 
 
 //
@@ -142,6 +142,7 @@ workflow MODULEDISCOVERY {
     }
 
     DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
+    ch_versions = ch_versions.mix(DIGEST.out.versions)
 
     // Collate and save software versions
     softwareVersionsToYAML(ch_versions)

@@ -11,10 +11,18 @@ process DIGEST {
 
     output:
     tuple val(meta), path("${meta.id}"), emit: outdir
-    path "versions.yml",                         emit: versions
+    path "versions.yml", emit: versions
 
     script:
     """
-    digest.py --target_file $target_file  --target_type $target_type   --network $network  --network_type $network_type
+    digest.py --target_file $target_file  --target_type $target_type   --network $network  --network_type $network_type --outdir ${meta.id}
+    
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version | sed 's/Python //g')
+        biodigest: \$(python -c "import biodigest print(biodigest.__version__)")
+    END_VERSIONS
+
     """
+    
 }
