@@ -16,13 +16,11 @@ process DIGEST {
     script:
     """
     digest.py --target_file $target_file  --target_type $target_type   --network $network  --network_type $network_type --outdir ${meta.id}
-    
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
-        biodigest: \$(python -c "import biodigest print(biodigest.__version__)")
+        biodigest: \$(python -c "import digest; print(biodigest.__version__)")
     END_VERSIONS
 
     """
-    
 }
