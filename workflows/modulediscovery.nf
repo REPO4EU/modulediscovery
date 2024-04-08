@@ -122,7 +122,7 @@ workflow MODULEDISCOVERY {
     ch_modules = ch_modules.mix(GT_ROBUST.out.module)
 
 
-    GT_FIRSTNEIGHBOR(ch_seeds, ch_network_gt, 0.8)
+    GT_FIRSTNEIGHBOR(ch_seeds, ch_network_gt, 'fraction', 0.95)
     ch_versions = ch_versions.mix(GT_FIRSTNEIGHBOR.out.versions)
     ch_modules = ch_modules.mix(GT_FIRSTNEIGHBOR.out.module_firstneighbor)
     ch_modules = ch_modules.mix(GT_FIRSTNEIGHBOR.out.module_spd)

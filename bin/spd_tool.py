@@ -26,7 +26,7 @@ def parse_user_arguments(*args, **kwds):
     parser.add_argument("-s", "--subnetwork_file", type=str, required=True, help="Path to file containing the subnetwork (disease module) in graph-tool format")
     parser.add_argument("-n", "--network_file", type=str, required=True, help="Path to file containing the network in graph-tool format")
     parser.add_argument("-o", "--output_file", type=str, required=True, help="Path to output file containing the resulting module in graph-tool format")
-    parser.add_argument("-t", "--cutoff_type", type=str, default="fraction", help="Type of cut-off. Options: fraction, zscore_fraction, spd, spd_mean_distribution_elbow")
+    parser.add_argument("-t", "--type_cutoff", type=str, default="fraction", help="Type of cut-off. Options: fraction, zscore_fraction, spd, spd_mean_distribution_elbow")
     parser.add_argument("-c", "--cutoff", type=float, default=0.95, help="Cut-off threshold")
     args = parser.parse_args()
     return args
@@ -44,13 +44,13 @@ def run(args):
         raise FileNotFoundError(f"Network file not found: {args.network_file}")
 
     # Validate cutoff type
-    valid_cutoff_types = ["fraction", "zscore_fraction", "spd", "spd_mean_distribution_elbow"]
-    if args.cutoff_type not in valid_cutoff_types:
+    valid_type_cutoffs = ["fraction", "zscore_fraction", "spd", "spd_mean_distribution_elbow"]
+    if args.type_cutoff not in valid_type_cutoffs:
         raise ValueError("Invalid input. Please enter one of these: fraction, zscore_fraction, spd, spd_mean_distribution_elbow")
-    print(f"SPD parameters info: type {args.cutoff_type} and value {args.cutoff}")
+    print(f"SPD parameters info: type {args.type_cutoff} and value {args.cutoff}")
 
     # Validate cutoff value
-    if args.cutoff_type != "spd_mean_distribution_elbow" and not (0 <= args.cutoff <= 1):
+    if args.type_cutoff != "spd_mean_distribution_elbow" and not (0 <= args.cutoff <= 1):
         raise ValueError("Cutoff must be a fraction between 0 and 1")
 
     # Read the subnetwork
@@ -80,14 +80,14 @@ def run(args):
     print(f"Max. SPD: {max(spd)}. Min. SPD: {min(spd)}")
 
     # Calculate SPD cut-off based on the fraction of nodes in the SPD distribution
-    if args.cutoff_type == "fraction":
+    if args.type_cutoff == "fraction":
         rank_cutoff = round(len(spd_sorted) * (1 - args.cutoff))
         # If there are multiple ranks with the same SPD, we consider all of them, even if we end up
         # having a fraction of nodes larger than the initially considered
         spd_cutoff = spd_sorted[rank_cutoff - 1]
 
     # Calculate SPD cut-off based on the fraction of nodes in the z-score SPD distribution
-    elif args.cutoff_type == "zscore_fraction":
+    elif args.type_cutoff == "zscore_fraction":
         spd_mean = np.mean(list(spd.a))
         spd_std = np.std(list(spd.a))
         spd_zscore = [(spd_val - spd_mean) / spd_std for spd_val in spd.a]
@@ -99,11 +99,11 @@ def run(args):
             spd_cutoff = 1
 
     # Use SPD cut-off
-    elif args.cutoff_type == "spd":
+    elif args.type_cutoff == "spd":
         spd_cutoff = args.cutoff
 
     # Calculate SPD cut-off based on the elbow of the mean SPD distribution
-    elif args.cutoff_type == "spd_mean_distribution_elbow":
+    elif args.type_cutoff == "spd_mean_distribution_elbow":
         (mean_spd, _) = calculate_mean_spd_distribution(subnetwork, spd, name_to_degree_full)
         spd_rank = list(range(1,len(mean_spd)+1))
         rank_cutoff = find_elbow_point(x = spd_rank,

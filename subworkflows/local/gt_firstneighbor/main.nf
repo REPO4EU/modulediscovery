@@ -9,7 +9,8 @@ workflow GT_FIRSTNEIGHBOR {
     take:                                   // Workflow inputs
     ch_seeds                                // File with seed genes
     ch_network                              // File with network in gt format
-    spd_cutoff                              // SPD network cutoff
+    spd_type_cutoff                         // SPD type cutoff
+    spd_cutoff                              // SPD cutoff value
 
 
     main:
@@ -23,7 +24,8 @@ workflow GT_FIRSTNEIGHBOR {
     SPD(                                                                  // Run DOMINO
         FIRSTNEIGHBOR.out.module.collect(),                               // First input is the firstneighbor output module
         ch_network,                                                       // Second input is the input network
-        spd_cutoff                                                        // Third input is the SPD cut-off
+        spd_type_cutoff,                                                  // Third input is the type of analysis to determine the cut-off
+        spd_cutoff                                                        // Fourth input is the cut-off value
     )
     ch_versions = ch_versions.mix(SPD.out.versions.first())               // Collect versions
 

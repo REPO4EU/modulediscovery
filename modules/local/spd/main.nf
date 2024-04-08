@@ -6,6 +6,7 @@ process SPD {
     input:
     path subnetwork
     path network
+    val type_cutoff
     val cutoff
 
     output:
@@ -17,7 +18,7 @@ process SPD {
 
     script:
     """
-    spd_tool.py -s $subnetwork -n $network -o "${subnetwork.baseName}_spd.gt" -c $cutoff
+    spd_tool.py -s $subnetwork -n $network -o "${subnetwork.baseName}_spd.gt" -t $type_cutoff -c $cutoff
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
