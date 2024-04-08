@@ -11,6 +11,8 @@ include { GRAPHTOOLPARSER         } from '../modules/local/graphtoolparser/main'
 include { GT2TSV as GT2TSV_Modules} from '../modules/local/gt2tsv/main'
 include { GT2TSV as GT2TSV_Network} from '../modules/local/gt2tsv/main'
 include { ADDHEADER               } from '../modules/local/addheader/main'
+include { DIGEST                  } from '../modules/local/digest/main'
+
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -139,10 +141,10 @@ workflow MODULEDISCOVERY {
         ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
     }
 
+    DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
+    ch_versions = ch_versions.mix(DIGEST.out.versions)
 
-    //
     // Collate and save software versions
-    //
     softwareVersionsToYAML(ch_versions)
         .collectFile(storeDir: "${params.outdir}/pipeline_info", name: 'nf_core_pipeline_software_mqc_versions.yml', sort: true, newLine: true)
         .set { ch_collated_versions }
