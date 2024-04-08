@@ -3,13 +3,15 @@ import os
 from argparse import ArgumentParser
 import graph_tool.all as gt
 import numpy as np
+import scipy
 
 
 def main():
     """
     Filters a subnetwork based on the Subnetwork-Participation-Degree (SPD)
-    Execution example:
-    python3 modulediscovery/bin/spd_tool.py -s modulediscovery-analysis/outputs/diamond_seeds/firstneighbor/seeds_diamond.gt -n modulediscovery-analysis/inputs/PPI.gt -o modulediscovery-analysis/outputs/diamond_seeds/firstneighbor/subnetwork_filtered.gt -c 0.8
+    Execution examples:
+    python3 modulediscovery/bin/spd_tool.py -s modulediscovery-analysis/outputs/thyroid_cancer_intogen/firstneighbor/firstneighbor.gt -n modulediscovery-analysis/outputs/thyroid_cancer_intogen/graphtoolparser/nedrex_ppi_genename_20240205_nedrex.gt -o modulediscovery-analysis/outputs/thyroid_cancer_intogen/firstneighbor/firstneighbor_spd.gt -t fraction -c 0.95 
+    python3 modulediscovery/bin/spd_tool.py -s modulediscovery-analysis/outputs/thyroid_cancer_tcga_threshold_200/firstneighbor/firstneighbor.gt -n modulediscovery-analysis/outputs/thyroid_cancer_tcga_threshold_200/graphtoolparser/nedrex_ppi_genename_20240205_nedrex.gt -o modulediscovery-analysis/outputs/thyroid_cancer_tcga_threshold_200/firstneighbor/firstneighbor_spd.gt -t zscore_fraction -c 0.95
     """
     args = parse_user_arguments()
     run(args)
@@ -24,7 +26,8 @@ def parse_user_arguments(*args, **kwds):
     parser.add_argument("-s", "--subnetwork_file", type=str, required=True, help="Path to file containing the subnetwork (disease module) in graph-tool format")
     parser.add_argument("-n", "--network_file", type=str, required=True, help="Path to file containing the network in graph-tool format")
     parser.add_argument("-o", "--output_file", type=str, required=True, help="Path to output file containing the resulting module in graph-tool format")
-    parser.add_argument("-c", "--cutoff", type=float, default=0.8, help="Fraction of the cumulative sum of SPD distribution values to be used as cut-off")
+    parser.add_argument("-t", "--cutoff_type", type=str, default="fraction", help="Type of cut-off. Options: fraction, zscore_fraction, spd, spd_mean_distribution_elbow")
+    parser.add_argument("-c", "--cutoff", type=float, default=0.95, help="Cut-off threshold")
     args = parser.parse_args()
     return args
 
@@ -40,8 +43,14 @@ def run(args):
     if not os.path.exists(args.network_file):
         raise FileNotFoundError(f"Network file not found: {args.network_file}")
 
+    # Validate cutoff type
+    valid_cutoff_types = ["fraction", "zscore_fraction", "spd", "spd_mean_distribution_elbow"]
+    if args.cutoff_type not in valid_cutoff_types:
+        raise ValueError("Invalid input. Please enter one of these: fraction, zscore_fraction, spd, spd_mean_distribution_elbow")
+    print(f"SPD parameters info: type {args.cutoff_type} and value {args.cutoff}")
+
     # Validate cutoff value
-    if not (0 <= args.cutoff <= 1):
+    if args.cutoff_type != "spd_mean_distribution_elbow" and not (0 <= args.cutoff <= 1):
         raise ValueError("Cutoff must be a fraction between 0 and 1")
 
     # Read the subnetwork
@@ -66,49 +75,44 @@ def run(args):
     name_to_degree_sub = create_name_to_degree_map(subnetwork)
 
     # Calculate SPD for each node in the subnetwork
-    spd = calculate_spd_subnetwork(subnetwork, name_to_degree_sub, name_to_degree_full)
+    spd, subnetwork = calculate_spd_subnetwork(subnetwork, name_to_degree_sub, name_to_degree_full)
+    spd_sorted =  sorted(spd.a, reverse=True)
     print(f"Max. SPD: {max(spd)}. Min. SPD: {min(spd)}")
 
-    ## Calculate the SPD average for each subnetwork, starting from the top-ranked nodes
-    # Sort nodes based on SPD from high to low
-    sorted_nodes = sorted(subnetwork.vertices(), key=lambda v: spd[v], reverse=True)
+    # Calculate SPD cut-off based on the fraction of nodes in the SPD distribution
+    if args.cutoff_type == "fraction":
+        rank_cutoff = round(len(spd_sorted) * (1 - args.cutoff))
+        # If there are multiple ranks with the same SPD, we consider all of them, even if we end up
+        # having a fraction of nodes larger than the initially considered
+        spd_cutoff = spd_sorted[rank_cutoff - 1]
 
-    # Initialize variables for the subsubnetworks
-    subsubnetwork_property = subnetwork.new_vertex_property("bool")
-    mean_spd_list = []
-    median_spd_list = []
+    # Calculate SPD cut-off based on the fraction of nodes in the z-score SPD distribution
+    elif args.cutoff_type == "zscore_fraction":
+        spd_mean = np.mean(list(spd.a))
+        spd_std = np.std(list(spd.a))
+        spd_zscore = [(spd_val - spd_mean) / spd_std for spd_val in spd.a]
+        spd_zscore.sort()
+        z_cutoff = scipy.stats.norm.ppf(args.cutoff, loc=np.mean(spd_zscore), scale=np.std(spd_zscore))
+        spd_cutoff = z_cutoff * spd_std + spd_mean
+        if spd_cutoff > 1:
+            print(f"Calculated SPD cut-off higher than 1: {round(spd_cutoff, 3)}. We will use as cut-off a SPD cut-off of 1 instead.")
+            spd_cutoff = 1
 
-    # Iterate, add to subnetwork, recalculate SPD, and calculate mean SPD
-    for v in sorted_nodes:
+    # Use SPD cut-off
+    elif args.cutoff_type == "spd":
+        spd_cutoff = args.cutoff
 
-        # Add node to subsubnetwork
-        subsubnetwork_property[v] = True
+    # Calculate SPD cut-off based on the elbow of the mean SPD distribution
+    elif args.cutoff_type == "spd_mean_distribution_elbow":
+        (mean_spd, _) = calculate_mean_spd_distribution(subnetwork, spd, name_to_degree_full)
+        spd_rank = list(range(1,len(mean_spd)+1))
+        rank_cutoff = find_elbow_point(x = spd_rank,
+                                       y = mean_spd,
+                                       plot=False)
+        print(f"Elbow rank cut-off: {rank_cutoff}")
+        spd_cutoff = spd_sorted[rank_cutoff - 1]
 
-        # Extract the subgraph containing the subsubnetwork nodes
-        subsubnetwork = gt.GraphView(subnetwork, vfilt=subsubnetwork_property)
-        subsubnetwork.purge_vertices()
-
-        # Create name to degree mappings for the subsubnetwork
-        name_to_degree_subsub = create_name_to_degree_map(subsubnetwork)
-
-        # Recalculate SPD for each node in the subsubnetwork
-        subsub_spd = calculate_spd_subnetwork(subsubnetwork, name_to_degree_subsub, name_to_degree_full)
-
-        # Calculate mean SPD so far
-        mean_spd_list.append(np.mean(list(subsub_spd)))
-        median_spd_list.append(np.median(list(subsub_spd)))
-        #print(f"Node ID {v} and name {subsubnetwork.vp["name"][v]}. SPD: {spd[v]}. Num nodes in subnetwork: {subsubnetwork.num_vertices()}. Mean SPD: {np.mean(list(subsub_spd))}. Median SPD: {np.median(list(subsub_spd))}")
-
-    print(mean_spd_list)
-    #print(median_spd_list)
-    print(np.mean(mean_spd_list))
-
-    # Calculate the SPD cutoff
-    sorted_spd = sorted(spd.a, reverse=True)
-    cumulative_spd = np.cumsum(sorted_spd)
-    cutoff_index = np.argmax(cumulative_spd >= cumulative_spd[-1] * args.cutoff)
-    calculated_spd_cutoff = sorted_spd[cutoff_index]
-    print(f"Calculated SPD cut-off: {calculated_spd_cutoff}")
+    print(f"SPD cut-off: {spd_cutoff}")
 
     # Create a property map to store a boolean values indicating whether the node is
     # part of the pruned module or not
@@ -116,7 +120,7 @@ def run(args):
 
     # Mark the nodes based on if they are part of the pruned module or not
     for node in subnetwork.vertices():
-        if spd[node] >= calculated_spd_cutoff:
+        if spd[node] >= spd_cutoff:
             module_property[node] = True
         else:
             module_property[node] = False
@@ -140,16 +144,17 @@ def create_name_to_degree_map(graph):
     Creates a dictionary mapping names to network degrees
     """
     degrees = graph.degree_property_map('total').a
-    names = graph.vp["name"]
+    names = [graph.vp["name"][v] for v in graph.vertices()]
     return dict(zip(names, degrees))
 
 def calculate_spd_subnetwork(subnetwork, name_to_degree_sub, name_to_degree_full):
     """
     Calculates the spd of all the nodes in a subnetwork.
-    Returns the spd in form of graph_tool vertex property.
+    Returns the spd in form of graph_tool vertex property and the subnetwork containing
+    the spd as vertex property.
     """
-
-    spd = subnetwork.new_vertex_property('float')
+    #spd = subnetwork.new_vertex_property('float')
+    subnetwork.vp["spd"] = subnetwork.new_vertex_property('float')
     names = subnetwork.vp["name"]
     full_degrees = np.array([name_to_degree_full.get(name, 0) for name in names])
     sub_degrees = np.array([name_to_degree_sub.get(name, 0) for name in names])
@@ -164,9 +169,101 @@ def calculate_spd_subnetwork(subnetwork, name_to_degree_sub, name_to_degree_full
         raise Exception("ERROR: Node with SPD higher than 1 detected.")
 
     # Assign the values back to the graph-tool property map
-    spd.get_array()[:] = spd_values
+    subnetwork.vp["spd"].get_array()[:] = spd_values
 
-    return spd
+    return subnetwork.vp["spd"], subnetwork
+
+def calculate_mean_spd_distribution(subnetwork, vertex_property_to_sort, name_to_degree_full):
+    """
+    Starting from the nodes with higher SPD or score (given by vertex_property_to_sort),
+    iteratively includes nodes to a subnetwork and calculates the mean SPD for each
+    subnetwork.
+    """
+
+    # Sort nodes based on SPD from high to low
+    sorted_nodes = sorted(subnetwork.vertices(), key=lambda v: vertex_property_to_sort[v], reverse=True)
+
+    # Initialize variables for the subsubnetworks
+    subsubnetwork_property = subnetwork.new_vertex_property("bool")
+    mean_spd_list = []
+    median_spd_list = []
+
+    # Add new node to subnetwork, recalculate SPD, and calculate mean SPD
+    for v in sorted_nodes:
+
+        # Add node to subsubnetwork
+        subsubnetwork_property[v] = True
+
+        # Extract the subgraph containing the subsubnetwork nodes
+        subsubnetwork = gt.GraphView(subnetwork, vfilt=subsubnetwork_property)
+        subsubnetwork.purge_vertices()
+
+        # Create name to degree mappings for the subsubnetwork
+        name_to_degree_subsub = create_name_to_degree_map(subsubnetwork)
+
+        # Recalculate SPD for each node in the subsubnetwork
+        subsub_spd, subsubnetwork = calculate_spd_subnetwork(subsubnetwork, name_to_degree_subsub, name_to_degree_full)
+
+        # Calculate mean SPD so far
+        mean_spd_list.append(np.mean(list(subsub_spd)))
+        median_spd_list.append(np.median(list(subsub_spd)))
+        #print(f"Node ID {v} and name {subsubnetwork.vp["name"][v]}. SPD: {vertex_property_to_sort[v]}. Num nodes in subnetwork: {subsubnetwork.num_vertices()}. Mean SPD: {np.mean(list(subsub_spd))}. Median SPD: {np.median(list(subsub_spd))}")
+
+    return mean_spd_list, median_spd_list
+
+def find_elbow_point(x, y, plot=False):
+    """
+    Find the elbow point in a curve defined by x and y.
+
+    Parameters:
+    - x: A list or array of x values.
+    - y: A list or array of y values.
+    - plot: Boolean, whether to plot the curve and the elbow point.
+
+    Returns:
+    - elbow_index: The index of the elbow point in the x and y arrays.
+    """
+    # Convert lists to numpy arrays if they aren't already
+    x = np.array(x)
+    y = np.array(y)
+
+    # Define the start and end points of the curve
+    start_point = np.array([x[0], y[0]])
+    end_point = np.array([x[-1], y[-1]])
+
+    # Calculate a line vector from start to end
+    line_vec = end_point - start_point
+
+    # Calculate vectors from the start point to each point in the curve
+    point_vecs = np.column_stack((x, y)) - start_point
+
+    # Normalize the line vector to create a unit vector representing the direction of
+    # the line
+    line_unit_vec = line_vec / np.linalg.norm(line_vec)
+
+    # Project each point vector onto the normalized line vector. This projection gives
+    # the distance of each point from the line connecting the start and end points
+    proj_lengths = np.dot(point_vecs, line_unit_vec)
+
+    # Calculate the actual points on the line
+    proj_points = np.outer(proj_lengths, line_unit_vec)
+
+    # Calculate the distance from the points to the line
+    distances = np.linalg.norm(point_vecs - proj_points, axis=1)
+
+    # Find the index of the point with the maximum distance
+    elbow_index = np.argmax(distances)
+
+    if plot:
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots()
+        ax.plot(x, y, label='Curve')
+        ax.scatter(x[elbow_index], y[elbow_index], color='red', label='Elbow Point')
+        ax.legend()
+        plt.show()
+        return elbow_index, fig
+    else:
+        return elbow_index
 
 if __name__ == "__main__":
     main()
