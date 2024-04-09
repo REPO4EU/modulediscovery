@@ -17,7 +17,6 @@ workflow GT_FIRSTNEIGHBOR {
 
     ch_versions = Channel.empty()                                         // For collecting tool versions
 
-
     FIRSTNEIGHBOR(ch_seeds, ch_network)                                   // Run first neighbor
     ch_versions = ch_versions.mix(FIRSTNEIGHBOR.out.versions.first())     // Collect versions
 
@@ -32,6 +31,11 @@ workflow GT_FIRSTNEIGHBOR {
 
     emit:
     module_firstneighbor = FIRSTNEIGHBOR.out.module // channel: [ module ]  emit the module extracted using first neighbors
+        .map{meta, path ->
+            def dup = meta.clone()
+            dup.id = meta.id + ".firstneighbor"
+            [ dup, path ]
+        }
     module_spd = SPD.out.module         // channel: [ module ]              emit the module extracted using SPD refinement
     versions = ch_versions              // channel: [ versions.yml ]        emit collected versions
 }

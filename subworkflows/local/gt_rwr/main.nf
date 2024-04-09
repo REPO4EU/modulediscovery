@@ -24,8 +24,13 @@ workflow GT_RWR {
     RWR(ch_seeds, GRAPHTOOLPARSER.out.network.collect(), scaling, symmetrical, r)      // Run RWR on parsed network
     ch_versions = ch_versions.mix(RWR.out.versions.first())                 // Collect versions
 
-    MODULEPARSER(ch_network, "rwr", RWR.out.module)
-    ch_versions = ch_versions.mix(MODULEPARSER.out.versions.first())
+    ch_module = RWR.out.module                                              // Extract the module
+        .map{meta, path ->
+            def dup = meta.clone()
+            dup.id = meta.id + ".rwr"
+            [ dup, path ]
+        }
+    MODULEPARSER(ch_network, "rwr", ch_module)
 
 
     emit:

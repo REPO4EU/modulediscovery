@@ -1,15 +1,15 @@
 
 process PREFIXLINES {
-    tag "$file"
+    tag "$meta.id"
     label 'process_single'
 
     input:
-    path file
+    tuple val(meta), path(file)
     val prefix
 
 
     output:
-    path "${file.baseName}.prefixed.${file.extension}"
+    tuple val(meta), path("${file.baseName}.prefixed.${file.extension}")
 
     when:
     task.ext.when == null || task.ext.when

@@ -1,11 +1,12 @@
-[![GitHub Actions CI Status](https://github.com/REPO4EU/modulediscovery/workflows/nf-core%20CI/badge.svg)](https://github.com/REPO4EU/modulediscovery/actions?query=workflow%3A%22nf-core+CI%22)
-[![GitHub Actions Linting Status](https://github.com/REPO4EU/modulediscovery/workflows/nf-core%20linting/badge.svg)](https://github.com/REPO4EU/modulediscovery/actions?query=workflow%3A%22nf-core+linting%22)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.XXXXXXX)
+[![GitHub Actions CI Status](https://github.com/REPO4EU/modulediscovery/actions/workflows/ci.yml/badge.svg)](https://github.com/REPO4EU/modulediscovery/actions/workflows/ci.yml)
+[![GitHub Actions Linting Status](https://github.com/REPO4EU/modulediscovery/actions/workflows/linting.yml/badge.svg)](https://github.com/REPO4EU/modulediscovery/actions/workflows/linting.yml)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.XXXXXXX)
+[![nf-test](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)
 
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A523.04.0-23aa62.svg)](https://www.nextflow.io/)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
-[![Launch on Nextflow Tower](https://img.shields.io/badge/Launch%20%F0%9F%9A%80-Nextflow%20Tower-%234256e7)](https://tower.nf/launch?pipeline=https://github.com/REPO4EU/modulediscovery)
+[![Launch on Seqera Platform](https://img.shields.io/badge/Launch%20%F0%9F%9A%80-Seqera%20Platform-%234256e7)](https://tower.nf/launch?pipeline=https://github.com/REPO4EU/modulediscovery)
 
 ## Introduction
 
@@ -42,7 +43,7 @@ conda activate modulediscovery
 
 The pipeline should be run from outside of the code repository since nextflow, by default, will write into the execution directory.
 
-Run with test data (DIAMOnD example data):
+Run with test data:
 
 ```bash
 nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
@@ -68,6 +69,12 @@ Show all parameter options:
 nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
 ```
 
+If you want to contribute to the pipeline, it is useful to set up pre-commit for code linting and quality checks:
+
+```bash
+pre-commit install
+```
+
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
 > see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
@@ -82,9 +89,7 @@ nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
 6. Test checks locally:
    1. Run tests via, e.g., `nextflow run main.nf -profile singularity,test --outdir results`.
    2. Run `nf-core lint`.
-   3. Run `prettier . --check`.
-   4. Run `prettier . --write`.
-   5. Run `black .`
+   3. Check your code style. This will automatically happen before you commit, if you use pre-commit, which can be set up with: `pre-commit install`. After each commit, it will automatically check your code style and fix it where possible. If changes were made, you have to commit again.
 7. Create a pull request against the dev branch.
 
 ### Further information
