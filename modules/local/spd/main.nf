@@ -4,13 +4,13 @@ process SPD {
     container "docker.io/quirinmanz/gt2biopax:0.1.0"
 
     input:
-    path subnetwork
+    tuple val(meta), path(subnetwork)
     path network
     val type_cutoff
     val cutoff
 
     output:
-    path "${subnetwork.baseName}_spd.gt", emit: module
+    tuple val(meta), path("${subnetwork.baseName}_spd.gt"), emit: module
     path "versions.yml", emit: versions
 
     when:
