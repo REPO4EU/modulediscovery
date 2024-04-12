@@ -19,7 +19,7 @@ process DIGEST {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
-        biodigest: \$(python -c "import digest; print(biodigest.__version__)")
+        biodigest: \$(python -c "import biodigest; print(biodigest.__version__)")
     END_VERSIONS
 
     """
