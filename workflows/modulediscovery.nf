@@ -129,7 +129,6 @@ workflow MODULEDISCOVERY {
     ADDHEADER(ch_seeds, "gene_id")
     ch_nodes = GT2TSV_Modules.out
     ch_nodes = ch_nodes.mix(ADDHEADER.out)
-    
     // Evaluation
     if(!params.skip_gprofiler){
 
