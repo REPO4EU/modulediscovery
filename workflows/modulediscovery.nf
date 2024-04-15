@@ -124,14 +124,13 @@ workflow MODULEDISCOVERY {
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
 
+    GT2TSV_Modules(ch_modules)
+    GT2TSV_Network(ch_network_gt.flatten().map{ it -> [ [ id: it.baseName ], it ] })
+    ADDHEADER(ch_seeds, "gene_id")
+    ch_nodes = GT2TSV_Modules.out
+    ch_nodes = ch_nodes.mix(ADDHEADER.out)
     // Evaluation
     if(!params.skip_gprofiler){
-        GT2TSV_Modules(ch_modules)
-        GT2TSV_Network(ch_network_gt.flatten().map{ it -> [ [ id: it.baseName ], it ] })
-        ADDHEADER(ch_seeds, "gene_id")
-
-        ch_nodes = GT2TSV_Modules.out
-        ch_nodes = ch_nodes.mix(ADDHEADER.out)
 
         GPROFILER2_GOST (
             ch_nodes,
@@ -141,8 +140,10 @@ workflow MODULEDISCOVERY {
         ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
     }
 
-    DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
-    ch_versions = ch_versions.mix(DIGEST.out.versions)
+    if(!params.skip_digest){
+        DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
+        ch_versions = ch_versions.mix(DIGEST.out.versions)
+    }
 
     // Collate and save software versions
     softwareVersionsToYAML(ch_versions)

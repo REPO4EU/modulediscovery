@@ -71,6 +71,10 @@
                     "fa_icon": "fas fa-forward",
                     "description": "Flag for skipping DIAMOnD"
                 },
+                "skip_digest": {
+                    "type": "boolean",
+                    "description": "Flag for skipping DIGEST"
+                },
                 "diamond_n": {
                     "type": "integer",
                     "default": 200,
