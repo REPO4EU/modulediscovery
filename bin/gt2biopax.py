@@ -201,12 +201,6 @@ class BioPAXFactory:
                 id="MI:0361",
                 comment="gene associated with disorder",
             ),
-            "drug_has_target.vocab": biopax.UnificationXref(
-                uid="drug_has_target.XREF",
-                db="PSI-MI",
-                id="MI:0361",
-                comment="drug has target",
-            ),
             "drug_has_side_effect.vocab": biopax.UnificationXref(
                 uid="drug_has_side_effect.XREF",
                 db="PSI-MI",
@@ -236,12 +230,6 @@ class BioPAXFactory:
             ),
             # "variant_associated_with_disorder": biopax.RelationshipTypeVocabulary(term = ["variant associated with disorder"], uid = "variant_associated_with_disorder.XREF"),
             # "variant_affects_gene": biopax.RelationshipTypeVocabulary(term = ["variant affects gene"], uid = "variant_affects_gene.XREF"),
-            "drug_has_target": biopax.RelationshipTypeVocabulary(
-                term=["additional information"],
-                comment="drug has target",
-                uid="drug_has_target.vocab",
-                xref=self.entityRefs["drug_has_target.vocab"],
-            ),
             "gene_product": biopax.RelationshipTypeVocabulary(
                 term=["gene product"],
                 uid="gene_product.vocab",
@@ -372,19 +360,6 @@ class BioPAXFactory:
                 ),
             )
         ]
-        if uniprot_id:
-            uniprot_id = uniprot_id.lstrip("uniprot.")
-            uniXRef.append(
-                self.xRefs.setdefault(
-                    uniprot_id + "relation",
-                    biopax.RelationshipXref(
-                        uid=f"{uniprot_id}.RREF",
-                        db="uniprot",
-                        id=uniprot_id,
-                        relationship_type=self.edgeTypes["drug_has_target"],
-                    ),
-                )
-            )
 
         for sideeffect in sideeffects:
             id = sideeffect["id"]
@@ -409,6 +384,11 @@ class BioPAXFactory:
         self.entities[drug_id] = biopax.SmallMolecule(
             uid=drug_id, entity_reference=entityRef, display_name=display_name
         )
+
+        if uniprot_id:
+            uniprot_id = uniprot_id.lstrip("uniprot.")
+            print(uniprot_id, drug_id)
+            self.add_drug_protein_interaction(uniprot_id, drug_id)
 
     def add_protein_info(
         self, proteins, protein2gene, protein2go, uniprot_ids=True, gene2prot=None
@@ -515,6 +495,15 @@ class BioPAXFactory:
             uid=interaction_id,
             participant=[self.entities[uniprot_id1], self.entities[uniprot_id2]],
             display_name=[f"{uniprot_id1} {uniprot_id2}"],
+        )
+
+    def add_drug_protein_interaction(self, uniprot_id, drug_id):
+        interaction_id = f"{drug_id}_{uniprot_id}"
+        self.entities[interaction_id] = biopax.MolecularInteraction(
+            uid=interaction_id,
+            participant=[self.entities[drug_id], self.entities[uniprot_id]],
+            display_name=[f"{drug_id} {uniprot_id}"],
+            comment="drug has target",
         )
 
     def add_gene(self, entrez_id, gene, associated_disorders=None):
