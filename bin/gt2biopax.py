@@ -349,14 +349,15 @@ class BioPAXFactory:
 
     def add_drug(self, drug, uniprot_id, display_name, sideeffects):
         drug_id = drug["id"]
+        # split drug_id by "." into db and id
+        this_db, this_id = drug_id.split(".")
         uniXRef = [
             self.xRefs.setdefault(
                 drug_id,
                 biopax.UnificationXref(
-                    # remove drugbank.DB prefix from id
                     uid=f"{drug_id}.XREF",
-                    db=drug["dataSources"],
-                    id=drug_id.replace("drugbank.DB", ""),
+                    db=this_db,
+                    id=this_id,
                 ),
             )
         ]
