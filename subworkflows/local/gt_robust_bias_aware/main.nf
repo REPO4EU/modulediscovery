@@ -2,6 +2,7 @@
 // Prepares the input for ROBUST_BIAS_AWARE and runs the tool
 //
 
+include { GRAPHTOOLPARSER   } from '../../../modules/local/graphtoolparser/main'
 include { ROBUSTBIASAWARE } from '../../../modules/local/robust_bias_aware/main'
 include { MODULEPARSER      } from '../../../modules/local/moduleparser/main'
 
@@ -15,8 +16,11 @@ workflow GT_ROBUSTBIASAWARE {
 
     ch_versions = Channel.empty()
 
+    GRAPHTOOLPARSER(ch_network, "robust")
+    ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
+
     def idspaceUpper = idspace.toUpperCase()
-    ROBUSTBIASAWARE(ch_seeds, idspaceUpper)
+    ROBUSTBIASAWARE(ch_seeds, idspaceUpper, GRAPHTOOLPARSER.out.network.collect())
     ch_versions = ch_versions.mix(ROBUSTBIASAWARE.out.versions.first())
 
     ch_module = ROBUSTBIASAWARE.out.module

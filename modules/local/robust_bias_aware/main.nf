@@ -6,6 +6,7 @@ process ROBUSTBIASAWARE {
     input:
     tuple val(meta), path(seeds)
     val idspace
+    path network
 
     output:
     tuple val(meta), path("${seeds.baseName}.graphml")  , emit: module
@@ -13,8 +14,10 @@ process ROBUSTBIASAWARE {
     when:
     task.ext.when == null || task.ext.when
     script:
+    def args = task.ext.args ?: ''          // Get possible alpha, beta, n, and tau arguments for robust, see TODO above
+
     """
-    robust-bias-aware --seeds $seeds --outfile "${seeds.baseName}.graphml" --namespace $idspace
+    robust-bias-aware --seeds $seeds --outfile "${seeds.baseName}.graphml" --namespace $idspace --network $network  $args
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
