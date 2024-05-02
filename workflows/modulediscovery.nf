@@ -107,9 +107,11 @@ workflow MODULEDISCOVERY {
         ch_modules = ch_modules.mix(GT_ROBUST.out.module)
     }
 
-    GT_ROBUSTBIASAWARE(ch_seeds, ch_network_gt, id_space)
-    ch_versions = ch_versions.mix(GT_ROBUSTBIASAWARE.out.versions)
-    ch_modules = ch_modules.mix(GT_ROBUSTBIASAWARE.out.module)
+    if(!params.skip_robust_bias_aware){
+        GT_ROBUSTBIASAWARE(ch_seeds, ch_network_gt, id_space)
+        ch_versions = ch_versions.mix(GT_ROBUSTBIASAWARE.out.versions)
+        ch_modules = ch_modules.mix(GT_ROBUSTBIASAWARE.out.module)
+    }
 
     if(!params.skip_firstneighbor){
         GT_FIRSTNEIGHBOR(ch_seeds, ch_network_gt)
