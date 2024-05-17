@@ -5,9 +5,9 @@
         "https://github.com/nf-core/modules.git": {
             "modules": {
                 "nf-core": {
-                    "fastqc": {
+                    "gprofiler2/gost": {
                         "branch": "master",
-                        "git_sha": "285a50500f9e02578d90b3ce6382ea3c30216acd",
+                        "git_sha": "c75e76bff35e2ee5305ebe89b513637b38e79d1d",
                         "installed_by": ["modules"]
                     },
                     "multiqc": {

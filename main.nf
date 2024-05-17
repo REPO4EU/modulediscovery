@@ -30,20 +30,27 @@ include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_modu
 //
 workflow REPO4EU_MODULEDISCOVERY {
 
-    take:
-    samplesheet // channel: samplesheet read in from --input
-
     main:
+
+    ch_versions = Channel.empty()
 
     //
     // WORKFLOW: Run pipeline
     //
+    ch_seeds = Channel
+        .fromPath(params.input.split(',').flatten(), checkIfExists: true)
+        .map{ it -> [ [ id: it.baseName ], it ] }
+    ch_network = Channel.fromPath(params.network, checkIfExists: true).first()
+
     MODULEDISCOVERY (
-        samplesheet
+        ch_seeds,
+        ch_network
     )
+    ch_versions = ch_versions.mix(MODULEDISCOVERY.out.versions)
 
     emit:
     multiqc_report = MODULEDISCOVERY.out.multiqc_report // channel: /path/to/multiqc_report.html
+    versions       = ch_versions                        // channel: [version1, version2, ...]
 
 }
 /*
@@ -66,15 +73,12 @@ workflow {
         params.monochrome_logs,
         args,
         params.outdir,
-        params.input
     )
 
     //
     // WORKFLOW: Run main workflow
     //
-    REPO4EU_MODULEDISCOVERY (
-        PIPELINE_INITIALISATION.out.samplesheet
-    )
+    REPO4EU_MODULEDISCOVERY ()
 
     //
     // SUBWORKFLOW: Run completion tasks

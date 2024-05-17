@@ -1,10 +1,41 @@
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
+    IMPORT LOCAL MODULES/SUBWORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { FASTQC                 } from '../modules/nf-core/fastqc/main'
+//
+// MODULE: Loaded from modules/local/
+//
+include { GRAPHTOOLPARSER         } from '../modules/local/graphtoolparser/main'
+include { GT2TSV as GT2TSV_Modules} from '../modules/local/gt2tsv/main'
+include { GT2TSV as GT2TSV_Network} from '../modules/local/gt2tsv/main'
+include { ADDHEADER               } from '../modules/local/addheader/main'
+include { DIGEST                  } from '../modules/local/digest/main'
+
+
+//
+// SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
+//
+include { GT_DIAMOND        } from '../subworkflows/local/gt_diamond'
+include { GT_DOMINO         } from '../subworkflows/local/gt_domino'
+include { GT_ROBUST         } from '../subworkflows/local/gt_robust'
+include { GT_ROBUSTBIASAWARE } from '../subworkflows/local/gt_robust_bias_aware'
+include { GT_FIRSTNEIGHBOR  } from '../subworkflows/local/gt_firstneighbor'
+include { GT_RWR            } from '../subworkflows/local/gt_rwr'
+
+include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    IMPORT NF-CORE MODULES/SUBWORKFLOWS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+//
+// MODULE: Installed directly from nf-core/modules
+//                                                //Evaluation
+include { GPROFILER2_GOST        } from '../modules/nf-core/gprofiler2/gost/main'
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -19,26 +50,109 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_modu
 
 workflow MODULEDISCOVERY {
 
+
     take:
-    ch_samplesheet // channel: samplesheet read in from --input
+    ch_seeds // channel: samplesheet read in from --input
+    ch_network // channel: network file read in from --network
 
     main:
 
+    // Params
+    diamond_n = Channel.value(params.diamond_n)
+    diamond_alpha = Channel.value(params.diamond_alpha)
+
+    rwr_scaling = Channel.value(params.rwr_scaling).map{it ? 1 : 0}
+    rwr_symmetrical = Channel.value(params.rwr_symmetrical).map{it ? 1 : 0}
+    rwr_r = Channel.value(params.rwr_r)
+
+    id_space = Channel.value(params.id_space)
+    validate_online = Channel.value(params.validate_online)
+
+    // Channels
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
+    ch_modules = Channel.empty()
 
-    //
-    // MODULE: Run FastQC
-    //
-    FASTQC (
-        ch_samplesheet
-    )
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]})
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
 
-    //
+    // Brach channel, so, GRAPHTOOLPARSER runs only for supported network formats, which are not already .gt files
+    ch_network_type = ch_network.branch {
+        gt: it.extension == "gt"
+        parse: true
+    }
+
+    // Run network parser for non .gt networks, supported by graph-tool
+    GRAPHTOOLPARSER(ch_network_type.parse, 'gt')
+    ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
+
+    // Mix into one .gt format channel
+    ch_network_gt = GRAPHTOOLPARSER.out.network.collect().mix(ch_network_type.gt).first()
+
+
+    // Network expansion tools
+    if(!params.skip_diamond){
+        GT_DIAMOND(ch_seeds, ch_network_gt, diamond_n, diamond_alpha)
+        ch_versions = ch_versions.mix(GT_DIAMOND.out.versions)
+        ch_modules = ch_modules.mix(GT_DIAMOND.out.module)
+    }
+
+    if(!params.skip_domino){
+        GT_DOMINO(ch_seeds, ch_network_gt)
+        ch_versions = ch_versions.mix(GT_DOMINO.out.versions)
+        ch_modules = ch_modules.mix(GT_DOMINO.out.module)
+    }
+
+    if(!params.skip_robust){
+        GT_ROBUST(ch_seeds, ch_network_gt)
+        ch_versions = ch_versions.mix(GT_ROBUST.out.versions)
+        ch_modules = ch_modules.mix(GT_ROBUST.out.module)
+    }
+
+    if(!params.skip_robust_bias_aware){
+        GT_ROBUSTBIASAWARE(ch_seeds, ch_network_gt, id_space)
+        ch_versions = ch_versions.mix(GT_ROBUSTBIASAWARE.out.versions)
+        ch_modules = ch_modules.mix(GT_ROBUSTBIASAWARE.out.module)
+    }
+
+    if(!params.skip_firstneighbor){
+        GT_FIRSTNEIGHBOR(ch_seeds, ch_network_gt)
+        ch_versions = ch_versions.mix(GT_FIRSTNEIGHBOR.out.versions)
+        ch_modules = ch_modules.mix(GT_FIRSTNEIGHBOR.out.module)
+    }
+
+    if(!params.skip_rwr){
+        GT_RWR(ch_seeds, ch_network_gt, rwr_scaling, rwr_symmetrical, rwr_r)
+        ch_versions = ch_versions.mix(GT_RWR.out.versions)
+        ch_modules = ch_modules.mix(GT_RWR.out.module)
+    }
+
+    // Annotation and BIOPAX conversion
+    if(!params.skip_annotation){
+        GT_BIOPAX(ch_modules, id_space, validate_online)
+        ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
+    }
+
+    GT2TSV_Modules(ch_modules)
+    GT2TSV_Network(ch_network_gt.flatten().map{ it -> [ [ id: it.baseName ], it ] })
+    ADDHEADER(ch_seeds, "gene_id")
+    ch_nodes = GT2TSV_Modules.out
+    ch_nodes = ch_nodes.mix(ADDHEADER.out)
+    // Evaluation
+    if(!params.skip_gprofiler){
+
+        GPROFILER2_GOST (
+            ch_nodes,
+            [],
+            GT2TSV_Network.out.map{it[1]}.first()
+        )
+        ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
+    }
+
+    if(!params.skip_digest){
+        DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
+        ch_versions = ch_versions.mix(DIGEST.out.versions)
+    }
+
     // Collate and save software versions
-    //
     softwareVersionsToYAML(ch_versions)
         .collectFile(
             storeDir: "${params.outdir}/pipeline_info",

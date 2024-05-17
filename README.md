@@ -22,44 +22,80 @@
      workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
 <!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
 
-1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
-
 ## Usage
 
 > [!NOTE]
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
 
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
+Clone the repository:
 
-First, prepare a samplesheet with your input data that looks as follows:
-
-`samplesheet.csv`:
-
-```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
+```bash
+git clone https://github.com/REPO4EU/modulediscovery.git
+cd modulediscovery
 ```
 
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
+Install required software e.g. via conda (docker not included):
 
--->
+```bash
+conda env create -n modulediscovery -f environment.yaml
+conda activate modulediscovery
+```
+
+The pipeline should be run from outside of the code repository since nextflow, by default, will write into the execution directory.
+
+Run with test data:
+
+```bash
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
+   -profile <docker/singularity>,test \
+   --outdir <OUTDIR>
+```
 
 Now, you can run the pipeline using:
 
 <!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
 
 ```bash
-nextflow run REPO4EU/modulediscovery \
-   -profile <docker/singularity/.../institute> \
-   --input samplesheet.csv \
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
+   -profile <docker/singularity> \
+   --input <seed_file> \
+   --network <network_file> \
    --outdir <OUTDIR>
+```
+
+Show all parameter options:
+
+```bash
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
+```
+
+If you want to contribute to the pipeline, it is useful to set up pre-commit for code linting and quality checks:
+
+```bash
+pre-commit install
 ```
 
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
 > see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
+
+## Including a new active module detection tool
+
+1. Create a new branch for your tool.
+2. Add a function to the bin/graph_tool_parser.py script for preparing the tool-specific network input format. The script is built around the [graph-tool](https://graph-tool.skewed.de/) Python package. An example is the safe_diamond() function, which saves a simple edge list in CSV format. Add the function as an option in the save() function and a command line option for `--format` in parse_args(). The output file name has to include the option specified with `--format` since nextflow uses this pattern to check whether the output file was successfully generated. The script expects a .gt file as input. Run the pipeline with the "test" profile to generate a .gt example file in `<OUTDIR>/graphtoolparser`, which you can use to test the parsing function by executing the parsing script directly via the command line.
+3. Create a module for the tool. (Example with comments: `modules/local/diamond/main.nf` and `modules/local/domino/`)
+4. Create a subworkflow wrapping the tool together with the input parser. (Example with comments: `subworkflows/local/gt_diamond/main.nf` and `subworkflows/local/gt_domino/main.nf`)
+5. Include the subworkflow in the `workflows/modulediscovery.nf` file. Again, DIAMOnD and DOMINO are included as examples.
+6. Test checks locally:
+   1. Run tests via, e.g., `nextflow run main.nf -profile singularity,test --outdir results`.
+   2. Run `nf-core lint`.
+   3. Check your code style. This will automatically happen before you commit, if you use pre-commit, which can be set up with: `pre-commit install`. After each commit, it will automatically check your code style and fix it where possible. If changes were made, you have to commit again.
+7. Create a pull request against the dev branch.
+
+### Further information
+
+- [FAQ sheet](https://docs.google.com/document/d/1WgBIFrrcxFKN0I-zJbuS7PUCmyCLPTWx6xAHg1zi4FA/edit?usp=sharing)
+- [Workflow schema](https://docs.google.com/drawings/d/1X7U79dAZaeRdGdIsXoEKw74MNqjxCHq3RuNASBYCiB4/edit?usp=sharing)
 
 ## Credits
 

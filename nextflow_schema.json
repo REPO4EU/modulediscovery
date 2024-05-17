@@ -10,18 +10,19 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["input", "outdir"],
+            "required": ["input", "network", "outdir"],
             "properties": {
                 "input": {
                     "type": "string",
+                    "description": "Seed gene files (comma separated paths)",
+                    "help_text": "Multiple paths to seed gene files separated by commas. Each file must have one line per gene."
+                },
+                "network": {
+                    "type": "string",
+                    "description": "Path to a PPI network in gt, csv, graphml, xml, dot, or gml format.",
                     "format": "file-path",
-                    "exists": true,
-                    "schema": "assets/schema_input.json",
-                    "mimetype": "text/csv",
-                    "pattern": "^\\S+\\.csv$",
-                    "description": "Path to comma-separated file containing information about the samples in the experiment.",
-                    "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row.",
-                    "fa_icon": "fas fa-file-csv"
+                    "fa_icon": "fas fa-file-csv",
+                    "pattern": "^\\S+.[csv|gt|graphml|xml|dot|gml]$"
                 },
                 "outdir": {
                     "type": "string",
@@ -40,6 +41,115 @@
                     "type": "string",
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
                     "fa_icon": "fas fa-file-signature"
+                }
+            }
+        },
+        "network_expansion": {
+            "title": "Network expansion",
+            "type": "object",
+            "description": "Parameters for the network expansion algorithms.",
+            "default": "",
+            "fa_icon": "fas fa-project-diagram",
+            "properties": {
+                "skip_firstneighbor": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Flag for skipping first neighbor"
+                },
+                "skip_domino": {
+                    "type": "boolean",
+                    "description": "Flag for skipping DOMINO",
+                    "fa_icon": "fas fa-forward"
+                },
+                "skip_robust": {
+                    "type": "boolean",
+                    "description": "Flag for skipping Robust",
+                    "fa_icon": "fas fa-forward"
+                },
+                "skip_robust_bias_aware": {
+                    "type": "boolean",
+                    "description": "Flag for skipping Robust-bias-aware",
+                    "fa_icon": "fas fa-forward"
+                },
+                "skip_diamond": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Flag for skipping DIAMOnD"
+                },
+                "skip_digest": {
+                    "type": "boolean",
+                    "description": "Flag for skipping DIGEST",
+                    "fa_icon": "fas fa-forward"
+                },
+                "diamond_n": {
+                    "type": "integer",
+                    "default": 200,
+                    "description": "Desired number of DIAMOnD genes.",
+                    "fa_icon": "far fa-gem"
+                },
+                "diamond_alpha": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "Weight of the seeds.",
+                    "fa_icon": "far fa-gem"
+                },
+                "skip_rwr": {
+                    "type": "boolean",
+                    "description": "Flag for skipping random walk with restart",
+                    "fa_icon": "fas fa-forward"
+                },
+                "rwr_scaling": {
+                    "type": "boolean",
+                    "description": "Add a scaling depending on the node's degree."
+                },
+                "rwr_symmetrical": {
+                    "type": "boolean",
+                    "description": "Compute the symmetric instead of column-wise normalized Markov matrix."
+                },
+                "rwr_r": {
+                    "type": "number",
+                    "description": "Damping factor/restart probability.",
+                    "default": 0.8,
+                    "minimum": 0,
+                    "maximum": 1
+                }
+            }
+        },
+        "annotation": {
+            "title": "Annotation",
+            "type": "object",
+            "description": "Set parameter regarding the annotation.",
+            "default": "",
+            "properties": {
+                "skip_annotation": {
+                    "type": "boolean",
+                    "description": "Flag for skipping the annotation part of the process."
+                },
+                "id_space": {
+                    "type": "string",
+                    "enum": ["entrez", "uniprot"],
+                    "default": "entrez",
+                    "description": "Either give graph with enter ids or uniprot ids."
+                },
+                "validate_online": {
+                    "type": "boolean",
+                    "help_text": "Flag for running the BioPAX validator client, i.e. validating at the baderlab server. If \"false\" will load OBO files locally, which can take some time but is recommended for files > 100Mb.",
+                    "description": "Flag for validating online at baderlab.org."
+                }
+            },
+            "fa_icon": "far fa-edit"
+        },
+        "evaluation": {
+            "title": "Evaluation",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "fa_icon": "fas fa-search",
+            "properties": {
+                "skip_gprofiler": {
+                    "type": "boolean",
+                    "description": "Flag for skipping g:Profiler",
+                    "fa_icon": "fas fa-forward"
                 }
             }
         },
@@ -248,6 +358,15 @@
     "allOf": [
         {
             "$ref": "#/definitions/input_output_options"
+        },
+        {
+            "$ref": "#/definitions/network_expansion"
+        },
+        {
+            "$ref": "#/definitions/annotation"
+        },
+        {
+            "$ref": "#/definitions/evaluation"
         },
         {
             "$ref": "#/definitions/institutional_config_options"
