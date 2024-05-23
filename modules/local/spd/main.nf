@@ -6,8 +6,6 @@ process SPD {
     input:
     tuple val(meta), path(subnetwork)
     path network
-    val type_cutoff
-    val cutoff
 
     output:
     tuple val(meta), path("${subnetwork.baseName}_spd.gt"), emit: module
@@ -18,7 +16,7 @@ process SPD {
 
     script:
     """
-    spd_tool.py -s $subnetwork -n $network -o "${subnetwork.baseName}_spd.gt" -t $type_cutoff -c $cutoff
+    spd_annotation_tool.py -s $subnetwork -n $network -o "${subnetwork.baseName}_spd.gt"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
