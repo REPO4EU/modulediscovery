@@ -23,6 +23,7 @@ include { GT_ROBUST         } from '../subworkflows/local/gt_robust'
 include { GT_FIRSTNEIGHBOR  } from '../subworkflows/local/gt_firstneighbor'
 include { GT_RWR            } from '../subworkflows/local/gt_rwr'
 
+include { GT_SPD  } from '../subworkflows/local/gt_spd'
 include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
 
 /*
@@ -107,10 +108,9 @@ workflow MODULEDISCOVERY {
     }
 
     if(!params.skip_firstneighbor){
-        GT_FIRSTNEIGHBOR(ch_seeds, ch_network_gt, 'fraction', 0.95)
+        GT_FIRSTNEIGHBOR(ch_seeds, ch_network_gt)
         ch_versions = ch_versions.mix(GT_FIRSTNEIGHBOR.out.versions)
         ch_modules = ch_modules.mix(GT_FIRSTNEIGHBOR.out.module)
-        ch_modules = ch_modules.mix(GT_FIRSTNEIGHBOR.out.module_spd)
     }
 
     if(!params.skip_rwr){
@@ -121,6 +121,9 @@ workflow MODULEDISCOVERY {
 
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
+        GT_SPD(ch_modules, ch_network_gt)
+        ch_modules = ch_modules.mix(GT_SPD.out.module)
+        ch_versions = ch_versions.mix(GT_SPD.out.versions)
         GT_BIOPAX(ch_modules, id_space, validate_online)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
