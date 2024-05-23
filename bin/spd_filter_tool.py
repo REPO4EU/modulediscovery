@@ -10,8 +10,8 @@ def main():
     """
     Filters a subnetwork based on the Subnetwork-Participation-Degree (SPD)
     Execution examples:
-    python3 modulediscovery/bin/spd_tool.py -s modulediscovery-analysis/outputs/thyroid_cancer_intogen/firstneighbor/firstneighbor.gt -n modulediscovery-analysis/outputs/thyroid_cancer_intogen/graphtoolparser/nedrex_ppi_genename_20240205_nedrex.gt -o modulediscovery-analysis/outputs/thyroid_cancer_intogen/firstneighbor/firstneighbor_spd.gt -t fraction -c 0.95
-    python3 modulediscovery/bin/spd_tool.py -s modulediscovery-analysis/outputs/thyroid_cancer_tcga_threshold_200/firstneighbor/firstneighbor.gt -n modulediscovery-analysis/outputs/thyroid_cancer_tcga_threshold_200/graphtoolparser/nedrex_ppi_genename_20240205_nedrex.gt -o modulediscovery-analysis/outputs/thyroid_cancer_tcga_threshold_200/firstneighbor/firstneighbor_spd.gt -t zscore_fraction -c 0.95
+    python3 modulediscovery/bin/spd_filter_tool.py -s modulediscovery-analysis/outputs/thyroid_cancer_intogen/firstneighbor/firstneighbor.gt -n modulediscovery-analysis/outputs/thyroid_cancer_intogen/graphtoolparser/nedrex_ppi_genename_20240205_nedrex.gt -o modulediscovery-analysis/outputs/thyroid_cancer_intogen/firstneighbor/firstneighbor_spd.gt -t fraction -c 0.95
+    python3 modulediscovery/bin/spd_filter_tool.py -s modulediscovery-analysis/outputs/thyroid_cancer_tcga_threshold_200/firstneighbor/firstneighbor.gt -n modulediscovery-analysis/outputs/thyroid_cancer_tcga_threshold_200/graphtoolparser/nedrex_ppi_genename_20240205_nedrex.gt -o modulediscovery-analysis/outputs/thyroid_cancer_tcga_threshold_200/firstneighbor/firstneighbor_spd.gt -t zscore_fraction -c 0.95
     """
     args = parse_user_arguments()
     run(args)
