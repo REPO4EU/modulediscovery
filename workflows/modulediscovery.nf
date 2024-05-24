@@ -19,6 +19,7 @@ include { DIGEST                  } from '../modules/local/digest/main'
 //
 include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
 include { NETWORKEXPANSION  } from '../subworkflows/local/networkexpansion/main'
+include { PERMUTATION       } from '../subworkflows/local/permutation/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,6 +79,11 @@ workflow MODULEDISCOVERY {
     NETWORKEXPANSION(ch_seeds, ch_network_gt)
     ch_modules = NETWORKEXPANSION.out.modules
     ch_versions = ch_versions.mix(NETWORKEXPANSION.out.versions)
+
+    // Permutation based evaluation
+    PERMUTATION(ch_seeds, ch_modules, ch_network_gt)
+    ch_versions = ch_versions.mix(PERMUTATION.out.versions)
+
 
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
