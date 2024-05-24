@@ -105,9 +105,7 @@ def mark_seeds(g, seeds, property="is_seed"):
     Marks the seed genes in a Graph via a vertex property.
     """
     g.vp[property] = g.new_vertex_property("bool")
-    for v in g.get_vertices():
-        if g.vp["name"][v] in seeds:
-            g.vp[property][v] = True
+    gt.map_property_values(g.vp.name, g.vp[property], lambda name: name in seeds)
     return g
 
 

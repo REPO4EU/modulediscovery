@@ -83,6 +83,10 @@ def run(args):
         else:
             module_property[node] = False
 
+    # Mark the seed genes
+    g.vp["is_seed"] = g.new_vertex_property("bool")
+    gt.map_property_values(g.vp.name, g.vp["is_seed"], lambda name: name in seeds)
+
     # Extract the subgraph containing the module nodes
     subgraph = gt.GraphView(g, vfilt=module_property)
 
