@@ -24,9 +24,7 @@ workflow GT_DIAMOND {
     DIAMOND(ch_seeds, GRAPHTOOLPARSER.out.network.collect(), n, alpha)      // Run diamond on parsed network
     ch_versions = ch_versions.mix(DIAMOND.out.versions.first())
 
-    ch_module = DIAMOND.out.module                                          // Extract the module
-
-    ch_module_seeds = ch_module
+    ch_module_seeds = DIAMOND.out.module                                          // Extract the module
         .join(ch_seeds, failOnMismatch: true, failOnDuplicate: true)        // Join with seed files
         .map{meta, module, seeds ->                                         // Adjust id
             def dup = meta.clone()
