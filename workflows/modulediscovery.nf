@@ -12,6 +12,7 @@ include { GT2TSV as GT2TSV_Modules} from '../modules/local/gt2tsv/main'
 include { GT2TSV as GT2TSV_Network} from '../modules/local/gt2tsv/main'
 include { ADDHEADER               } from '../modules/local/addheader/main'
 include { DIGEST                  } from '../modules/local/digest/main'
+include { CALCULATEDISTANCE       } from '../modules/local/calculatedistance/main'
 
 
 //
