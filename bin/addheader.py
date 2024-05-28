@@ -12,6 +12,9 @@ def add_header(input_file, header, output_file):
     if not content.startswith(header):
         with open(output_file, "w") as output:
             output.write(f"{header}\n{content}")
+    else:
+        with open(output_file, "w") as output:
+            output.write(f"{content}")
 
 
 if __name__ == "__main__":
