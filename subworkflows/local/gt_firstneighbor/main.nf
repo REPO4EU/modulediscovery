@@ -16,7 +16,7 @@ workflow GT_FIRSTNEIGHBOR {
     FIRSTNEIGHBOR(ch_seeds, ch_network)                                   // Run first neighbor
     ch_versions = ch_versions.mix(FIRSTNEIGHBOR.out.versions.first())     // Collect versions
 
-    module_firstneighbor = FIRSTNEIGHBOR.out.module                       // Extract the module
+    ch_module = FIRSTNEIGHBOR.out.module                       // Extract the module
         .map{meta, path ->
             def dup = meta.clone()
             dup.id = meta.id + ".firstneighbor"
