@@ -9,7 +9,7 @@ process SPD {
     path network
 
     output:
-    tuple val(meta), path("${subnetwork.baseName}_spd.gt"), emit: module
+    tuple val(meta), path("${meta.id}.spd.gt"), emit: module
     path "versions.yml", emit: versions
 
     when:
