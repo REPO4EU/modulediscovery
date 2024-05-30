@@ -104,9 +104,8 @@ def create_name_to_degree_map(graph):
     """
     Creates a dictionary mapping names to network degrees
     """
-    degrees = graph.degree_property_map("total").a
-    names = [graph.vp["name"][v] for v in graph.vertices()]
-    return dict(zip(names, degrees))
+    name_to_degree = {graph.vp["name"][v]: v.out_degree() for v in graph.vertices()}
+    return name_to_degree
 
 
 def calculate_spd_subnetwork(subnetwork, name_to_degree_sub, name_to_degree_full):
@@ -115,7 +114,6 @@ def calculate_spd_subnetwork(subnetwork, name_to_degree_sub, name_to_degree_full
     Returns the spd in form of graph_tool vertex property and the subnetwork containing
     the spd as vertex property.
     """
-    # spd = subnetwork.new_vertex_property('float')
     subnetwork.vp["spd"] = subnetwork.new_vertex_property("float")
     names = subnetwork.vp["name"]
     full_degrees = np.array([name_to_degree_full.get(name, 0) for name in names])
