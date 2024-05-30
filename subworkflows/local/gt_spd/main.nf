@@ -17,7 +17,7 @@ workflow GT_SPD {
     )
     ch_versions = ch_versions.mix(SPD.out.versions)                       // Collect versions
 
-    module_spd = SPD.out.module                                           // Extract the modules with SPD annotations
+    ch_module_spd = SPD.out.module                                           // Extract the modules with SPD annotations
         .map{meta, path ->
             def dup = meta.clone()
             dup.id = meta.id + ".spd"
