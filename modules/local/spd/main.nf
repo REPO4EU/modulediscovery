@@ -1,5 +1,5 @@
 process SPD {
-    tag "$meta.id"  
+    tag "$meta.id"
     label 'process_single'
 
     container "docker.io/quirinmanz/gt2biopax:0.1.0"
