@@ -25,6 +25,6 @@ workflow GT_SPD {
         }
 
     emit:
-    module   = module_spd               // channel: [ module ]              emit the module containing SPD annotations
+    module   = ch_module_spd               // channel: [ module ]              emit the module containing SPD annotations
     versions = ch_versions              // channel: [ versions.yml ]        emit collected versions
 }
