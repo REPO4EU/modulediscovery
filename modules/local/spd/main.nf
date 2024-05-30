@@ -17,7 +17,7 @@ process SPD {
 
     script:
     """
-    spd_annotation_tool.py -s $subnetwork -n $network -o "${subnetwork.baseName}_spd.gt"
+    spd_annotation_tool.py -s $subnetwork -n $network -o ""${meta.id}.spd.gt""
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
