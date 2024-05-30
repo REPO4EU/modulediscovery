@@ -24,6 +24,6 @@ workflow GT_FIRSTNEIGHBOR {
         }
 
     emit:
-    module = module_firstneighbor // channel: [ module ]              emit the module extracted using first neighbors
+    module = ch_module // channel: [ module ]              emit the module extracted using first neighbors
     versions = ch_versions        // channel: [ versions.yml ]        emit collected versions
 }
