@@ -61,7 +61,6 @@ def run(args):
     subnetwork = gt.load_graph(str(args.subnetwork_file))
 
     # Purge vertices without interactions
-    subnetwork.purge_vertices()
     print(
         f"Subnetwork info: {subnetwork.num_vertices()} nodes and {subnetwork.num_edges()} edges"
     )
@@ -115,21 +114,15 @@ def calculate_spd_subnetwork(subnetwork, name_to_degree_sub, name_to_degree_full
     the spd as vertex property.
     """
     subnetwork.vp["spd"] = subnetwork.new_vertex_property("float")
-    names = subnetwork.vp["name"]
-    full_degrees = np.array([name_to_degree_full.get(name, 0) for name in names])
-    sub_degrees = np.array([name_to_degree_sub.get(name, 0) for name in names])
-
-    # Avoid division by zero and calculate SPD
-    with np.errstate(divide="ignore", invalid="ignore"):
-        spd_values = np.true_divide(sub_degrees, full_degrees)
-        spd_values[full_degrees == 0] = 0  # Set SPD to 0 where full_degree is 0
+    for v in subnetwork.vertices():
+        name = subnetwork.vp["name"][v]
+        full_degree = name_to_degree_full.get(name, 0)
+        sub_degree = name_to_degree_sub.get(name, 0)
+        subnetwork.vp["spd"][v] = sub_degree / full_degree if full_degree > 0 else 0
 
     # Check for SPD values greater than 1
-    if np.any(spd_values > 1):
+    if np.any(subnetwork.vp["spd"].a > 1):
         raise Exception("ERROR: Node with SPD higher than 1 detected.")
-
-    # Assign the values back to the graph-tool property map
-    subnetwork.vp["spd"].get_array()[:] = spd_values
 
     return subnetwork.vp["spd"], subnetwork
 
