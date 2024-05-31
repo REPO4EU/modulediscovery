@@ -38,6 +38,7 @@ workflow GT_DOMINO {                        // Define the subworkflow, usually s
         .map{meta, module, seeds ->
             def dup = meta.clone()
             dup.id = meta.id + ".domino"
+            dup.amim = "domino"
             [ dup, module, seeds ]
         }
 
