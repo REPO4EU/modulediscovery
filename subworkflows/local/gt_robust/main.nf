@@ -28,6 +28,7 @@ workflow GT_ROBUST {
             def dup = meta.clone()
             dup.id = meta.id + ".robust"
             dup.amim = "robust"
+            dup.seeds = meta.id
             [ dup, module, seeds ]
         }
 

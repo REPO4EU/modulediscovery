@@ -30,6 +30,7 @@ workflow GT_DIAMOND {
             def dup = meta.clone()
             dup.id = meta.id + ".diamond"
             dup.amim = "diamond"
+            dup.seeds = meta.id
             [ dup, module, seeds ]
         }
 
