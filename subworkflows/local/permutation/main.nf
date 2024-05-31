@@ -75,13 +75,18 @@ workflow PERMUTATION {
         .multiMap{meta, module, seeds, permuted_modules, permuted_seeds ->
             module: [meta, module]
             seeds: seeds
-            permuted_modules: permuted_modules
             permuted_seeds: permuted_seeds
+            permuted_modules: permuted_modules
         }
 
 
     // Evaluation
-    PERMUTATIONEVALUATION(ch_evaluation)
+    PERMUTATIONEVALUATION(
+        ch_evaluation.module,
+        ch_evaluation.seeds,
+        ch_evaluation.permuted_modules,
+        ch_evaluation.permuted_seeds
+    )
 
 
     emit:
