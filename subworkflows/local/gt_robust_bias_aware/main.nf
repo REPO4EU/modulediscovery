@@ -23,14 +23,15 @@ workflow GT_ROBUSTBIASAWARE {
     ROBUSTBIASAWARE(ch_seeds, idspaceUpper, GRAPHTOOLPARSER.out.network.collect())
     ch_versions = ch_versions.mix(ROBUSTBIASAWARE.out.versions.first())
 
-    ch_module = ROBUSTBIASAWARE.out.module
-        .map{meta, path ->
+    ch_module_seeds = ROBUSTBIASAWARE.out.module
+        .join(ch_seeds, failOnMismatch: true, failOnDuplicate: true)
+        .map{meta, module, seeds ->
             def dup = meta.clone()
             dup.id = meta.id + ".robust_bias_aware"
-            [ dup, path ]
+            [ dup, module, seeds ]
         }
 
-    MODULEPARSER(ch_network, "robust", ch_module)
+    MODULEPARSER(ch_network, "robust", ch_module_seeds)
     ch_versions = ch_versions.mix(MODULEPARSER.out.versions.first())
 
 
