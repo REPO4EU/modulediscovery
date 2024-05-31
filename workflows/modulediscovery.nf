@@ -24,6 +24,7 @@ include { GT_ROBUSTBIASAWARE } from '../subworkflows/local/gt_robust_bias_aware'
 include { GT_FIRSTNEIGHBOR  } from '../subworkflows/local/gt_firstneighbor'
 include { GT_RWR            } from '../subworkflows/local/gt_rwr'
 
+include { GT_SPD  } from '../subworkflows/local/gt_spd'
 include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
 
 /*
@@ -127,6 +128,8 @@ workflow MODULEDISCOVERY {
 
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
+        GT_SPD(ch_modules, ch_network_gt)
+        ch_versions = ch_versions.mix(GT_SPD.out.versions)
         GT_BIOPAX(ch_modules, id_space, validate_online)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
