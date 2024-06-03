@@ -33,14 +33,15 @@ workflow GT_DOMINO {                        // Define the subworkflow, usually s
     )
     ch_versions = ch_versions.mix(DOMINO_DOMINO.out.versions.first())       // Collect versions
 
-    ch_module = DOMINO_DOMINO.out.modules
-        .map{meta, path ->
+    ch_module_seeds = DOMINO_DOMINO.out.modules                                   // Get the modules discovered by DOMINO
+        .join(ch_seeds, failOnMismatch: true, failOnDuplicate: true)
+        .map{meta, module, seeds ->
             def dup = meta.clone()
             dup.id = meta.id + ".domino"
-            [ dup, path ]
+            [ dup, module, seeds ]
         }
 
-    MODULEPARSER(ch_network, "domino",  ch_module)          // Convert module from domino specific format to gt file
+    MODULEPARSER(ch_network, "domino",  ch_module_seeds)          // Convert module from domino specific format to gt file
     ch_versions = ch_versions.mix(MODULEPARSER.out.versions.first())
 
 

@@ -1,16 +1,16 @@
 //
-// Prepares the input for ROBUST and runs the tool
+// Prepares the input for ROBUST_BIAS_AWARE and runs the tool
 //
 
 include { GRAPHTOOLPARSER   } from '../../../modules/local/graphtoolparser/main'
-include { ROBUST            } from '../../../modules/local/robust/main'
+include { ROBUSTBIASAWARE } from '../../../modules/local/robust_bias_aware/main'
 include { MODULEPARSER      } from '../../../modules/local/moduleparser/main'
 
-workflow GT_ROBUST {
+workflow GT_ROBUSTBIASAWARE {
     take:
     ch_seeds
     ch_network
-
+    idspace
 
     main:
 
@@ -19,14 +19,15 @@ workflow GT_ROBUST {
     GRAPHTOOLPARSER(ch_network, "robust")
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
 
-    ROBUST(ch_seeds, GRAPHTOOLPARSER.out.network.collect())
-    ch_versions = ch_versions.mix(ROBUST.out.versions.first())
+    def idspaceUpper = idspace.toUpperCase()
+    ROBUSTBIASAWARE(ch_seeds, idspaceUpper, GRAPHTOOLPARSER.out.network.collect())
+    ch_versions = ch_versions.mix(ROBUSTBIASAWARE.out.versions.first())
 
-    ch_module_seeds = ROBUST.out.module
+    ch_module_seeds = ROBUSTBIASAWARE.out.module
         .join(ch_seeds, failOnMismatch: true, failOnDuplicate: true)
         .map{meta, module, seeds ->
             def dup = meta.clone()
-            dup.id = meta.id + ".robust"
+            dup.id = meta.id + ".robust_bias_aware"
             [ dup, module, seeds ]
         }
 

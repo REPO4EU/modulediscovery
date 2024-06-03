@@ -66,6 +66,11 @@
                     "description": "Flag for skipping Robust",
                     "fa_icon": "fas fa-forward"
                 },
+                "skip_robust_bias_aware": {
+                    "type": "boolean",
+                    "description": "Flag for skipping Robust-bias-aware",
+                    "fa_icon": "fas fa-forward"
+                },
                 "skip_diamond": {
                     "type": "boolean",
                     "fa_icon": "fas fa-forward",
@@ -73,7 +78,8 @@
                 },
                 "skip_digest": {
                     "type": "boolean",
-                    "description": "Flag for skipping DIGEST"
+                    "description": "Flag for skipping DIGEST",
+                    "fa_icon": "fas fa-forward"
                 },
                 "diamond_n": {
                     "type": "integer",
@@ -338,6 +344,13 @@
                     "description": "Validation of parameters in lenient more.",
                     "hidden": true,
                     "help_text": "Allows string values that are parseable as numbers or booleans. For further information see [JSONSchema docs](https://github.com/everit-org/json-schema#lenient-mode)."
+                },
+                "pipelines_testdata_base_path": {
+                    "type": "string",
+                    "fa_icon": "far fa-check-circle",
+                    "description": "Base URL or local path to location of pipeline test dataset files",
+                    "default": "https://raw.githubusercontent.com/nf-core/test-datasets/",
+                    "hidden": true
                 }
             }
         }

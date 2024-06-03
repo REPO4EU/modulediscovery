@@ -1,24 +1,23 @@
-process MODULEPARSER {
+process SPD {
     tag "$meta.id"
     label 'process_single'
 
     container "docker.io/quirinmanz/gt2biopax:0.1.0"
 
     input:
+    tuple val(meta), path(subnetwork)
     path network
-    val tool
-    tuple val(meta), path(module), path(seeds)
 
     output:
-    tuple val(meta), path("${meta.id}.gt")  , emit: network
-    path "versions.yml"                     , emit: versions
+    tuple val(meta), path("${meta.id}.spd.gt"), emit: module
+    path "versions.yml", emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     """
-    module_parser.py $network -t $tool -l DEBUG -m $module -s $seeds -o ${meta.id}.gt
+    spd_annotation_tool.py -s $subnetwork -n $network -o ""${meta.id}.spd.gt""
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
