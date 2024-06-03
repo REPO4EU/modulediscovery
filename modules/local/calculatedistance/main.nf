@@ -5,7 +5,6 @@ process CALCULATEDISTANCE {
     input:
     tuple val(meta1), path(module)
     tuple val(meta2), path (nodes )
-   
 
     output:
     tuple val(meta1), path("${meta1.id}.distance.txt")
