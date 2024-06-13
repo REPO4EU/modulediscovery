@@ -7,6 +7,7 @@
 //
 // MODULE: Loaded from modules/local/
 //
+include { INPUTCHECK              } from '../modules/local/inputcheck/main'
 include { GRAPHTOOLPARSER         } from '../modules/local/graphtoolparser/main'
 include { GT2TSV as GT2TSV_Modules} from '../modules/local/gt2tsv/main'
 include { GT2TSV as GT2TSV_Network} from '../modules/local/gt2tsv/main'
@@ -87,6 +88,14 @@ workflow MODULEDISCOVERY {
 
     // Mix into one .gt format channel
     ch_network_gt = GRAPHTOOLPARSER.out.network.collect().mix(ch_network_type.gt).first()
+
+    // Check input
+    INPUTCHECK(ch_seeds, ch_network_gt)
+    ch_seeds = INPUTCHECK.out.seeds
+    ch_removed_seeds_multiqc = INPUTCHECK.out.multiqc
+        .map{ meta, path -> path }
+        .collectFile(name: 'removed_seeds_mqc.tsv', keepHeader: true)
+    ch_multiqc_files = ch_multiqc_files.mix(ch_removed_seeds_multiqc)
 
 
     // Network expansion tools

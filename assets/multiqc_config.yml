@@ -12,3 +12,14 @@ report_section_order:
 export_plots: true
 
 disable_version_detection: true
+
+custom_data:
+  removed_seeds:
+    section_name: "WARNING: Removed seeds"
+    description: "Some seed files contained seeds, which were not present in network and were removed."
+    plot_type: "table"
+    pconfig:
+      id: "removed_seeds_table"
+      table_title: "Removed seeds"
+      namespace: "Removed seeds"
+      format: "{:.0f}"
