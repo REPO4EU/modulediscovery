@@ -49,6 +49,7 @@ if __name__ == "__main__":
     parser.add_argument("--module", required=True, help="Input module path")
     parser.add_argument("--nodes", required=True, help="nodes file")
     parser.add_argument("--out", required=True, help="output file")
+    parser.add_argument("--id", required=True, help="Id for the output")
 
     args = parser.parse_args()
     graph_path = args.module
@@ -64,8 +65,8 @@ if __name__ == "__main__":
 
     with open(out, "w") as file:
         file.write(
-            "average shortest path \t diameter \t number of nodes \t number of edges \t max distance of shortest path from nonseed to seed\n"
+            "network\taverage shortest path\tdiameter\tnumber of nodes\t number of edges\tmax distance of shortest path from non-seed to seed\n"
         )
         file.write(
-            f"{average_distance}\t {pseudo_diameter}\t {g.num_vertices()}\t {g.num_edges()}\t {max_shortest_path}\n"
+            f"{args.id}\t{average_distance}\t{pseudo_diameter}\t{g.num_vertices()}\t{g.num_edges()}\t{max_shortest_path}\n"
         )

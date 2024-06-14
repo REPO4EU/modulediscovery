@@ -155,8 +155,12 @@ workflow MODULEDISCOVERY {
         DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
         ch_versions = ch_versions.mix(DIGEST.out.versions)
     }
-    
+
     CALCULATEDISTANCE(ch_modules, ch_seeds.first())
+    ch_toplogy_multiqc = CALCULATEDISTANCE.out
+        .map{ meta, path -> path }
+        .collectFile(name: 'topology_mqc.tsv', keepHeader: true)
+    ch_multiqc_files = ch_multiqc_files.mix(ch_toplogy_multiqc)
 
     // Collate and save software versions
     softwareVersionsToYAML(ch_versions)

@@ -11,7 +11,7 @@ process CALCULATEDISTANCE {
 
     script:
     """
-    calculate_distance.py --module $module --nodes $nodes --out ${meta1.id}.distance.txt
+    calculate_distance.py --module $module --nodes $nodes --id ${meta1.id} --out ${meta1.id}.distance.txt
     """
 }
 
