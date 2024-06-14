@@ -156,7 +156,7 @@ workflow MODULEDISCOVERY {
         ch_versions = ch_versions.mix(DIGEST.out.versions)
     }
 
-    CALCULATEDISTANCE(ch_modules, ch_seeds.first())
+    CALCULATEDISTANCE(ch_modules)
     ch_toplogy_multiqc = CALCULATEDISTANCE.out
         .map{ meta, path -> path }
         .collectFile(name: 'topology_mqc.tsv', keepHeader: true)

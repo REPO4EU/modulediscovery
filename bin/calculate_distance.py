@@ -47,26 +47,22 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Calculate Distances")
     parser.add_argument("--module", required=True, help="Input module path")
-    parser.add_argument("--nodes", required=True, help="nodes file")
     parser.add_argument("--out", required=True, help="output file")
     parser.add_argument("--id", required=True, help="Id for the output")
 
     args = parser.parse_args()
     graph_path = args.module
-    nodes_file = args.nodes
     out = args.out
 
     g = gt.load_graph(graph_path)
 
     average_distance = calculate_average_distances_all(g)
-    max_shortest_path, seeds = find_max_shortest_path(g, nodes_file, "name")
+    num_seeds = g.vp["is_seed"].a.sum() if g.vp["is_seed"] else ""
 
     pseudo_diameter, pseudo_diameter_ends = gt.pseudo_diameter(g)
 
     with open(out, "w") as file:
+        file.write("sample\tnodes\tedges\tseeds\tdiameter\taverage_shortest_path\n")
         file.write(
-            "sample\tnodes\tedges\tdiameter\taverage_shortest_path\tmax_dist_to_seed\n"
-        )
-        file.write(
-            f"{args.id}\t{g.num_vertices()}\t{g.num_edges()}\t{pseudo_diameter}\t{average_distance}\t{max_shortest_path}\n"
+            f"{args.id}\t{g.num_vertices()}\t{g.num_edges()}\t{num_seeds}\t{pseudo_diameter}\t{average_distance}\n"
         )

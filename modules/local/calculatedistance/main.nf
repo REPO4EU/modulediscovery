@@ -1,17 +1,16 @@
 process CALCULATEDISTANCE {
-    tag "$meta1.id"
+    tag "$meta.id"
     container "docker.io/quirinmanz/gt2biopax:0.1.1"
 
     input:
-    tuple val(meta1), path(module)
-    tuple val(meta2), path (nodes )
+    tuple val(meta), path(module)
 
     output:
-    tuple val(meta1), path("${meta1.id}.distance.txt")
+    tuple val(meta), path("${meta.id}.distance.tsv")
 
     script:
     """
-    calculate_distance.py --module $module --nodes $nodes --id ${meta1.id} --out ${meta1.id}.distance.txt
+    calculate_distance.py --module $module --id ${meta.id} --out ${meta.id}.distance.tsv
     """
 }
 

@@ -37,9 +37,6 @@ custom_data:
           title: "Diameter"
           description: "Diameter of the network"
           format: "{:.0f}"
-      - average_shortest_path:
-          title: "Average Shortest Path"
-          description: "Average shortest path length in the network"
       - max_dist_to_seed:
           title: "Max Distance to Seed"
           description: "Maximum distance from any added node to its closest seed node"
