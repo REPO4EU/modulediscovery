@@ -65,8 +65,8 @@ if __name__ == "__main__":
 
     with open(out, "w") as file:
         file.write(
-            "network\taverage shortest path\tdiameter\tnumber of nodes\t number of edges\tmax distance of shortest path from non-seed to seed\n"
+            "sample\tnodes\tedges\tdiameter\taverage_shortest_path\tmax_dist_to_seed\n"
         )
         file.write(
-            f"{args.id}\t{average_distance}\t{pseudo_diameter}\t{g.num_vertices()}\t{g.num_edges()}\t{max_shortest_path}\n"
+            f"{args.id}\t{g.num_vertices()}\t{g.num_edges()}\t{pseudo_diameter}\t{average_distance}\t{max_shortest_path}\n"
         )

@@ -12,3 +12,35 @@ report_section_order:
 export_plots: true
 
 disable_version_detection: true
+
+run_modules:
+  - custom_content
+
+custom_data:
+  topology:
+    description: "Test bla bla"
+    plot_type: "generalstats"
+    pconfig:
+      - nodes:
+          title: "Nodes"
+          description: "Number of nodes in the network"
+          format: "{:.0f}"
+      - edges:
+          title: "Edges"
+          description: "Number of edges in the network"
+          format: "{:.0f}"
+      - seeds:
+          title: "Seeds"
+          description: "Number of seed genes in the network"
+          format: "{:.0f}"
+      - diameter:
+          title: "Diameter"
+          description: "Diameter of the network"
+          format: "{:.0f}"
+      - average_shortest_path:
+          title: "Average Shortest Path"
+          description: "Average shortest path length in the network"
+      - max_dist_to_seed:
+          title: "Max Distance to Seed"
+          description: "Maximum distance from any added node to its closest seed node"
+          format: "{:.0f}"
