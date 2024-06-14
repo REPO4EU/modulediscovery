@@ -35,7 +35,11 @@ custom_data:
           format: "{:.0f}"
       - diameter:
           title: "Diameter"
-          description: "Diameter of the network"
+          description: "Pseudo diameter of the network"
+          format: "{:.0f}"
+      - components:
+          title: "Components"
+          description: "Number of connected components"
           format: "{:.0f}"
       - max_dist_to_seed:
           title: "Max Distance to Seed"

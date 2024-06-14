@@ -56,13 +56,14 @@ if __name__ == "__main__":
 
     g = gt.load_graph(graph_path)
 
-    average_distance = calculate_average_distances_all(g)
-    num_seeds = g.vp["is_seed"].a.sum() if g.vp["is_seed"] else ""
+    # average_distance = calculate_average_distances_all(g)
+    num_seeds = g.vp["is_seed"].a.sum() if "is_seed" in g.vp else ""
+    num_components = len(gt.label_components(g)[1])
 
     pseudo_diameter, pseudo_diameter_ends = gt.pseudo_diameter(g)
 
     with open(out, "w") as file:
-        file.write("sample\tnodes\tedges\tseeds\tdiameter\taverage_shortest_path\n")
+        file.write("sample\tnodes\tedges\tseeds\tdiameter\tcomponents\n")
         file.write(
-            f"{args.id}\t{g.num_vertices()}\t{g.num_edges()}\t{num_seeds}\t{pseudo_diameter}\t{average_distance}\n"
+            f"{args.id}\t{g.num_vertices()}\t{g.num_edges()}\t{num_seeds}\t{pseudo_diameter}\t{num_components}\n"
         )
