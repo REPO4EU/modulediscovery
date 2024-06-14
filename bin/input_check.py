@@ -4,30 +4,13 @@
 
 
 import argparse
-import csv
 import logging
 import sys
-import os
 import graph_tool.all as gt
 from pathlib import Path
 import util
 
 logger = logging.getLogger()
-
-
-def save_gt(g, stem):
-    g.save(f"{stem}.gt")
-
-
-def load_graph(file):
-    stem = Path(file).stem
-    extension = Path(file).suffix
-    logger.debug(f"{stem=}")
-    logger.debug(f"{extension=}")
-    if extension in [".gt", ".graphml", ".xml", ".dot", ".gml"]:
-        return gt.load_graph(str(file))
-    else:
-        return gt.load_graph_from_csv(str(file))
 
 
 def parse_args(argv=None):
