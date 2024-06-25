@@ -85,8 +85,10 @@ workflow PERMUTATION {
         ch_evaluation.module,
         ch_evaluation.seeds,
         ch_evaluation.permuted_modules,
-        ch_evaluation.permuted_seeds
+        ch_evaluation.permuted_seeds,
+        ch_network
     )
+    ch_versions = ch_versions.mix(PERMUTATIONEVALUATION.out.versions)
 
 
     emit:
