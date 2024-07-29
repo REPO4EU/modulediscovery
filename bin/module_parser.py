@@ -39,13 +39,20 @@ def filter_diamond(g, module, filter_column, seeds):
 
 
 def filter_domino(g, module, filter_column):
-    module_ids = []
+
+    g.vp["submodule"] = g.new_vertex_property("int")
+    submodule_id = 0
+
     with open(module, "r") as file:
         for line in file:
-            module_ids += [id.strip("entrez.") for id in line.strip("[]\n").split(", ")]
-    gt.map_property_values(
-        g.vp.name, g.vp[filter_column], lambda name: name in module_ids
-    )
+            submodule_id += 1
+            module_nodes = [
+                id.strip("entrez.") for id in line.strip("[]\n").split(", ")
+            ]
+            for node in module_nodes:
+                v = gt.find_vertex(g, g.vp.name, node)[0]
+                g.vp[filter_column][v] = True
+                g.vp["submodule"][v] = submodule_id
     return g
 
 
