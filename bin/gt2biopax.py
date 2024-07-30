@@ -446,9 +446,9 @@ class BioPAXFactory:
                     id,
                     biopax.RelationshipXref(
                         uid=f"{id}.XREF",
-                        db="drugcentral",
+                        db="drugbank",
                         id=id,
-                        comment=indication["dataSources"],
+                        comment=",".join(indication["dataSources"]),
                         relationship_type=self.edgeTypes["drug_has_indication"],
                     ),
                 )
@@ -460,9 +460,9 @@ class BioPAXFactory:
                     id,
                     biopax.RelationshipXref(
                         uid=f"{id}.XREF",
-                        db="drugcentral",
+                        db="drugbank",
                         id=id,
-                        comment=contraindication["dataSources"],
+                        comment=",".join(contraindication["dataSources"]),
                         relationship_type=self.edgeTypes["drug_has_contraindication"],
                     ),
                 )
