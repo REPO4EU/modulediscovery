@@ -156,6 +156,14 @@ def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) 
     # get side effect nodes for drugs
     sideeffects = get_node_dict(nodes_to_get, batch_size, "side_effect")
 
+    edge_types = ["drug_has_indication", "drug_has_contraindication"]
+    edges_new = [e for edge_type in edge_types for e in iter_edges(edge_type)]
+    edges_relevant = []
+    for e in edges_new:
+        if e["targetDomainId"] in disorders and e["sourceDomainId"] in drugs:
+            edges_relevant.append(e)
+    edges.extend(edges_relevant)
+
     return (
         genes,
         disorders,
@@ -207,6 +215,18 @@ class BioPAXFactory:
                 id="MI:0361",
                 comment="drug has side effect",
             ),
+            "drug_has_indication.vocab": biopax.UnificationXref(
+                uid="drug_has_indication.XREF",
+                db="PSI-MI",
+                id="MI:0361",
+                comment="drug has indication",
+            ),
+            "drug_has_contraindication.vocab": biopax.UnificationXref(
+                uid="drug_has_contraindication.XREF",
+                db="PSI-MI",
+                id="MI:0361",
+                comment="drug has contraindication",
+            ),
             "gene_product.vocab": biopax.UnificationXref(
                 uid="gene_product.XREF",
                 db="PSI-MI",
@@ -240,7 +260,12 @@ class BioPAXFactory:
                 uid="cellular_component.vocab",
                 xref=self.entityRefs["cellular_component.vocab"],
             ),
-            # "drug_has_indication": biopax.RelationshipTypeVocabulary(term = ["drug has indication"], uid = "drug_has_indication.XREF"),
+            "drug_has_indication": biopax.RelationshipTypeVocabulary(
+                term=["drug has indication"], uid="drug_has_indication.XREF"
+            ),
+            "drug_has_contraindication": biopax.RelationshipTypeVocabulary(
+                term=["drug has contraindication"], uid="drug_has_contraindication.XREF"
+            ),
             "drug_has_side_effect": biopax.RelationshipTypeVocabulary(
                 term=["additional information"],
                 comment="drug has side effect",
@@ -324,10 +349,20 @@ class BioPAXFactory:
             self.add_protein_info(proteins, protein2gene, protein2go, False, gene2prot)
 
         gene2disorder = create_dict_mapping(edges, "GeneAssociatedWithDisorder")
+        drug2disorderIndication = create_dict_mapping(edges, "DrugHasIndication")
+        drug2disorderContraindication = create_dict_mapping(
+            edges, "DrugHasContraindication"
+        )
         protein2drug = create_dict_mapping(edges, "DrugHasTarget", True)
         drug2sideeffect = create_dict_mapping(edges, "DrugHasSideEffect")
 
-        self.add_drug_info(protein2drug, drugs, drug2sideeffect)
+        self.add_drug_info(
+            protein2drug,
+            drugs,
+            drug2sideeffect,
+            drug2disorderIndication,
+            drug2disorderContraindication,
+        )
         self.add_gene_info(gene2disorder, genes)
 
     def add_gene_info(self, gene2disorder, genes):
@@ -337,17 +372,45 @@ class BioPAXFactory:
             else:
                 self.add_gene(entrez_id, gene)
 
-    def add_drug_info(self, protein2drug, drug_nodes, drug2sideeffect):
+    def add_drug_info(
+        self,
+        protein2drug,
+        drug_nodes,
+        drug2sideeffect,
+        drug2disorderIndication,
+        drug2disorderContraindication,
+    ):
         for p, drugs in protein2drug.items():
             for drug in drugs:
                 id = drug["id"]
                 drug_node = drug_nodes[id]
                 sides = []
+                indications = []
+                contraindications = []
                 if id in drug2sideeffect:
                     sides = drug2sideeffect[id]
-                self.add_drug(drug, p, drug_node["displayName"], sides)
+                if id in drug2disorderIndication:
+                    indications = drug2disorderIndication[id]
+                if id in drug2disorderContraindication:
+                    contraindications = drug2disorderContraindication[id]
+                self.add_drug(
+                    drug,
+                    p,
+                    drug_node["displayName"],
+                    sides,
+                    indications,
+                    contraindications,
+                )
 
-    def add_drug(self, drug, uniprot_id, display_name, sideeffects):
+    def add_drug(
+        self,
+        drug,
+        uniprot_id,
+        display_name,
+        sideeffects,
+        indications,
+        contraindications,
+    ):
         drug_id = drug["id"]
         # split drug_id by "." into db and id
         this_db, this_id = drug_id.split(".")
@@ -373,6 +436,34 @@ class BioPAXFactory:
                         id=id,
                         comment=sideeffect["dataSources"],
                         relationship_type=self.edgeTypes["drug_has_side_effect"],
+                    ),
+                )
+            )
+        for indication in indications:
+            id = indication["id"]
+            uniXRef.append(
+                self.xRefs.setdefault(
+                    id,
+                    biopax.RelationshipXref(
+                        uid=f"{id}.XREF",
+                        db="drugcentral",
+                        id=id,
+                        comment=indication["dataSources"],
+                        relationship_type=self.edgeTypes["drug_has_indication"],
+                    ),
+                )
+            )
+        for contraindication in contraindications:
+            id = contraindication["id"]
+            uniXRef.append(
+                self.xRefs.setdefault(
+                    id,
+                    biopax.RelationshipXref(
+                        uid=f"{id}.XREF",
+                        db="drugcentral",
+                        id=id,
+                        comment=contraindication["dataSources"],
+                        relationship_type=self.edgeTypes["drug_has_contraindication"],
                     ),
                 )
             )
