@@ -9,6 +9,7 @@
 //
 include { INPUTCHECK              } from '../modules/local/inputcheck/main'
 include { GRAPHTOOLPARSER         } from '../modules/local/graphtoolparser/main'
+include { SAVEMODULES             } from '../modules/local/savemodules/main'
 include { GT2TSV as GT2TSV_Modules} from '../modules/local/gt2tsv/main'
 include { GT2TSV as GT2TSV_Network} from '../modules/local/gt2tsv/main'
 include { ADDHEADER               } from '../modules/local/addheader/main'
@@ -134,6 +135,9 @@ workflow MODULEDISCOVERY {
         ch_versions = ch_versions.mix(GT_RWR.out.versions)
         ch_modules = ch_modules.mix(GT_RWR.out.module)
     }
+
+    // Save modules
+    SAVEMODULES(ch_modules)
 
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
