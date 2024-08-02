@@ -11,8 +11,26 @@ import os
 import graph_tool.all as gt
 import util
 from pathlib import Path
+import pandas as pd
 
 logger = logging.getLogger()
+
+
+def vp2df(g):
+    """Convert the vertex properties of a graph to a pandas DataFrame. 'name' will be used as index."""
+    # Get all vertex properties
+    vertex_props = g.vertex_properties
+
+    # Prepare a dictionary to hold the data for the DataFrame
+    data = {
+        prop_name: [prop[v] for v in g.vertices()]
+        for prop_name, prop in vertex_props.items()
+    }
+
+    # Create and return the DataFrame
+    df = pd.DataFrame(data)
+    df.set_index("name", inplace=True)
+    return df
 
 
 def parse_args(argv=None):
@@ -57,6 +75,9 @@ def main(argv=None):
 
     # save as graphml
     g.save(f"{args.prefix}.graphml")
+
+    # save nodes as tsv
+    vp2df(g).to_csv(f"{args.prefix}.nodes.tsv", sep="\t")
 
 
 if __name__ == "__main__":
