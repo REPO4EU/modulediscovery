@@ -2,7 +2,6 @@ process SAVEMODULES {
     tag "$meta.id"
     label 'process_single'
 
-    //container "docker.io/quirinmanz/gt2biopax:0.1.1"
     container "community.wave.seqera.io/library/graph-tool_pandas:794fcd9ce9115a68"
 
     input:

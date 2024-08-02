@@ -138,6 +138,7 @@ workflow MODULEDISCOVERY {
 
     // Save modules
     SAVEMODULES(ch_modules)
+    ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
 
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
