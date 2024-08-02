@@ -2,7 +2,8 @@ process SAVEMODULES {
     tag "$meta.id"
     label 'process_single'
 
-    container "docker.io/quirinmanz/gt2biopax:0.1.1"
+    //container "docker.io/quirinmanz/gt2biopax:0.1.1"
+    container "community.wave.seqera.io/library/graph-tool_pandas:794fcd9ce9115a68"
 
     input:
     tuple val(meta), path(module)
@@ -10,6 +11,10 @@ process SAVEMODULES {
     output:
     tuple val(meta), path("${meta.id}.graphml")  , emit: graphml
     tuple val(meta), path("${meta.id}.nodes.tsv"), emit: nodes_tsv
+    tuple val(meta), path("${meta.id}.edges.tsv"), emit: edges_tsv
+    tuple val(meta), path("${meta.id}.pdf")      , emit: pdf
+    tuple val(meta), path("${meta.id}.png")      , emit: png
+    tuple val(meta), path("${meta.id}.svg")      , emit: svg
     path "versions.yml", emit: versions
 
     when:
