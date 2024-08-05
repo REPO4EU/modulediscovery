@@ -17,7 +17,7 @@ process NETWORKANNOTATION {
 
     script:
     """
-    spd_annotation_tool.py -s $subnetwork -n $network -o ""${meta.id}.gt""
+    network_annotation.py -s $subnetwork -n $network -o ""${meta.id}.gt""
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
