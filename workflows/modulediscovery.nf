@@ -7,27 +7,27 @@
 //
 // MODULE: Loaded from modules/local/
 //
-include { INPUTCHECK              } from '../modules/local/inputcheck/main'
-include { GRAPHTOOLPARSER         } from '../modules/local/graphtoolparser/main'
-include { SAVEMODULES             } from '../modules/local/savemodules/main'
-include { GT2TSV as GT2TSV_Modules} from '../modules/local/gt2tsv/main'
-include { GT2TSV as GT2TSV_Network} from '../modules/local/gt2tsv/main'
-include { ADDHEADER               } from '../modules/local/addheader/main'
-include { DIGEST                  } from '../modules/local/digest/main'
+include { INPUTCHECK               } from '../modules/local/inputcheck/main'
+include { GRAPHTOOLPARSER          } from '../modules/local/graphtoolparser/main'
+include { NETWORKANNOTATION        } from '../modules/local/networkannotation/main'
+include { SAVEMODULES              } from '../modules/local/savemodules/main'
+include { GT2TSV as GT2TSV_Modules } from '../modules/local/gt2tsv/main'
+include { GT2TSV as GT2TSV_Network } from '../modules/local/gt2tsv/main'
+include { ADDHEADER                } from '../modules/local/addheader/main'
+include { DIGEST                   } from '../modules/local/digest/main'
 
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { GT_DIAMOND        } from '../subworkflows/local/gt_diamond'
-include { GT_DOMINO         } from '../subworkflows/local/gt_domino'
-include { GT_ROBUST         } from '../subworkflows/local/gt_robust'
+include { GT_DIAMOND         } from '../subworkflows/local/gt_diamond'
+include { GT_DOMINO          } from '../subworkflows/local/gt_domino'
+include { GT_ROBUST          } from '../subworkflows/local/gt_robust'
 include { GT_ROBUSTBIASAWARE } from '../subworkflows/local/gt_robust_bias_aware'
-include { GT_FIRSTNEIGHBOR  } from '../subworkflows/local/gt_firstneighbor'
-include { GT_RWR            } from '../subworkflows/local/gt_rwr'
+include { GT_FIRSTNEIGHBOR   } from '../subworkflows/local/gt_firstneighbor'
+include { GT_RWR             } from '../subworkflows/local/gt_rwr'
 
-include { GT_SPD  } from '../subworkflows/local/gt_spd'
-include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
+include { GT_BIOPAX          } from '../subworkflows/local/gt_biopax/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -136,14 +136,17 @@ workflow MODULEDISCOVERY {
         ch_modules = ch_modules.mix(GT_RWR.out.module)
     }
 
+    // Annotate with network properties
+    NETWORKANNOTATION(ch_modules, ch_network_gt)
+    ch_modules = NETWORKANNOTATION.out.module
+    ch_versions = ch_versions.mix(NETWORKANNOTATION.out.versions)
+
     // Save modules
     SAVEMODULES(ch_modules)
     ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
 
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
-        GT_SPD(ch_modules, ch_network_gt)
-        ch_versions = ch_versions.mix(GT_SPD.out.versions)
         GT_BIOPAX(ch_modules, id_space, validate_online)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
