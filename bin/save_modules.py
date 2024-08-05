@@ -4,14 +4,17 @@
 
 
 import argparse
-import csv
 import logging
 import sys
-import os
-import graph_tool.all as gt
-import util
 from pathlib import Path
+
+import util
+
+import graph_tool.all as gt
 import pandas as pd
+import networkx as nx
+import pyintergraph
+from pyvis.network import Network
 
 logger = logging.getLogger()
 
@@ -62,7 +65,7 @@ def parse_args(argv=None):
     """Define and immediately parse command line arguments."""
     parser = argparse.ArgumentParser(
         description="Parse the modules of different tools.",
-        epilog="Example: python module_parser.py network.gt -t diamond -m module.txt -o module.gt",
+        epilog="Example: python save_modules.py -m module1.gt -p 'module1'",
     )
     parser.add_argument(
         "-m",
@@ -108,23 +111,22 @@ def main(argv=None):
     ep2df(g).to_csv(f"{args.prefix}.edges.tsv", sep="\t")
 
     # save figures
-
-    vertex_color = g.new_vertex_property("vector<double>")
+    g.vp["color"] = g.new_vertex_property("string")
     for v in g.vertices():
         if g.vertex_properties["is_seed"][v]:
-            vertex_color[v] = [1.0, 0.0, 0.0, 1.0]  # red for seed genes
+            g.vp["color"][v] = "red"  # red for seed genes
         else:
-            vertex_color[v] = [0.0, 0.0, 1.0, 1.0]  # blue for added genes
+            g.vp["color"][v] = "blue"  # blue for added genes
 
     # calculate the layout
     pos = gt.sfdp_layout(g)
 
-    # save as pdf
+    # save as pdf, png, svg
     for format in ["pdf", "png", "svg"]:
         gt.graph_draw(
             g,
             pos,
-            vertex_fill_color=vertex_color,
+            vertex_fill_color=g.vp["color"],
             output_size=(1000, 1000),
             vertex_text=g.vp["name"],
             vorder=g.vp["is_seed"],
@@ -132,6 +134,16 @@ def main(argv=None):
             edge_pen_width=3,
             output=f"{args.prefix}.{format}",
         )
+
+    nx_graph = pyintergraph.gt2nx(g, labelname="name")
+    # nt = Network(filter_menu=True, select_menu=True)
+    nt = Network(filter_menu=True, select_menu=True)
+    nt.from_nx(nx_graph)
+    nt.toggle_physics(False)
+    nt.show_buttons()
+    nt.show(f"{args.prefix}.html")
+
+    # save as html
 
 
 if __name__ == "__main__":

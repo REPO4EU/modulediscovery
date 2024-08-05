@@ -2,7 +2,8 @@ process SAVEMODULES {
     tag "$meta.id"
     label 'process_single'
 
-    container "community.wave.seqera.io/library/graph-tool_pandas:794fcd9ce9115a68"
+    //container "community.wave.seqera.io/library/graph-tool_pandas:794fcd9ce9115a68"
+    container "community.wave.seqera.io/library/graph-tool_networkx_pandas_pyvis_pruned:3b79bb1c134b59eb"
 
     input:
     tuple val(meta), path(module)
@@ -14,7 +15,9 @@ process SAVEMODULES {
     tuple val(meta), path("${meta.id}.pdf")      , emit: pdf
     tuple val(meta), path("${meta.id}.png")      , emit: png
     tuple val(meta), path("${meta.id}.svg")      , emit: svg
-    path "versions.yml", emit: versions
+    tuple val(meta), path("${meta.id}.html")     , emit: html
+    tuple val(meta), path("lib/*")               , emit: lib
+    path "versions.yml"                          , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -28,6 +31,9 @@ process SAVEMODULES {
         python: \$(python --version | sed 's/Python //g')
         graph-tool: \$(python -c "import graph_tool; print(graph_tool.__version__)")
         pandas: \$(python -c "import pandas; print(pandas.__version__)")
+        networkx: \$(python -c "import networkx; print(networkx.__version__)")
+        pyintergraph: \$(pip show pyintergraph | grep Version | awk '{print \$2}')
+        pyvis: \$(pip show pyvis | grep Version | awk '{print \$2}')
     END_VERSIONS
     """
 }
