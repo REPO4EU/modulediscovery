@@ -136,6 +136,14 @@ def main(argv=None):
             output=f"{args.prefix}.{format}",
         )
 
+    # add x and y properties for consistent html layout
+    g.vp["x"] = g.new_vertex_property("double")
+    g.vp["y"] = g.new_vertex_property("double")
+
+    for v in g.vertices():
+        g.vp["x"][v] = pos[v][0] * 30
+        g.vp["y"][v] = pos[v][1] * 30
+
     # convert to networkx and save as html with pyvis
     nx_graph = pyintergraph.gt2nx(g, labelname="name")
 
@@ -151,6 +159,7 @@ def main(argv=None):
             {node['label']}\n
             {'\n'.join(f'{col}: {val}' for col, val in row.items())}
         """
+        print(node["x"])
     nt.toggle_physics(False)  # turn off physics
     nt.show_buttons(
         filter_=["physics", "interaction", "manipulation"]
