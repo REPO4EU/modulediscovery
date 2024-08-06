@@ -160,10 +160,13 @@ def main(argv=None):
             {'\n'.join(f'{col}: {val}' for col, val in row.items())}
         """
         print(node["x"])
-    nt.toggle_physics(False)  # turn off physics
-    nt.show_buttons(
-        filter_=["physics", "interaction", "manipulation"]
-    )  # show setting buttons
+
+    # turn off physics
+    nt.toggle_physics(False)
+
+    # show setting buttons
+    nt.show_buttons(filter_=["physics", "interaction", "manipulation"])
+    # save as html
     nt.show(f"{args.prefix}.html")
 
 

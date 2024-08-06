@@ -2,7 +2,6 @@ process SAVEMODULES {
     tag "$meta.id"
     label 'process_single'
 
-    //container "community.wave.seqera.io/library/graph-tool_pandas:794fcd9ce9115a68"
     container "community.wave.seqera.io/library/graph-tool_networkx_pandas_pyvis_pruned:3b79bb1c134b59eb"
 
     input:
