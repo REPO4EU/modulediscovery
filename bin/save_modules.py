@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Provide a command line tool to parse the output module of different tools."""
+"""Takes a gt file and saves it as graphml, tsv, pdf, png, svg, and html."""
 
 
 import argparse
@@ -159,7 +159,6 @@ def main(argv=None):
             {node['label']}\n
             {'\n'.join(f'{col}: {val}' for col, val in row.items())}
         """
-        print(node["x"])
 
     # turn off physics
     nt.toggle_physics(False)
