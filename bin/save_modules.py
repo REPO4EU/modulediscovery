@@ -105,7 +105,8 @@ def main(argv=None):
     g.save(f"{args.prefix}.graphml")
 
     # save nodes as tsv
-    vp2df(g).to_csv(f"{args.prefix}.nodes.tsv", sep="\t")
+    vp_df = vp2df(g)
+    vp_df.to_csv(f"{args.prefix}.nodes.tsv", sep="\t")
 
     # save edges as tsv
     ep2df(g).to_csv(f"{args.prefix}.edges.tsv", sep="\t")
@@ -135,15 +136,26 @@ def main(argv=None):
             output=f"{args.prefix}.{format}",
         )
 
+    # convert to networkx and save as html with pyvis
     nx_graph = pyintergraph.gt2nx(g, labelname="name")
-    # nt = Network(filter_menu=True, select_menu=True)
-    nt = Network(filter_menu=True, select_menu=True)
-    nt.from_nx(nx_graph)
-    nt.toggle_physics(False)
-    nt.show_buttons()
-    nt.show(f"{args.prefix}.html")
 
-    # save as html
+    nt = Network()
+    nt.from_nx(nx_graph)
+
+    # add titles
+    for node in nt.nodes:
+        row = vp_df.loc[node["label"]]
+        node[
+            "title"
+        ] = f"""
+            {node['label']}\n
+            {'\n'.join(f'{col}: {val}' for col, val in row.items())}
+        """
+    nt.toggle_physics(False)  # turn off physics
+    nt.show_buttons(
+        filter_=["physics", "interaction", "manipulation"]
+    )  # show setting buttons
+    nt.show(f"{args.prefix}.html")
 
 
 if __name__ == "__main__":

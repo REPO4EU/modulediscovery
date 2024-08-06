@@ -16,7 +16,6 @@ process SAVEMODULES {
     tuple val(meta), path("${meta.id}.png")      , emit: png
     tuple val(meta), path("${meta.id}.svg")      , emit: svg
     tuple val(meta), path("${meta.id}.html")     , emit: html
-    tuple val(meta), path("lib/*")               , emit: lib
     path "versions.yml"                          , emit: versions
 
     when:
