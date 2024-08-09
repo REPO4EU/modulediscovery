@@ -10,8 +10,9 @@ process DIGEST {
     val network_type
 
     output:
-    tuple val(meta), path("${meta.id}"), emit: outdir
-    path "versions.yml", emit: versions
+    tuple val(meta), path("${meta.id}")            , emit: outdir
+    tuple val(meta), path("${meta.id}.multiqc.tsv"), emit: multiqc
+    path "versions.yml"                            , emit: versions
 
     script:
     """

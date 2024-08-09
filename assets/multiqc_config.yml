@@ -17,6 +17,7 @@ custom_content:
   order:
     - input_seeds
     - input_network
+    - digest
 
 custom_data:
   input_seeds:
@@ -27,7 +28,7 @@ custom_data:
     plot_type: "bargraph"
     pconfig:
       id: "input_seeds_bargraph"
-      table_title: "Seeds"
+      title: "Seeds"
       format: "{:.0f}"
   input_network:
     parent_id: input
@@ -36,5 +37,17 @@ custom_data:
     plot_type: "table"
     pconfig:
       id: "input_network_table"
-      table_title: "Network"
+      title: "Network"
       format: "{:.0f}"
+  digest:
+    section_name: "DIGEST"
+    description: "Empirical -log10 p-values for functional coherence calculated with
+      <a href='https://digest-validation.net/documentation'>DIGEST</a>. Columns represent different gene set data sources."
+    plot_type: "table"
+    pconfig:
+      id: "digest_table"
+      title: "DIGEST p-values"
+      min: 0
+      max: 3
+      scale: "YlGn"
+      format: "{:,.3f}"

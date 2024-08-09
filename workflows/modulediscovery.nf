@@ -164,6 +164,12 @@ workflow MODULEDISCOVERY {
     if(!params.skip_digest){
         DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
         ch_versions = ch_versions.mix(DIGEST.out.versions)
+        ch_multiqc_files = ch_multiqc_files.mix(
+            DIGEST.out.multiqc
+            .map{ meta, path -> path }
+            .collectFile(name: 'digest_mqc.tsv', keepHeader: true)
+        )
+
     }
 
     // Collate and save software versions

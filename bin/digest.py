@@ -3,6 +3,7 @@
 import argparse
 import os
 import pandas as pd
+import numpy as np
 from biodigest.single_validation import single_validation, save_results
 from biodigest.evaluation.d_utils.plotting_utils import (
     create_plots,
@@ -49,7 +50,11 @@ def run_analysis(target_set, target_type, network, network_type, output_director
         network_data=network_data,
     )
 
-    pd.DataFrame(results["p_values"]["values"])
+    pvalues_df = pd.DataFrame(results["p_values"]["values"])
+    pvalues_df = pvalues_df.transpose().applymap(lambda x: -np.log10(x))
+    pvalues_df.insert(0, "ID", prefix)
+    print(pvalues_df)
+    pvalues_df.to_csv(f"{prefix}.multiqc.tsv", sep="\t", index=False)
 
     pd.DataFrame(results["input_values"]["values"])
 
