@@ -50,6 +50,7 @@ def run_analysis(target_set, target_type, network, network_type, output_director
         network_data=network_data,
     )
 
+    # ==== save results for multiqc ====
     pvalues_df = pd.DataFrame(results["p_values"]["values"])
     pvalues_df = pvalues_df.transpose().applymap(lambda x: -np.log10(x))
     pvalues_df.insert(0, "ID", prefix)

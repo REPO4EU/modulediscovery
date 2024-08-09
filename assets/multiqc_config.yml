@@ -27,7 +27,6 @@ custom_data:
     description: "Shows the number of seeds retained from the input files and the number of seeds removed (not in network)."
     plot_type: "bargraph"
     pconfig:
-      id: "input_seeds_bargraph"
       title: "Seeds"
       format: "{:.0f}"
   input_network:
@@ -36,7 +35,6 @@ custom_data:
     section_name: "Network"
     plot_type: "table"
     pconfig:
-      id: "input_network_table"
       title: "Network"
       format: "{:.0f}"
   digest:
@@ -45,7 +43,6 @@ custom_data:
       <a href='https://digest-validation.net/documentation'>DIGEST</a>. Columns represent different gene set data sources."
     plot_type: "table"
     pconfig:
-      id: "digest_table"
       title: "DIGEST p-values"
       min: 0
       max: 3
