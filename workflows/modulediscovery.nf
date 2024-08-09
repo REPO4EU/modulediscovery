@@ -92,10 +92,10 @@ workflow MODULEDISCOVERY {
     // Check input
     INPUTCHECK(ch_seeds, ch_network_gt)
     ch_seeds = INPUTCHECK.out.seeds
-    INPUTCHECK.out.removed_seeds | view {meta, path -> log.warn("Removed seeds from $meta.id which were not in the input network") }
+    INPUTCHECK.out.removed_seeds | view {meta, path -> log.warn("Removed seeds from $meta.id. Check multiqc report.") }
     ch_removed_seeds_multiqc = INPUTCHECK.out.multiqc
         .map{ meta, path -> path }
-        .collectFile(name: 'removed_seeds_mqc.tsv', keepHeader: true)
+        .collectFile(name: 'input_seeds_mqc.tsv', keepHeader: true)
     ch_multiqc_files = ch_multiqc_files.mix(ch_removed_seeds_multiqc)
 
 

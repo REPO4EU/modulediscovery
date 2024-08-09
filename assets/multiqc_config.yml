@@ -13,13 +13,19 @@ export_plots: true
 
 disable_version_detection: true
 
+custom_content:
+  order:
+    - input_seeds
+    - input_network
+
 custom_data:
-  removed_seeds:
-    section_name: "WARNING: Removed seeds"
-    description: "Some seed files contained seeds, which were not present in network and were removed."
-    plot_type: "table"
+  input_seeds:
+    parent_id: input
+    parent_name: "Input"
+    section_name: "Seeds"
+    description: "Shows the number of seeds retained from the input files and the number of seeds removed (not in network)."
+    plot_type: "bargraph"
     pconfig:
-      id: "removed_seeds_table"
-      table_title: "Removed seeds"
-      namespace: "Removed seeds"
+      id: "input_check_table"
+      table_title: "Seed input"
       format: "{:.0f}"
