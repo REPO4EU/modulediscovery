@@ -26,6 +26,15 @@ custom_data:
     description: "Shows the number of seeds retained from the input files and the number of seeds removed (not in network)."
     plot_type: "bargraph"
     pconfig:
-      id: "input_check_table"
-      table_title: "Seed input"
+      id: "input_seeds_bargraph"
+      table_title: "Seeds"
+      format: "{:.0f}"
+  input_network:
+    parent_id: input
+    parent_name: "Input"
+    section_name: "Network"
+    plot_type: "table"
+    pconfig:
+      id: "input_network_table"
+      table_title: "Network"
       format: "{:.0f}"

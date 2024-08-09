@@ -85,6 +85,7 @@ workflow MODULEDISCOVERY {
     // Run network parser for non .gt networks, supported by graph-tool
     GRAPHTOOLPARSER(ch_network_type.parse, 'gt')
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
+    ch_multiqc_files = ch_multiqc_files.mix(GRAPHTOOLPARSER.out.multiqc)
 
     // Mix into one .gt format channel
     ch_network_gt = GRAPHTOOLPARSER.out.network.collect().mix(ch_network_type.gt).first()
@@ -93,10 +94,10 @@ workflow MODULEDISCOVERY {
     INPUTCHECK(ch_seeds, ch_network_gt)
     ch_seeds = INPUTCHECK.out.seeds
     INPUTCHECK.out.removed_seeds | view {meta, path -> log.warn("Removed seeds from $meta.id. Check multiqc report.") }
-    ch_removed_seeds_multiqc = INPUTCHECK.out.multiqc
+    ch_seeds_multiqc = INPUTCHECK.out.multiqc
         .map{ meta, path -> path }
         .collectFile(name: 'input_seeds_mqc.tsv', keepHeader: true)
-    ch_multiqc_files = ch_multiqc_files.mix(ch_removed_seeds_multiqc)
+    ch_multiqc_files = ch_multiqc_files.mix(ch_seeds_multiqc)
 
 
     // Network expansion tools
