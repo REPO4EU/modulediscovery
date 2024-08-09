@@ -15,8 +15,12 @@ disable_version_detection: true
 
 custom_content:
   order:
+    - input
     - input_seeds
     - input_network
+    - overlap
+    - jaccard_similarity
+    - shared_nodes
     - digest
 
 custom_data:
@@ -48,3 +52,22 @@ custom_data:
       max: 3
       scale: "YlGn"
       format: "{:,.3f}"
+  jaccard_similarity:
+    parent_id: overlap
+    parent_name: "Overlap"
+    section_name: "Jaccard similarity"
+    description: "Jaccard similarity between the gene sets of the modules"
+    plot_type: "heatmap"
+    pconfig:
+      title: "Module Jaccard similarity"
+      zlab: "Jaccard similarity"
+  shared_nodes:
+    parent_id: overlap
+    parent_name: "Overlap"
+    section_name: "Shared nodes"
+    description: "Number of shared nodes between the gene sets of the modules"
+    plot_type: "heatmap"
+    pconfig:
+      title: "Number of shared nodes"
+      zlab: "Number of shared nodes"
+      format: "{:,.0f}"

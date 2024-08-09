@@ -13,6 +13,7 @@ include { GT2TSV as GT2TSV_Modules} from '../modules/local/gt2tsv/main'
 include { GT2TSV as GT2TSV_Network} from '../modules/local/gt2tsv/main'
 include { ADDHEADER               } from '../modules/local/addheader/main'
 include { DIGEST                  } from '../modules/local/digest/main'
+include { MODULEOVERLAP           } from '../modules/local/moduleoverlap/main'
 
 
 //
@@ -150,7 +151,19 @@ workflow MODULEDISCOVERY {
     ADDHEADER(ch_seeds, "gene_id")
     ch_nodes = GT2TSV_Modules.out
     ch_nodes = ch_nodes.mix(ADDHEADER.out)
+
     // Evaluation
+    ch_overlap_input = ch_nodes
+        .multiMap { meta, path ->
+            ids: meta.id
+            nodes: path
+        }
+    MODULEOVERLAP(
+        ch_overlap_input.ids.collect().map{it.join(" ")},
+        ch_overlap_input.nodes.collect()
+    )
+    ch_multiqc_files = ch_multiqc_files.mix(MODULEOVERLAP.out)
+
     if(!params.skip_gprofiler){
 
         GPROFILER2_GOST (
