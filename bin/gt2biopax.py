@@ -42,7 +42,7 @@ def get_proteins(uniprot_ids: list[str]) -> any:
 
 
 def get_genes_to_proteins(uniprot_ids):
-    edges = [e for e in iter_edges("protein_encoded_by_gene")]
+    edges = getEdges("protein_encoded_by_gene", target_domain_ids=uniprot_ids)
     prot2gene = {}
     for uniprot_id in uniprot_ids:
         prot2gene[uniprot_id] = ""
