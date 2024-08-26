@@ -13,7 +13,7 @@ from pybiopax import biopax, model_to_owl_file
 
 import nedrex
 
-open_url = "https://10.162.163.34:7123/open/"
+open_url = "http://10.162.163.34:7123/open"
 nedrex.config.set_url_base(open_url)
 from nedrex.core import api_keys_active, get_api_key
 
@@ -72,42 +72,23 @@ def get_node_dict(ids, batch_size, node_type):
 
 
 def getEdges(
-    type: str, source_domain_ids=None, target_domain_ids=None, extra_attributes=[]
+    type: str, source_domain_ids=[], target_domain_ids=[], extra_attributes=[]
 ):
-    all_edges = []
-    upper_limit = 10000
-
-    attributes = ["sourceDomainId", "targetDomainId", "dataSources", "type"].extend(
-        extra_attributes
-    )
+    attributes = ["sourceDomainId", "targetDomainId", "dataSources", "type"]
+    attributes.extend(extra_attributes)
     body = {
         "source_domain_id": source_domain_ids,
         "target_domain_id": target_domain_ids,
         "attributes": attributes,
-        "skip": 0,
-        "limit": upper_limit,
     }
-
-    offset = 0
-    while True:
-        body["skip"] = offset
-        try:
-            response = requests.post(
-                url=f"{open_url}/{type}/attributes/json",
-                json=body,
-                headers={"content-type": "application/json"},
-            )
-            response.raise_for_status()
-            data = response.json()
-            all_edges.extend(data)
-            if len(data) < upper_limit:
-                break
-            offset += upper_limit
-        except requests.exceptions.RequestException as e:
-            print(f"HTTP Anfrage fehlgeschlagen: {e}")
-            return None
-    print("type:", type, len(all_edges))
-    return all_edges
+    try:
+        response = requests.post(url=f"{open_url}/{type}/attributes/json", json=body)
+        response.raise_for_status()
+        data = response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"HTTP Anfrage fehlgeschlagen: {e}")
+        return None
+    return data
 
 
 def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) -> any:
@@ -143,7 +124,7 @@ def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) 
     edges = []
 
     edges_new = getEdges(
-        "gene_associated_with_disorder", source_domain_ids=genes.keys()
+        "gene_associated_with_disorder", source_domain_ids=list(genes.keys())
     )
     edges.extend(edges_new)
 
@@ -151,44 +132,44 @@ def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) 
     disorders = get_node_dict(nodes_to_get, batch_size, "disorder")
 
     # get drugs that target a protein (encoded by our genes)
-    edges_new = getEdges("drug_has_target", target_domain_ids=proteins.keys())
+    edges_new = getEdges("drug_has_target", target_domain_ids=list(proteins.keys()))
     edges.extend(edges_new)
 
     nodes_to_get = list({e["sourceDomainId"] for e in edges_new})
     drugs = get_node_dict(nodes_to_get, batch_size, "drug")
 
     # get edges for go annotations; no nodes needed
-    new_edges = getEdges(
+    edges_new = getEdges(
         "protein_has_go_annotation",
-        source_domain_ids=proteins.keys(),
+        source_domain_ids=list(proteins.keys()),
         extra_attributes=["qualifiers"],
     )
     edges_relevant = []
-    for e in new_edges:
+    for e in edges_new:
         if "is_active_in" in e["qualifiers"]:
             edges_relevant.append(e)
 
     edges.extend(edges_relevant)
 
     # get side effects for drugs
-    new_edges = getEdges("drug_has_side_effect", source_domain_ids=drugs.keys())
+    edges_new = getEdges("drug_has_side_effect", source_domain_ids=list(drugs.keys()))
     edges.extend(edges_new)
 
-    nodes_to_get = list({e["targetDomainId"] for e in new_edges})
+    nodes_to_get = list({e["targetDomainId"] for e in edges_new})
     # get side effect nodes for drugs
     sideeffects = get_node_dict(nodes_to_get, batch_size, "side_effect")
 
     edges_new = getEdges(
         "drug_has_indication",
-        source_domain_ids=drugs.keys(),
-        target_domain_ids=disorders.keys(),
+        source_domain_ids=list(drugs.keys()),
+        target_domain_ids=list(disorders.keys()),
     )
     edges.extend(edges_new)
 
     edges_new = getEdges(
         "drug_has_contraindication",
-        source_domain_ids=drugs.keys(),
-        target_domain_ids=disorders.keys(),
+        source_domain_ids=list(drugs.keys()),
+        target_domain_ids=list(disorders.keys()),
     )
     edges.extend(edges_new)
 
@@ -507,7 +488,6 @@ class BioPAXFactory:
 
         if uniprot_id:
             uniprot_id = uniprot_id.lstrip("uniprot.")
-            print(uniprot_id, drug_id)
             self.add_drug_protein_interaction(uniprot_id, drug_id)
 
     def add_protein_info(
