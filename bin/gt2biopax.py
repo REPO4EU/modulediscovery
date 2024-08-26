@@ -5,21 +5,10 @@ import sys
 from pathlib import Path
 import requests
 
-from nedrex.core import iter_edges
-from nedrex.core import get_nodes
-
 import graph_tool.all as gt
 from pybiopax import biopax, model_to_owl_file
 
-import nedrex
-
 open_url = "http://10.162.163.34:7123/open"
-nedrex.config.set_url_base(open_url)
-from nedrex.core import api_keys_active, get_api_key
-
-if api_keys_active():
-    api_key = get_api_key(accept_eula=True)
-    nedrex.config.set_api_key(api_key)
 
 logger = logging.getLogger()
 
