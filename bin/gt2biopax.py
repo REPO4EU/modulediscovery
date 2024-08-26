@@ -60,17 +60,6 @@ def get_genes_to_proteins(uniprot_ids):
     return genes, prot2gene
 
 
-def get_node_dict(ids, batch_size, node_type):
-    result = []
-    for i in range(0, len(ids), batch_size):
-        batch_ids = ids[i : i + batch_size]
-        # get_nodes for current group of ids
-        nodes = get_nodes(node_type=node_type, node_ids=batch_ids)
-        result.extend(nodes)
-    result = {res["primaryDomainId"]: res for res in result}
-    return result
-
-
 def getEdges(
     type: str, source_domain_ids=[], target_domain_ids=[], extra_attributes=[]
 ):
@@ -91,8 +80,27 @@ def getEdges(
     return data
 
 
+def getNodeDict(ids, node_type, extra_attributes=[]):
+    attributes = ["primaryDomainId", "type", "displayName"]
+    attributes.extend(extra_attributes)
+    body = {
+        "node_ids": ids,
+        "attributes": attributes,
+    }
+    try:
+        response = requests.post(
+            url=f"{open_url}/{node_type}/attributes/json", json=body
+        )
+        response.raise_for_status()
+        data = response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"HTTP Anfrage fehlgeschlagen: {e}")
+        return None
+    result = {res["primaryDomainId"]: res for res in data}
+    return result
+
+
 def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) -> any:
-    batch_size = 300  # number of ids in each group
 
     proteins = []
 
@@ -118,7 +126,7 @@ def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) 
     proteins = get_proteins(uniprot_ids)
 
     # get all needed gene nodes + create dict for faster access
-    genes = get_node_dict(entrez_ids, batch_size, "gene")
+    genes = getNodeDict(entrez_ids, "gene")
 
     # list for all needed edges
     edges = []
@@ -129,14 +137,14 @@ def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) 
     edges.extend(edges_new)
 
     nodes_to_get = list({e["targetDomainId"] for e in edges_new})
-    disorders = get_node_dict(nodes_to_get, batch_size, "disorder")
+    disorders = getNodeDict(nodes_to_get, "disorder")
 
     # get drugs that target a protein (encoded by our genes)
     edges_new = getEdges("drug_has_target", target_domain_ids=list(proteins.keys()))
     edges.extend(edges_new)
 
     nodes_to_get = list({e["sourceDomainId"] for e in edges_new})
-    drugs = get_node_dict(nodes_to_get, batch_size, "drug")
+    drugs = getNodeDict(nodes_to_get, "drug")
 
     # get edges for go annotations; no nodes needed
     edges_new = getEdges(
@@ -157,7 +165,7 @@ def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) 
 
     nodes_to_get = list({e["targetDomainId"] for e in edges_new})
     # get side effect nodes for drugs
-    sideeffects = get_node_dict(nodes_to_get, batch_size, "side_effect")
+    sideeffects = getNodeDict(nodes_to_get, "side_effect")
 
     edges_new = getEdges(
         "drug_has_indication",
