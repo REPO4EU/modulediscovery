@@ -36,15 +36,9 @@ def get_uniprot_from_entrez(entrez_ids: list[str]) -> dict[str, list[str]]:
 
 
 def get_proteins(uniprot_ids: list[str]) -> any:
-    batch_size = 200
-
-    proteins = {id: "" for id in uniprot_ids}
-    for i in range(0, len(uniprot_ids), batch_size):
-        batch_ids = uniprot_ids[i : i + batch_size]
-        proteins_nodes = get_nodes(node_type="protein", node_ids=batch_ids)
-        for protein in proteins_nodes:
-            proteins[protein["primaryDomainId"]] = protein
-    return proteins
+    proteins = list({id: "" for id in uniprot_ids})
+    result = getNodeDict(proteins, "protein")
+    return result
 
 
 def get_genes_to_proteins(uniprot_ids):
