@@ -7,9 +7,9 @@ import numpy as np
 
 def main():
     """
-    Annotates the Subnetwork-Participation-Degree (SPD) in a subnetwork
+    Annotates the Subnetwork-Participation-Degree (SPD) and component ID in a subnetwork
     Execution example:
-    python3 modulediscovery/bin/spd_annotation_tool.py -s modulediscovery-analysis/outputs/thyroid_cancer_intogen/firstneighbor/firstneighbor.gt -n modulediscovery-analysis/outputs/thyroid_cancer_intogen/graphtoolparser/nedrex_ppi_genename_20240205_nedrex.gt -o modulediscovery-analysis/outputs/thyroid_cancer_intogen/firstneighbor/firstneighbor_spd.gt
+    python3 modulediscovery/bin/network_annotation.py -s modulediscovery-analysis/outputs/thyroid_cancer_intogen/firstneighbor/firstneighbor.gt -n modulediscovery-analysis/outputs/thyroid_cancer_intogen/graphtoolparser/nedrex_ppi_genename_20240205_nedrex.gt -o modulediscovery-analysis/outputs/thyroid_cancer_intogen/firstneighbor/firstneighbor_spd.gt
     """
     args = parse_user_arguments()
     run(args)
@@ -19,7 +19,7 @@ def parse_user_arguments(*args, **kwds):
     """
     Parses the arguments of the program
     """
-    description = "SPD-based module refinement"
+    description = "Network annotation of SPD and component ID"
     parser = ArgumentParser(description=description)
     parser.add_argument(
         "-s",

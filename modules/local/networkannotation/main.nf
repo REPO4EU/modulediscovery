@@ -1,23 +1,23 @@
-process SPD {
+process NETWORKANNOTATION {
     tag "$meta.id"
     label 'process_single'
 
     container "docker.io/quirinmanz/gt2biopax:0.1.0"
 
     input:
-    tuple val(meta), path(subnetwork)
-    path network
+    tuple val(meta), (path(subnetwork), stageAs: 'input/*')
+    path network, stageAs: 'input/*'
 
     output:
-    tuple val(meta), path("${meta.id}.spd.gt"), emit: module
-    path "versions.yml", emit: versions
+    tuple val(meta), path("${meta.id}.gt"), emit: module
+    path "versions.yml"                   , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     """
-    spd_annotation_tool.py -s $subnetwork -n $network -o ""${meta.id}.spd.gt""
+    network_annotation.py -s $subnetwork -n $network -o ""${meta.id}.gt""
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
