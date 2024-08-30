@@ -11,7 +11,7 @@ process INPUTCHECK {
     output:
     tuple val(meta), path("${meta.id}.tsv")        , emit: seeds, optional: true
     tuple val(meta), path("${meta.id}.removed.tsv"), emit: removed_seeds, optional: true
-    tuple val(meta), path("${meta.id}.multiqc.tsv"), emit: multiqc, optional: true
+    tuple val(meta), path("${meta.id}.multiqc.tsv"), emit: multiqc
     path "versions.yml"                            , emit: versions
 
     when:

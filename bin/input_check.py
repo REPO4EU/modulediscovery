@@ -70,17 +70,21 @@ def main(argv=None):
     seeds_remove = []
 
     name2index = util.name2index(g)
+
+    # Check if seeds are in the graph
     for seed in seeds:
         if seed in name2index:
             seeds_keep.append(seed)
         else:
             seeds_remove.append(seed)
 
+    # Write the seeds to files
     if seeds_keep:
         with open(f"{args.prefix}.tsv", "w") as file:
             for seed in seeds_keep:
                 file.write(f"{seed}\n")
 
+    # Write the seeds that are not in the graph to a file
     if seeds_remove:
         logger.warning(f"Seeds not in graph: {seeds_remove}")
 
@@ -88,9 +92,10 @@ def main(argv=None):
             for seed in seeds_remove:
                 file.write(f"{seed}\n")
 
-        with open(f"{args.prefix}.multiqc.tsv", "w") as file:
-            file.write("Seed file\tSeeds removed\tSeeds remaining\n")
-            file.write(f"{args.prefix}\t{len(seeds_remove)}\t{len(seeds_keep)}\n")
+    # Write summary for multiqc
+    with open(f"{args.prefix}.multiqc.tsv", "w") as file:
+        file.write("Seed file\tSeeds\tNot in network\n")
+        file.write(f"{args.prefix}\t{len(seeds_keep)}\t{len(seeds_remove)}\n")
 
 
 if __name__ == "__main__":

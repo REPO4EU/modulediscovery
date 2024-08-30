@@ -18,6 +18,12 @@ def save_gt(g, stem):
     g.save(f"{stem}.gt")
 
 
+def save_multiqc(g, stem):
+    with open("input_network_mqc.tsv", "w") as file:
+        file.write("Network\tNodes\tEdges\n")
+        file.write(f"{stem}\t{g.num_vertices()}\t{g.num_edges()}\n")
+
+
 def save_diamond(g, stem):
     with open(f"{stem}.diamond.csv", "w") as file:
         writer = csv.writer(file, lineterminator="\n")
@@ -65,6 +71,7 @@ def save(g, stem, format):
     """
     if format == "gt":
         save_gt(g=g, stem=stem)
+        save_multiqc(g=g, stem=stem)
     elif format == "diamond":
         save_diamond(g=g, stem=stem)
     elif format == "domino":
@@ -115,7 +122,7 @@ def parse_args(argv=None):
     parser.add_argument(
         "-f",
         "--format",
-        help="Output format (default gt).",
+        help="Output format (default gt). If format it gt, a summary file for multiqc will be generated as well.",
         choices=("gt", "diamond", "domino", "robust", "rwr"),
         default="gt",
     )
