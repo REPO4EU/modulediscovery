@@ -8,8 +8,9 @@ process GRAPHTOOLPARSER {
     val format
 
     output:
-    path "*${format}*" , emit: network
-    path "versions.yml", emit: versions
+    path "*${format}*"          , emit: network
+    path "input_network_mqc.tsv", emit: multiqc, optional: true
+    path "versions.yml"         , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
