@@ -2,7 +2,7 @@ process INPUTCHECK {
     tag "$meta.id"
     label 'process_single'
 
-    container "docker.io/quirinmanz/gt2biopax:0.1.0"
+    container "docker.io/quirinmanz/gt2biopax:0.1.1"
 
     input:
     tuple val(meta), (path(seeds), stageAs: 'check/*')
