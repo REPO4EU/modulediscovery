@@ -140,7 +140,7 @@ workflow MODULEDISCOVERY {
     if(!params.skip_annotation){
         GT_SPD(ch_modules, ch_network_gt)
         ch_versions = ch_versions.mix(GT_SPD.out.versions)
-        GT_BIOPAX(ch_modules, id_space, validate_online)
+        GT_BIOPAX(ch_modules, id_space, validate_online, add_variants)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
 
