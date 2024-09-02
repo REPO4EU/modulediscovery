@@ -67,8 +67,6 @@ def getEdges(
             )
             response.raise_for_status()
             data = response.json()
-            print(type, len(data))
-
             all_edges.extend(data)
             if len(data) < upper_limit:
                 break
@@ -94,7 +92,6 @@ def getNodeDict(ids, node_type, extra_attributes=[]):
             )
             response.raise_for_status()
             data = response.json()
-            print(node_type, len(data))
             all_nodes.extend(data)
             if len(data) < upper_limit:
                 break
