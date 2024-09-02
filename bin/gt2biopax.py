@@ -364,17 +364,17 @@ class BioPAXFactory:
             ),
             "variant_on_chromosome": biopax.RelationshipTypeVocabulary(
                 term=["variant on chromosome"],
-                uid="variant_on_chromosome.XREF",
+                uid="variant_on_chromosome.vocab",
                 xref=self.entityRefs["variant_on_chromosome.vocab"],
             ),
             "variant_associated_with_disorder": biopax.RelationshipTypeVocabulary(
                 term=["variant associated with disorder"],
-                uid="variant_associated_with_disorder.XREF",
+                uid="variant_associated_with_disorder.vocab",
                 xref=self.entityRefs["variant_associated_with_disorder.vocab"],
             ),
             "variant_affects_gene": biopax.RelationshipTypeVocabulary(
                 term=["variant affects gene"],
-                uid="variant_affects_gene.XREF",
+                uid="variant_affects_gene.vocab",
                 xref=self.entityRefs["variant_affects_gene.vocab"],
             ),
             "gene_product": biopax.RelationshipTypeVocabulary(
@@ -388,10 +388,14 @@ class BioPAXFactory:
                 xref=self.entityRefs["cellular_component.vocab"],
             ),
             "drug_has_indication": biopax.RelationshipTypeVocabulary(
-                term=["drug has indication"], uid="drug_has_indication.XREF"
+                term=["drug has indication"],
+                uid="drug_has_indication.vocab",
+                xref=self.entityRefs["drug_has_indication.vocab"],
             ),
             "drug_has_contraindication": biopax.RelationshipTypeVocabulary(
-                term=["drug has contraindication"], uid="drug_has_contraindication.XREF"
+                term=["drug has contraindication"],
+                uid="drug_has_contraindication.vocab",
+                xref=self.entityRefs["drug_has_contraindication.vocab"],
             ),
             "drug_has_side_effect": biopax.RelationshipTypeVocabulary(
                 term=["additional information"],

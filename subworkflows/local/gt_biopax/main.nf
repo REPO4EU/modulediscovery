@@ -17,8 +17,10 @@ workflow GT_BIOPAX {
     BIOPAX_PARSER(ch_modules, idspace, add_variants)                        // Parse the biopax files
     ch_versions = ch_versions.mix(BIOPAX_PARSER.out.versions)
 
-    BIOPAX_VALIDATOR(BIOPAX_PARSER.out.biopax.collect(), validate_online)
-    ch_versions = ch_versions.mix(BIOPAX_VALIDATOR.out.versions)
+    if (!add_variants){
+        BIOPAX_VALIDATOR(BIOPAX_PARSER.out.biopax.collect(), validate_online) // Validate the biopax files
+        ch_versions = ch_versions.mix(BIOPAX_VALIDATOR.out.versions)
+    }
 
 
     emit:
