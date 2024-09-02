@@ -8,7 +8,7 @@ import requests
 import graph_tool.all as gt
 from pybiopax import biopax, model_to_owl_file
 
-open_url = "http://10.162.163.34:7123/open"
+open_url = "https://exbio.wzw.tum.de/repo4eu_nedrex_open"
 
 logger = logging.getLogger()
 
@@ -17,7 +17,7 @@ def get_uniprot_from_entrez(entrez_ids: list[str]) -> dict[str, list[str]]:
 
     # returns the ids without the prefixes uniprot. / entrez.
     response = requests.post(
-        "https://api.nedrex.net/open/relations/get_encoded_proteins",
+        "https://exbio.wzw.tum.de/repo4eu_nedrex_open/relations/get_encoded_proteins",
         json={"nodes": entrez_ids},
     )
     response.raise_for_status()
