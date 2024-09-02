@@ -103,6 +103,26 @@ def getNodeDict(ids, node_type, extra_attributes=[]):
     return result
 
 
+def getVariantsInBatches(nodes_to_get):
+    batch_size = 10000
+    all_variants = {}
+
+    for i in range(0, len(nodes_to_get), batch_size):
+        batch_nodes = nodes_to_get[i : i + batch_size]
+        variants_batch = getNodeDict(
+            batch_nodes,
+            "genomic_variant",
+            extra_attributes=["dataSources", "position", "variantType", "chromosome"],
+        )
+        if variants_batch is not None:
+            all_variants.update(variants_batch)
+        else:
+            print(f"Error occurred while fetching batch starting at index {i}.")
+            break
+
+    return all_variants
+
+
 def get_nedrex_data(
     entrez_ids: list[str], uniprot_ids=None, protein2gene=None, variants=False
 ) -> any:
@@ -148,11 +168,9 @@ def get_nedrex_data(
         )
         edges.extend(edges_new)
         nodes_to_get = list({e["sourceDomainId"] for e in edges_new})
-        variants = getNodeDict(
-            nodes_to_get,
-            "genomic_variant",
-            extra_attributes=["dataSources", "position", "variantType", "chromosome"],
-        )
+
+        # number of variants could exceed the 16 MB limit of a passed json... that's why we need to get them in batches
+        variants = getVariantsInBatches(nodes_to_get)
 
         edges_new = getEdges(
             "variant_associated_with_disorder", source_domain_ids=list(variants.keys())
