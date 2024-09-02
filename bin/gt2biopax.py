@@ -103,7 +103,9 @@ def getNodeDict(ids, node_type, extra_attributes=[]):
     return result
 
 
-def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) -> any:
+def get_nedrex_data(
+    entrez_ids: list[str], uniprot_ids=None, protein2gene=None, variants=False
+) -> any:
 
     proteins = []
 
@@ -138,9 +140,31 @@ def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) 
         "gene_associated_with_disorder", source_domain_ids=list(genes.keys())
     )
     edges.extend(edges_new)
+    nodes_to_get_disorders_genes = list({e["targetDomainId"] for e in edges_new})
 
-    nodes_to_get = list({e["targetDomainId"] for e in edges_new})
-    disorders = getNodeDict(nodes_to_get, "disorder")
+    if variants:
+        edges_new = getEdges(
+            "variant_affects_gene", target_domain_ids=list(genes.keys())
+        )
+        edges.extend(edges_new)
+        nodes_to_get = list({e["sourceDomainId"] for e in edges_new})
+        variants = getNodeDict(
+            nodes_to_get,
+            "genomic_variant",
+            extra_attributes=["dataSources", "position", "variantType", "chromosome"],
+        )
+
+        edges_new = getEdges(
+            "variant_associated_with_disorder", source_domain_ids=list(variants.keys())
+        )
+        edges.extend(edges_new)
+        nodes_to_get_disorders_variants = list({e["targetDomainId"] for e in edges_new})
+    else:
+        nodes_to_get_disorders_variants = []
+        variants = {}
+    all_nodes_to_get = nodes_to_get_disorders_genes + nodes_to_get_disorders_variants
+
+    disorders = getNodeDict(all_nodes_to_get, "disorder")
 
     # get drugs that target a protein (encoded by our genes)
     edges_new = getEdges("drug_has_target", target_domain_ids=list(proteins.keys()))
@@ -188,6 +212,7 @@ def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) 
         genes,
         disorders,
         edges,
+        variants,
         drugs,
         proteins,
         protein2gene,
@@ -216,9 +241,12 @@ def create_dict_mapping(edges, type, switched_mapping=False):
 
 
 class BioPAXFactory:
-    def __init__(self, input_path: Path, id_space: str = "entrez"):
+    def __init__(
+        self, input_path: Path, id_space: str = "entrez", variants: bool = False
+    ):
         self.input_path = input_path
         self.id_space = id_space
+        self.variants = variants
         self.g = None
         self.biopaxmodel = None
         self.xRefs: dict[str, biopax.Xref] = {}
@@ -259,8 +287,31 @@ class BioPAXFactory:
                 id="MI:0354",
                 comment="cellular component",
             ),
+            "variant_associated_with_disorder.vocab": biopax.UnificationXref(
+                uid="variant_associated_with_disorder.XREF",
+                db="PSI-MI",
+                id="MI:0361",
+                comment="variant associated with disorder",
+            ),
+            "variant_affects_gene.vocab": biopax.UnificationXref(
+                uid="variant_affects_gene.XREF",
+                db="PSI-MI",
+                id="MI:0361",
+                comment="variant affects gene",
+            ),
+            "variant_on_chromosome.vocab": biopax.UnificationXref(
+                uid="variant_on_chromosome.XREF",
+                db="PSI-MI",
+                id="MI:0361",
+                comment="variant on chromosome",
+            ),
         }
         self.entities: dict[str, biopax.BioPaxObject] = {}
+        self.entityFeatures: dict[str, biopax.EntityFeature] = {}
+        self.featureLocationTypes: dict[str, biopax.SequenceRegionVocabulary] = {}
+        self.sequenceInterval: dict[str, biopax.SequenceInterval] = {}
+        self.sequenceSite: dict[str, biopax.SequenceSite] = {}
+        self.sequenceLocation: dict[str, biopax.SequenceLocation] = {}
         self.edgeTypes: dict[str, biopax.RelationshipTypeVocabulary] = {
             "gene_associated_with_disorder": biopax.RelationshipTypeVocabulary(
                 term=["additional information"],
@@ -268,8 +319,21 @@ class BioPAXFactory:
                 uid="gene_associated_with_disorder.vocab",
                 xref=self.entityRefs["gene_associated_with_disorder.vocab"],
             ),
-            # "variant_associated_with_disorder": biopax.RelationshipTypeVocabulary(term = ["variant associated with disorder"], uid = "variant_associated_with_disorder.XREF"),
-            # "variant_affects_gene": biopax.RelationshipTypeVocabulary(term = ["variant affects gene"], uid = "variant_affects_gene.XREF"),
+            "variant_on_chromosome": biopax.RelationshipTypeVocabulary(
+                term=["variant on chromosome"],
+                uid="variant_on_chromosome.XREF",
+                xref=self.entityRefs["variant_on_chromosome.vocab"],
+            ),
+            "variant_associated_with_disorder": biopax.RelationshipTypeVocabulary(
+                term=["variant associated with disorder"],
+                uid="variant_associated_with_disorder.XREF",
+                xref=self.entityRefs["variant_associated_with_disorder.vocab"],
+            ),
+            "variant_affects_gene": biopax.RelationshipTypeVocabulary(
+                term=["variant affects gene"],
+                uid="variant_affects_gene.XREF",
+                xref=self.entityRefs["variant_affects_gene.vocab"],
+            ),
             "gene_product": biopax.RelationshipTypeVocabulary(
                 term=["gene product"],
                 uid="gene_product.vocab",
@@ -310,7 +374,6 @@ class BioPAXFactory:
         if not self.g:
             self.load_graph()
         if self.id_space == "entrez":
-            # TODO: entrez prefix will already be added in the future
             entrez_ids = []
             for v_i in self.g.get_vertices():
                 präfix = (
@@ -321,7 +384,6 @@ class BioPAXFactory:
                 entrez_ids.append(präfix + self.g.vp["name"][v_i])
             self.add_info(entrez_ids)
         elif self.id_space == "uniprot":
-            # TODO: entrez prefix will already be added in the future
             uniprot_ids = []
             for v_i in self.g.get_vertices():
                 präfix = (
@@ -341,23 +403,25 @@ class BioPAXFactory:
                 genes,
                 disorders,
                 edges,
+                variants,
                 drugs,
                 proteins,
                 protein2gene,
                 gene2prot,
                 sideeffects,
-            ) = get_nedrex_data(entrez_ids, ids, prot2gene)
+            ) = get_nedrex_data(entrez_ids, ids, prot2gene, variants=self.variants)
         else:
             (
                 genes,
                 disorders,
                 edges,
+                variants,
                 drugs,
                 proteins,
                 protein2gene,
                 gene2prot,
                 sideeffects,
-            ) = get_nedrex_data(ids)
+            ) = get_nedrex_data(ids, variants=self.variants)
 
         # TODO: add disorders + sideeffects as soon as Biopax supports it
 
@@ -369,6 +433,16 @@ class BioPAXFactory:
             self.add_protein_info(proteins, protein2gene, protein2go, False, gene2prot)
 
         gene2disorder = create_dict_mapping(edges, "GeneAssociatedWithDisorder")
+        if self.variants:
+            variant2disorder = create_dict_mapping(
+                edges, "VariantAssociatedWithDisorder"
+            )
+            gene2variant = create_dict_mapping(edges, "VariantAffectsGene", True)
+            self.add_variant_info(variant2disorder, variants)
+
+        else:
+            variant2disorder = {}
+            gene2variant = {}
         drug2disorderIndication = create_dict_mapping(edges, "DrugHasIndication")
         drug2disorderContraindication = create_dict_mapping(
             edges, "DrugHasContraindication"
@@ -383,14 +457,163 @@ class BioPAXFactory:
             drug2disorderIndication,
             drug2disorderContraindication,
         )
-        self.add_gene_info(gene2disorder, genes)
+        self.add_gene_info(gene2disorder, genes, gene2variant)
 
-    def add_gene_info(self, gene2disorder, genes):
+    def add_variant_info(self, variant2disorder, variants):
+        for variant_id, variant in variants.items():
+            if variant_id in variant2disorder:
+                self.add_variant(variant_id, variant, variant2disorder[variant_id])
+            else:
+                self.add_variant(variant_id, variant)
+
+    def add_variant(self, variant_id, variant, associated_disorders=None):
+        display_name = "variant " + variant_id
+        uniXRef = [
+            self.xRefs.setdefault(
+                variant_id,
+                biopax.UnificationXref(
+                    uid=f"{variant_id}.XREF", db=variant["dataSources"], id=variant_id
+                ),
+            )
+        ]
+        if associated_disorders is not None:
+            for disorder in associated_disorders:
+                id = disorder["id"]
+                uniXRef.append(
+                    self.xRefs.setdefault(
+                        id + "_variant",
+                        biopax.RelationshipXref(
+                            uid=f"{id}.RREF_variant",
+                            db="MONDO",
+                            id=id,
+                            comment=disorder["dataSources"],
+                            relationship_type=self.edgeTypes[
+                                "variant_associated_with_disorder"
+                            ],
+                        ),
+                    )
+                )
+
+        position = str(variant["position"])
+
+        sequenceSites = [
+            self.sequenceSite.setdefault(
+                variant_id + ".begin",
+                biopax.SequenceSite(
+                    uid=f"{variant_id}.begin", sequence_position=position
+                ),
+            ),
+            self.sequenceSite.setdefault(
+                variant_id + ".end",
+                biopax.SequenceSite(
+                    uid=f"{variant_id}.end", sequence_position=position
+                ),
+            ),
+        ]
+
+        sequenceInterval = self.sequenceInterval.setdefault(
+            variant_id,
+            biopax.SequenceInterval(
+                uid=f"{variant_id}.interval",
+                sequence_interval_begin=sequenceSites[0],
+                sequence_interval_end=sequenceSites[1],
+            ),
+        )
+
+        variant_type_id = str(variant["variantType"]).replace(" ", "_")
+
+        termXref = self.entityRefs.setdefault(
+            variant["variantType"],
+            biopax.UnificationXref(
+                uid=f"{variant_type_id}.XREF", db="PSI-MI", id="MI:0361"
+            ),
+        )
+
+        variant_type = self.featureLocationTypes.setdefault(
+            variant_type_id,
+            biopax.SequenceRegionVocabulary(
+                term=[variant["variantType"]],
+                uid=f"{variant_type_id}.vocab",
+                xref=termXref,
+            ),
+        )
+
+        entityFeature = self.entityFeatures.setdefault(
+            variant_id,
+            biopax.EntityFeature(
+                uid=variant_id + ".feature",
+                feature_location=sequenceInterval,
+                feature_location_type=variant_type,
+            ),
+        )
+
+        entityRef = [
+            self.entityRefs.setdefault(
+                variant_id + ".REF",
+                biopax.DnaRegionReference(
+                    uid=f"{variant_id}.REF",
+                    xref=uniXRef,
+                    display_name=display_name,
+                    entity_feature=entityFeature,
+                    organism=self.organism["human"],
+                ),
+            )
+        ]
+
+        self.entities[variant_id] = biopax.DnaRegion(
+            uid=variant_id, entity_reference=entityRef, display_name=display_name
+        )
+
+        # create Chromosome
+        chromosome_id = "chr_" + variant["chromosome"]
+        uniXRefChromosome = [
+            self.xRefs.setdefault(
+                chromosome_id,
+                biopax.UnificationXref(
+                    uid=f"{chromosome_id}.XREF",
+                    db=variant["dataSources"],
+                    id=chromosome_id,
+                ),
+            )
+        ]
+
+        uniXRefChromosome.append(
+            self.xRefs.setdefault(
+                variant_id + "_" + chromosome_id,
+                biopax.RelationshipXref(
+                    uid=f"{variant_id}_{chromosome_id}.RREF",
+                    db=variant["dataSources"],
+                    id=variant_id + "_" + chromosome_id,
+                    relationship_type=self.edgeTypes["variant_on_chromosome"],
+                ),
+            )
+        )
+        self.entities[chromosome_id] = biopax.Gene(
+            uid=chromosome_id,
+            xref=uniXRefChromosome,
+            organism=self.organism["human"],
+            display_name=["chromosome " + variant["chromosome"]],
+        )
+
+    def add_gene_info(self, gene2disorder, genes, gene2variant=None):
         for entrez_id, gene in genes.items():
             if entrez_id in gene2disorder:
-                self.add_gene(entrez_id, gene, gene2disorder[entrez_id])
+                if entrez_id in gene2variant:
+                    self.add_gene(
+                        entrez_id,
+                        gene,
+                        gene2disorder[entrez_id],
+                        gene2variant[entrez_id],
+                    )
+                else:
+                    self.add_gene(entrez_id, gene, gene2disorder[entrez_id])
             else:
-                self.add_gene(entrez_id, gene)
+                if entrez_id in gene2variant:
+                    self.add_gene(
+                        entrez_id, gene, affecting_variants=gene2variant[entrez_id]
+                    )
+                else:
+                    self.add_gene(entrez_id, gene)
 
     def add_drug_info(
         self,
@@ -598,6 +821,11 @@ class BioPAXFactory:
             + list(self.entities.values())
             + list(self.edgeTypes.values())
             + list(self.organism.values())
+            + list(self.entityFeatures.values())
+            + list(self.featureLocationTypes.values())
+            + list(self.sequenceInterval.values())
+            + list(self.sequenceSite.values())
+            + list(self.sequenceLocation.values())
         )
 
     def add_PPI(self, uniprot_id1, uniprot_id2):
@@ -617,7 +845,9 @@ class BioPAXFactory:
             comment="drug has target",
         )
 
-    def add_gene(self, entrez_id, gene, associated_disorders=None):
+    def add_gene(
+        self, entrez_id, gene, associated_disorders=None, affecting_variants=None
+    ):
         # in the biopax file: id-prefix entrez. should be removed
         entrez_id = entrez_id.lstrip("entrez.")
         uniXRef = [
@@ -643,6 +873,21 @@ class BioPAXFactory:
                             relationship_type=self.edgeTypes[
                                 "gene_associated_with_disorder"
                             ],
+                        ),
+                    )
+                )
+        if affecting_variants is not None:
+            for variant in affecting_variants:
+                id = variant["id"]
+                uniXRef.append(
+                    self.xRefs.setdefault(
+                        id,
+                        biopax.RelationshipXref(
+                            uid=f"{id}.XREF",
+                            db=variant["dataSources"],
+                            # remove mondo. prefix from id
+                            id=id.replace("clinvar.", ""),
+                            relationship_type=self.edgeTypes["variant_affects_gene"],
                         ),
                     )
                 )
@@ -678,6 +923,13 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
+        "-v",
+        "--variants",
+        help="If this flag is set, variants will be added as annotations.",
+        action="store_true",
+    )
+
+    parser.add_argument(
         "-l",
         "--log-level",
         help="The desired log level (default WARNING).",
@@ -695,7 +947,7 @@ def main(argv=None):
         logger.error(f"The given input file {args.file_in} was not found!")
         sys.exit(2)
     logger.debug(f"{args=}")
-    biopax = BioPAXFactory(args.file_in, args.idspace)
+    biopax = BioPAXFactory(args.file_in, args.idspace, args.variants)
     biopax.write()
 
 
