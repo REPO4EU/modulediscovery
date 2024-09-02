@@ -2,7 +2,7 @@ process SAVEMODULES {
     tag "$meta.id"
     label 'process_single'
 
-    container "community.wave.seqera.io/library/graph-tool_networkx_pandas_pyvis_pruned:3b79bb1c134b59eb"
+    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
 
     input:
     tuple val(meta), path(module)
