@@ -46,40 +46,63 @@ def get_genes_to_proteins(uniprot_ids):
 def getEdges(
     type: str, source_domain_ids=[], target_domain_ids=[], extra_attributes=[]
 ):
+    all_edges = []
     attributes = ["sourceDomainId", "targetDomainId", "dataSources", "type"]
     attributes.extend(extra_attributes)
+    upper_limit = 10000
+
     body = {
         "source_domain_id": source_domain_ids,
         "target_domain_id": target_domain_ids,
         "attributes": attributes,
+        "skip": 0,
+        "limit": upper_limit,
     }
-    try:
-        response = requests.post(url=f"{open_url}/{type}/attributes/json", json=body)
-        response.raise_for_status()
-        data = response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"HTTP Anfrage fehlgeschlagen: {e}")
-        return None
-    return data
+    offset = 0
+    while True:
+        body["skip"] = offset
+        try:
+            response = requests.post(
+                url=f"{open_url}/{type}/attributes/json", json=body
+            )
+            response.raise_for_status()
+            data = response.json()
+            print(type, len(data))
+
+            all_edges.extend(data)
+            if len(data) < upper_limit:
+                break
+            offset += upper_limit
+        except requests.exceptions.RequestException as e:
+            print(f"HTTP Anfrage fehlgeschlagen: {e}")
+            return None
+    return all_edges
 
 
 def getNodeDict(ids, node_type, extra_attributes=[]):
+    all_nodes = []
+    upper_limit = 10000
     attributes = ["primaryDomainId", "type", "displayName"]
     attributes.extend(extra_attributes)
-    body = {
-        "node_ids": ids,
-        "attributes": attributes,
-    }
-    try:
-        response = requests.post(
-            url=f"{open_url}/{node_type}/attributes/json", json=body
-        )
-        response.raise_for_status()
-        data = response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"HTTP Anfrage fehlgeschlagen: {e}")
-        return None
-    result = {res["primaryDomainId"]: res for res in data}
+    body = {"node_ids": ids, "attributes": attributes, "skip": 0, "limit": upper_limit}
+    offset = 0
+    while True:
+        body["skip"] = offset
+        try:
+            response = requests.post(
+                url=f"{open_url}/{node_type}/attributes/json", json=body
+            )
+            response.raise_for_status()
+            data = response.json()
+            print(node_type, len(data))
+            all_nodes.extend(data)
+            if len(data) < upper_limit:
+                break
+            offset += upper_limit
+        except requests.exceptions.RequestException as e:
+            print(f"HTTP Anfrage fehlgeschlagen: {e}")
+            return None
+    result = {res["primaryDomainId"]: res for res in all_nodes}
     return result
 
 
