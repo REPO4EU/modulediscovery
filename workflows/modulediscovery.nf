@@ -69,6 +69,7 @@ workflow MODULEDISCOVERY {
 
     id_space = Channel.value(params.id_space)
     validate_online = Channel.value(params.validate_online)
+    add_variants = Channel.value(params.add_variants)
 
     // Channels
     ch_versions = Channel.empty()
