@@ -103,24 +103,45 @@ def getNodeDict(ids, node_type, extra_attributes=[]):
     return result
 
 
-def getVariantsInBatches(nodes_to_get):
+def getNodesInBatches(nodes_to_get, type: str, extra_attributes=[]):
     batch_size = 10000
-    all_variants = {}
+    all_nodes = {}
 
     for i in range(0, len(nodes_to_get), batch_size):
         batch_nodes = nodes_to_get[i : i + batch_size]
-        variants_batch = getNodeDict(
+        nodes_batch = getNodeDict(
             batch_nodes,
-            "genomic_variant",
-            extra_attributes=["dataSources", "position", "variantType", "chromosome"],
+            type,
+            extra_attributes=extra_attributes,
         )
-        if variants_batch is not None:
-            all_variants.update(variants_batch)
+        if nodes_batch is not None:
+            all_nodes.update(nodes_batch)
         else:
             print(f"Error occurred while fetching batch starting at index {i}.")
             break
 
-    return all_variants
+    return all_nodes
+
+
+def getEdgesInBatches(type: str, ids, sources=True, extra_attributes=[]):
+    batch_size = 10000
+    all_edges = []
+    for i in range(0, len(ids), batch_size):
+        batch_nodes = ids[i : i + batch_size]
+        if sources:
+            edges_batch = getEdges(
+                type, source_domain_ids=batch_nodes, extra_attributes=extra_attributes
+            )
+        else:
+            edges_batch = getEdges(
+                type, target_domain_ids=batch_nodes, extra_attributes=extra_attributes
+            )
+        if edges_batch is not None:
+            all_edges.extend(edges_batch)
+        else:
+            print(f"Error occurred while fetching batch starting at index {i}.")
+            break
+    return all_edges
 
 
 def get_nedrex_data(
@@ -151,29 +172,31 @@ def get_nedrex_data(
     proteins = get_proteins(uniprot_ids)
 
     # get all needed gene nodes + create dict for faster access
-    genes = getNodeDict(entrez_ids, "gene")
+    genes = getNodesInBatches(entrez_ids, "gene")
 
     # list for all needed edges
     edges = []
 
-    edges_new = getEdges(
-        "gene_associated_with_disorder", source_domain_ids=list(genes.keys())
-    )
+    edges_new = getEdgesInBatches("gene_associated_with_disorder", list(genes.keys()))
     edges.extend(edges_new)
     nodes_to_get_disorders_genes = list({e["targetDomainId"] for e in edges_new})
 
     if variants:
-        edges_new = getEdges(
-            "variant_affects_gene", target_domain_ids=list(genes.keys())
+        edges_new = getEdgesInBatches(
+            "variant_affects_gene", list(genes.keys()), sources=False
         )
         edges.extend(edges_new)
         nodes_to_get = list({e["sourceDomainId"] for e in edges_new})
 
         # number of variants could exceed the 16 MB limit of a passed json... that's why we need to get them in batches
-        variants = getVariantsInBatches(nodes_to_get)
+        variants = getNodesInBatches(
+            nodes_to_get,
+            "genomic_variant",
+            extra_attributes=["dataSources", "position", "variantType", "chromosome"],
+        )
 
-        edges_new = getEdges(
-            "variant_associated_with_disorder", source_domain_ids=list(variants.keys())
+        edges_new = getEdgesInBatches(
+            "variant_associated_with_disorder", ids=list(variants.keys())
         )
         edges.extend(edges_new)
         nodes_to_get_disorders_variants = list({e["targetDomainId"] for e in edges_new})
@@ -182,19 +205,21 @@ def get_nedrex_data(
         variants = {}
     all_nodes_to_get = nodes_to_get_disorders_genes + nodes_to_get_disorders_variants
 
-    disorders = getNodeDict(all_nodes_to_get, "disorder")
+    disorders = getNodesInBatches(all_nodes_to_get, "disorder")
 
     # get drugs that target a protein (encoded by our genes)
-    edges_new = getEdges("drug_has_target", target_domain_ids=list(proteins.keys()))
+    edges_new = getEdgesInBatches(
+        "drug_has_target", ids=list(proteins.keys()), sources=False
+    )
     edges.extend(edges_new)
 
     nodes_to_get = list({e["sourceDomainId"] for e in edges_new})
-    drugs = getNodeDict(nodes_to_get, "drug")
+    drugs = getNodesInBatches(nodes_to_get, "drug")
 
     # get edges for go annotations; no nodes needed
-    edges_new = getEdges(
+    edges_new = getEdgesInBatches(
         "protein_has_go_annotation",
-        source_domain_ids=list(proteins.keys()),
+        ids=list(proteins.keys()),
         extra_attributes=["qualifiers"],
     )
     edges_relevant = []
@@ -205,12 +230,12 @@ def get_nedrex_data(
     edges.extend(edges_relevant)
 
     # get side effects for drugs
-    edges_new = getEdges("drug_has_side_effect", source_domain_ids=list(drugs.keys()))
+    edges_new = getEdgesInBatches("drug_has_side_effect", ids=list(drugs.keys()))
     edges.extend(edges_new)
 
     nodes_to_get = list({e["targetDomainId"] for e in edges_new})
     # get side effect nodes for drugs
-    sideeffects = getNodeDict(nodes_to_get, "side_effect")
+    sideeffects = getNodesInBatches(nodes_to_get, "side_effect")
 
     edges_new = getEdges(
         "drug_has_indication",
