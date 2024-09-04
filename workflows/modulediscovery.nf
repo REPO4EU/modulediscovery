@@ -71,7 +71,6 @@ workflow MODULEDISCOVERY {
 
     id_space = Channel.value(params.id_space)
     validate_online = Channel.value(params.validate_online)
-    add_variants = Channel.value(params.add_variants)
 
     // Channels
     ch_versions = Channel.empty()
@@ -157,7 +156,7 @@ workflow MODULEDISCOVERY {
 
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
-        GT_BIOPAX(ch_modules, id_space, validate_online, add_variants)
+        GT_BIOPAX(ch_modules, id_space, validate_online)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
 

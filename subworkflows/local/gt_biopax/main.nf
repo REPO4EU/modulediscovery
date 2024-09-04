@@ -8,13 +8,12 @@ workflow GT_BIOPAX {
     ch_modules
     idspace
     validate_online
-    add_variants
 
     main:
 
     ch_versions = Channel.empty()                                           // For collecting tool versions
 
-    BIOPAX_PARSER(ch_modules, idspace, add_variants)                        // Parse the biopax files
+    BIOPAX_PARSER(ch_modules, idspace, params.add_variants)                        // Parse the biopax files
     ch_versions = ch_versions.mix(BIOPAX_PARSER.out.versions)
 
     if (!params.add_variants){
