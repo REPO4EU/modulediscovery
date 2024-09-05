@@ -2,7 +2,7 @@
 process PERMUTATIONEVALUATION {
     tag "$meta.id"
     label 'process_single'
-    container "community.wave.seqera.io/library/graph-tool_pip_csv.py_l-sys_pruned:e95dbddbf81ad212"
+    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
 
     input:
     tuple val(meta), path(module)
@@ -12,7 +12,8 @@ process PERMUTATIONEVALUATION {
     path(network)
 
     output:
-    tuple val(meta), path("${meta.id}.permutation_evaluation.tsv")
+    tuple val(meta), path("${meta.id}.permutation_evaluation_summary.tsv")
+    tuple val(meta), path("${meta.id}.permutation_evaluation_detailed.tsv")
     path "versions.yml"                                             , emit: versions
 
     when:
@@ -22,16 +23,12 @@ process PERMUTATIONEVALUATION {
     script:
     """
     permutation_evaluation.py \\
+        --prefix ${meta.id} \\
         --module ${module} \\
         --seeds ${seeds} \\
         --permuted_modules ${permuted_modules} \\
         --permuted_seeds ${permuted_seeds} \\
         --network ${network}
-
-    echo "Original module: ${module}
-    Original seeds: ${seeds}
-    Permuted modules (list): ${permuted_modules}
-    Permuted seeds (list): ${permuted_seeds}" > ${meta.id}.permutation_evaluation.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
