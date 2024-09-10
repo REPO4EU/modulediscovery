@@ -24,7 +24,7 @@ process DRUGPREDICTIONS {
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
         pandas: \$(python -c "import pandas; print(pandas.__version__)")
-        drugstone: \$(python -c "import drugstone; print(drugstone.__version__)")
+        drugstone: \$(pip show drugstone | grep Version | awk '{print \$2}')
     END_VERSIONS
     """
 }

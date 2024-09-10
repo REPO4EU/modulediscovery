@@ -45,6 +45,17 @@ def vp2df(g):
     # Create and return the DataFrame
     df = pd.DataFrame(data)
     df.set_index("name", inplace=True)
+
+    if "submodule" in df.columns:
+        df.sort_values(
+            by=["component_id", "submodule", "is_seed"],
+            ascending=[True, True, False],
+            inplace=True,
+        )
+    else:
+        df.sort_values(
+            by=["component_id", "is_seed"], ascending=[True, False], inplace=True
+        )
     return df
 
 

@@ -24,7 +24,16 @@ class DrugPredictions:
 
     def load_file(self, input_path):
         logger.debug("Loading file from %s", input_path)
-        self.df = pd.read_csv(input_path, sep="\t")
+        self.df = pd.read_csv(
+            input_path,
+            sep="\t",
+            dtype={
+                "name": str,
+                "is_seed": "Int64",
+                "component_id": "Int64",
+                "spd": float,
+            },
+        )
         self.nodes = set(self.df["name"])
 
     def get_drug_set_trustrank(self, id_set, identifier, filename):
@@ -97,10 +106,12 @@ class DrugPredictions:
             self.load_file(self.input_path)
         logger.debug("Creating drug predictions")
         drugs, nodeDetails = self.get_drug_set_trustrank(
-            self.nodes, self.id_space, self.prefix + ".trustrank.csv"
+            self.nodes, self.id_space, str(self.prefix) + ".trustrank"
         )
         self.parse_drug_predictions(drugs, nodeDetails)
-        self.df.to_csv(self.prefix + ".drug_predictions.tsv", sep="\t", index=False)
+        self.df.to_csv(
+            str(self.prefix) + ".drug_predictions.tsv", sep="\t", index=False
+        )
 
 
 def parse_args(argv=None):
