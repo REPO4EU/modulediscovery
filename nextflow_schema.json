@@ -15,7 +15,8 @@
                 "input": {
                     "type": "string",
                     "description": "Seed gene files (comma separated paths)",
-                    "help_text": "Multiple paths to seed gene files separated by commas. Each file must have one line per gene."
+                    "help_text": "Multiple paths to seed gene files separated by commas. Each file must have one line per gene.",
+                    "fa_icon": "fas fa-file-csv"
                 },
                 "network": {
                     "type": "string",
@@ -115,6 +116,12 @@
                     "type": "boolean",
                     "description": "Skip module visualization",
                     "fa_icon": "fas fa-forward"
+                },
+                "visualization_max_nodes": {
+                    "type": "integer",
+                    "default": 500,
+                    "description": "If a module has more nodes it will not be visualized.",
+                    "fa_icon": "fas fa-project-diagram"
                 }
             }
         },
