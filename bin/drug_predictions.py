@@ -82,6 +82,7 @@ class DrugPredictions:
                 expanded_df_rows.append(row)
 
         expanded_df = pd.DataFrame(expanded_df_rows)
+        print(expanded_df)
 
         df_sorted_within_groups = (
             expanded_df.groupby("name", group_keys=False)
