@@ -150,7 +150,7 @@ workflow MODULEDISCOVERY {
 
     // Visualize modules
     if(!params.skip_visualization){
-        VISUALIZEMODULES(ch_modules)
+        VISUALIZEMODULES(ch_modules, params.visualization_max_nodes)
         ch_versions = ch_versions.mix(VISUALIZEMODULES.out.versions)
     }
 
