@@ -15,9 +15,10 @@ logger = logging.getLogger()
 
 
 class DrugPredictions:
-    def __init__(self, input_path: Path, id_space: str = "entrez"):
+    def __init__(self, input_path: Path, id_space: str = "entrez", prefix: str = None):
         self.input_path = input_path
         self.id_space = id_space
+        self.prefix = prefix
         self.df = None
         self.nodes = None
 
@@ -25,10 +26,6 @@ class DrugPredictions:
         logger.debug("Loading file from %s", input_path)
         self.df = pd.read_csv(input_path, sep="\t")
         self.nodes = set(self.df["name"])
-
-    # TODO: adjust output path
-    def get_drug_csv_path(self) -> Path:
-        return str(self.input_path).replace(".tsv", "") + "_trustrank_drugs"
 
     def get_drug_set_trustrank(self, id_set, identifier, filename):
         parameters = {
@@ -99,10 +96,10 @@ class DrugPredictions:
             self.load_file(self.input_path)
         logger.debug("Creating drug predictions")
         drugs, nodeDetails = self.get_drug_set_trustrank(
-            self.nodes, self.id_space, self.get_drug_csv_path()
+            self.nodes, self.id_space, self.prefix + ".trustrank.csv"
         )
         self.parse_drug_predictions(drugs, nodeDetails)
-        self.df.to_csv(self.get_drug_csv_path() + ".tsv", sep="\t", index=False)
+        self.df.to_csv(self.prefix + ".drug_predictions.tsv", sep="\t", index=False)
 
 
 def parse_args(argv=None):
@@ -135,6 +132,14 @@ def parse_args(argv=None):
         choices=("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"),
         default="WARNING",
     )
+
+    parser.add_argument(
+        "-p",
+        "--prefix",
+        help="Prefix to name the output files.",
+        type=str,
+    )
+
     return parser.parse_args(argv)
 
 
@@ -146,7 +151,7 @@ def main(argv=None):
         logger.error(f"The given input file {args.file_in} was not found!")
         sys.exit(2)
     logger.debug(f"{args=}")
-    predictor = DrugPredictions(args.file_in, args.idspace)
+    predictor = DrugPredictions(args.file_in, args.idspace, args.prefix)
     predictor.create_drug_predictions()
 
 

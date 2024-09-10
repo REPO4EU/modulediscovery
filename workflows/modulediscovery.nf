@@ -17,6 +17,7 @@ include { GT2TSV as GT2TSV_Network } from '../modules/local/gt2tsv/main'
 include { ADDHEADER                } from '../modules/local/addheader/main'
 include { DIGEST                   } from '../modules/local/digest/main'
 include { MODULEOVERLAP            } from '../modules/local/moduleoverlap/main'
+include { DRUGPREDICTIONS          } from '../modules/local/drugpredictions/main'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -147,6 +148,9 @@ workflow MODULEDISCOVERY {
     // Save modules
     SAVEMODULES(ch_modules)
     ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
+
+    // Drug predictions
+    DRUGPREDICTIONS(SAVEMODULES.out.nodes_tsv, id_space)
 
     // Visualize modules
     if(!params.skip_visualization){
