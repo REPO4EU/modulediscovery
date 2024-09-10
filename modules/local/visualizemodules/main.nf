@@ -20,7 +20,7 @@ process VISUALIZEMODULES {
 
     script:
     """
-    visualize_modules.py -m "${module}" -p "${meta.id}" -n "${max_nodes}" -l DEBUG
+    visualize_modules.py -m "${module}" -p "${meta.id}" -n ${max_nodes} -l DEBUG
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
