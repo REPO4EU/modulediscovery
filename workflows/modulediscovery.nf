@@ -17,7 +17,7 @@ include { GT2TSV as GT2TSV_Network } from '../modules/local/gt2tsv/main'
 include { ADDHEADER                } from '../modules/local/addheader/main'
 include { DIGEST                   } from '../modules/local/digest/main'
 include { MODULEOVERLAP            } from '../modules/local/moduleoverlap/main'
-include { CALCULATEDISTANCE        } from '../modules/local/calculatedistance/main'
+include { TOPOLOGY                 } from '../modules/local/topology/main'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -200,8 +200,9 @@ workflow MODULEDISCOVERY {
 
     }
 
-    CALCULATEDISTANCE(ch_modules)
-    ch_toplogy_multiqc = CALCULATEDISTANCE.out
+    TOPOLOGY(ch_modules)
+    ch_versions = ch_versions.mix(TOPOLOGY.out.versions)
+    ch_toplogy_multiqc = TOPOLOGY.out.multiqc
         .map{ meta, path -> path }
         .collectFile(name: 'topology_mqc.tsv', keepHeader: true)
     ch_multiqc_files = ch_multiqc_files.mix(ch_toplogy_multiqc)

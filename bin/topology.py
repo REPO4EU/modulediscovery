@@ -45,9 +45,9 @@ def find_max_shortest_path(graph, gene_file, property_name):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Calculate Distances")
+    parser = argparse.ArgumentParser(description="Topology analysis")
     parser.add_argument("--module", required=True, help="Input module path")
-    parser.add_argument("--out", required=True, help="output file")
+    parser.add_argument("--out", required=True, help="Output file")
     parser.add_argument("--id", required=True, help="Id for the output")
 
     args = parser.parse_args()
