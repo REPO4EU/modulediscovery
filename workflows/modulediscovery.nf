@@ -7,26 +7,29 @@
 //
 // MODULE: Loaded from modules/local/
 //
-include { GRAPHTOOLPARSER         } from '../modules/local/graphtoolparser/main'
-include { GT2TSV as GT2TSV_Modules} from '../modules/local/gt2tsv/main'
-include { GT2TSV as GT2TSV_Network} from '../modules/local/gt2tsv/main'
-include { ADDHEADER               } from '../modules/local/addheader/main'
-include { DIGEST                  } from '../modules/local/digest/main'
-include { CALCULATEDISTANCE       } from '../modules/local/calculatedistance/main'
-
+include { INPUTCHECK               } from '../modules/local/inputcheck/main'
+include { GRAPHTOOLPARSER          } from '../modules/local/graphtoolparser/main'
+include { NETWORKANNOTATION        } from '../modules/local/networkannotation/main'
+include { SAVEMODULES              } from '../modules/local/savemodules/main'
+include { VISUALIZEMODULES         } from '../modules/local/visualizemodules/main'
+include { GT2TSV as GT2TSV_Modules } from '../modules/local/gt2tsv/main'
+include { GT2TSV as GT2TSV_Network } from '../modules/local/gt2tsv/main'
+include { ADDHEADER                } from '../modules/local/addheader/main'
+include { DIGEST                   } from '../modules/local/digest/main'
+include { MODULEOVERLAP            } from '../modules/local/moduleoverlap/main'
+include { CALCULATEDISTANCE        } from '../modules/local/calculatedistance/main'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { GT_DIAMOND        } from '../subworkflows/local/gt_diamond'
-include { GT_DOMINO         } from '../subworkflows/local/gt_domino'
-include { GT_ROBUST         } from '../subworkflows/local/gt_robust'
+include { GT_DIAMOND         } from '../subworkflows/local/gt_diamond'
+include { GT_DOMINO          } from '../subworkflows/local/gt_domino'
+include { GT_ROBUST          } from '../subworkflows/local/gt_robust'
 include { GT_ROBUSTBIASAWARE } from '../subworkflows/local/gt_robust_bias_aware'
-include { GT_FIRSTNEIGHBOR  } from '../subworkflows/local/gt_firstneighbor'
-include { GT_RWR            } from '../subworkflows/local/gt_rwr'
+include { GT_FIRSTNEIGHBOR   } from '../subworkflows/local/gt_firstneighbor'
+include { GT_RWR             } from '../subworkflows/local/gt_rwr'
 
-include { GT_SPD  } from '../subworkflows/local/gt_spd'
-include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
+include { GT_BIOPAX          } from '../subworkflows/local/gt_biopax/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,9 +88,19 @@ workflow MODULEDISCOVERY {
     // Run network parser for non .gt networks, supported by graph-tool
     GRAPHTOOLPARSER(ch_network_type.parse, 'gt')
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
+    ch_multiqc_files = ch_multiqc_files.mix(GRAPHTOOLPARSER.out.multiqc)
 
     // Mix into one .gt format channel
     ch_network_gt = GRAPHTOOLPARSER.out.network.collect().mix(ch_network_type.gt).first()
+
+    // Check input
+    INPUTCHECK(ch_seeds, ch_network_gt)
+    ch_seeds = INPUTCHECK.out.seeds
+    INPUTCHECK.out.removed_seeds | view {meta, path -> log.warn("Removed seeds from $meta.id. Check multiqc report.") }
+    ch_seeds_multiqc = INPUTCHECK.out.multiqc
+        .map{ meta, path -> path }
+        .collectFile(name: 'input_seeds_mqc.tsv', keepHeader: true)
+    ch_multiqc_files = ch_multiqc_files.mix(ch_seeds_multiqc)
 
 
     // Network expansion tools
@@ -127,10 +140,23 @@ workflow MODULEDISCOVERY {
         ch_modules = ch_modules.mix(GT_RWR.out.module)
     }
 
+    // Annotate with network properties
+    NETWORKANNOTATION(ch_modules, ch_network_gt)
+    ch_modules = NETWORKANNOTATION.out.module
+    ch_versions = ch_versions.mix(NETWORKANNOTATION.out.versions)
+
+    // Save modules
+    SAVEMODULES(ch_modules)
+    ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
+
+    // Visualize modules
+    if(!params.skip_visualization){
+        VISUALIZEMODULES(ch_modules, params.visualization_max_nodes)
+        ch_versions = ch_versions.mix(VISUALIZEMODULES.out.versions)
+    }
+
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
-        GT_SPD(ch_modules, ch_network_gt)
-        ch_versions = ch_versions.mix(GT_SPD.out.versions)
         GT_BIOPAX(ch_modules, id_space, validate_online)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
@@ -140,7 +166,19 @@ workflow MODULEDISCOVERY {
     ADDHEADER(ch_seeds, "gene_id")
     ch_nodes = GT2TSV_Modules.out
     ch_nodes = ch_nodes.mix(ADDHEADER.out)
+
     // Evaluation
+    ch_overlap_input = ch_nodes
+        .multiMap { meta, path ->
+            ids: meta.id
+            nodes: path
+        }
+    MODULEOVERLAP(
+        ch_overlap_input.ids.collect().map{it.join(" ")},
+        ch_overlap_input.nodes.collect()
+    )
+    ch_multiqc_files = ch_multiqc_files.mix(MODULEOVERLAP.out)
+
     if(!params.skip_gprofiler){
 
         GPROFILER2_GOST (
@@ -154,6 +192,12 @@ workflow MODULEDISCOVERY {
     if(!params.skip_digest){
         DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
         ch_versions = ch_versions.mix(DIGEST.out.versions)
+        ch_multiqc_files = ch_multiqc_files.mix(
+            DIGEST.out.multiqc
+            .map{ meta, path -> path }
+            .collectFile(name: 'digest_mqc.tsv', keepHeader: true)
+        )
+
     }
 
     CALCULATEDISTANCE(ch_modules)

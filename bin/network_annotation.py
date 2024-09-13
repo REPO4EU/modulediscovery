@@ -7,9 +7,9 @@ import numpy as np
 
 def main():
     """
-    Annotates the Subnetwork-Participation-Degree (SPD) in a subnetwork
+    Annotates the Subnetwork-Participation-Degree (SPD) and component ID in a subnetwork
     Execution example:
-    python3 modulediscovery/bin/spd_annotation_tool.py -s modulediscovery-analysis/outputs/thyroid_cancer_intogen/firstneighbor/firstneighbor.gt -n modulediscovery-analysis/outputs/thyroid_cancer_intogen/graphtoolparser/nedrex_ppi_genename_20240205_nedrex.gt -o modulediscovery-analysis/outputs/thyroid_cancer_intogen/firstneighbor/firstneighbor_spd.gt
+    python3 modulediscovery/bin/network_annotation.py -s modulediscovery-analysis/outputs/thyroid_cancer_intogen/firstneighbor/firstneighbor.gt -n modulediscovery-analysis/outputs/thyroid_cancer_intogen/graphtoolparser/nedrex_ppi_genename_20240205_nedrex.gt -o modulediscovery-analysis/outputs/thyroid_cancer_intogen/firstneighbor/firstneighbor_spd.gt
     """
     args = parse_user_arguments()
     run(args)
@@ -19,7 +19,7 @@ def parse_user_arguments(*args, **kwds):
     """
     Parses the arguments of the program
     """
-    description = "SPD-based module refinement"
+    description = "Network annotation of SPD and component ID"
     parser = ArgumentParser(description=description)
     parser.add_argument(
         "-s",
@@ -88,7 +88,10 @@ def run(args):
         subnetwork, name_to_degree_sub, name_to_degree_full
     )
 
-    # Save the pruned network in graph-tool format
+    # Assign component ID to each component of the subnetwork
+    component_id = assign_component_ids(subnetwork)
+
+    # Save the network containing the annotations in graph-tool format
     subnetwork.save(args.output_file)
 
     return
@@ -125,6 +128,16 @@ def calculate_spd_subnetwork(subnetwork, name_to_degree_sub, name_to_degree_full
         raise Exception("ERROR: Node with SPD higher than 1 detected.")
 
     return subnetwork.vp["spd"], subnetwork
+
+
+def assign_component_ids(graph):
+    graph.vp["component_id"] = graph.new_vertex_property("int")
+    component_property_map, component_histogram = gt.label_components(graph)
+
+    for v in graph.vertices():
+        graph.vp["component_id"][v] = component_property_map[v]
+
+    return graph.vp["component_id"]
 
 
 if __name__ == "__main__":
