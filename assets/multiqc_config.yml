@@ -51,6 +51,10 @@ custom_data:
           title: "Components"
           description: "Number of connected components"
           format: "{:.0f}"
+      - largest_component:
+          title: "Largest component"
+          description: "Number of nodes in the largest connected component"
+          format: "{:.0f}"
       - max_dist_to_seed:
           title: "Max Distance to Seed"
           description: "Maximum distance from any added node to its closest seed node"

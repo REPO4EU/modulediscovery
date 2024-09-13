@@ -58,12 +58,16 @@ if __name__ == "__main__":
 
     # average_distance = calculate_average_distances_all(g)
     num_seeds = g.vp["is_seed"].a.sum() if "is_seed" in g.vp else ""
-    num_components = len(gt.label_components(g)[1])
+    component_labels, component_sizes = gt.label_components(g)
+    num_components = len(component_sizes)
+    largest_component = max(component_sizes)
 
     pseudo_diameter, pseudo_diameter_ends = gt.pseudo_diameter(g)
 
     with open(out, "w") as file:
-        file.write("sample\tnodes\tedges\tseeds\tdiameter\tcomponents\n")
         file.write(
-            f"{args.id}\t{g.num_vertices()}\t{g.num_edges()}\t{num_seeds}\t{pseudo_diameter}\t{num_components}\n"
+            "sample\tnodes\tedges\tseeds\tdiameter\tcomponents\tlargest_component\n"
+        )
+        file.write(
+            f"{args.id}\t{g.num_vertices()}\t{g.num_edges()}\t{num_seeds}\t{pseudo_diameter}\t{num_components}\t{largest_component}\n"
         )
