@@ -3,32 +3,21 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-
-from nedrex.core import iter_edges
-from nedrex.core import get_nodes
+import requests
 
 import graph_tool.all as gt
 from pybiopax import biopax, model_to_owl_file
 
-import nedrex
-
-open_url = "https://api.nedrex.net/open/"
-nedrex.config.set_url_base(open_url)
-from nedrex.core import api_keys_active, get_api_key
-
-if api_keys_active():
-    api_key = get_api_key(accept_eula=True)
-    nedrex.config.set_api_key(api_key)
+open_url = "https://exbio.wzw.tum.de/repo4eu_nedrex_open"
 
 logger = logging.getLogger()
 
 
 def get_uniprot_from_entrez(entrez_ids: list[str]) -> dict[str, list[str]]:
-    import requests
 
     # returns the ids without the prefixes uniprot. / entrez.
     response = requests.post(
-        "https://api.nedrex.net/open/relations/get_encoded_proteins",
+        "https://exbio.wzw.tum.de/repo4eu_nedrex_open/relations/get_encoded_proteins",
         json={"nodes": entrez_ids},
     )
     response.raise_for_status()
@@ -36,19 +25,13 @@ def get_uniprot_from_entrez(entrez_ids: list[str]) -> dict[str, list[str]]:
 
 
 def get_proteins(uniprot_ids: list[str]) -> any:
-    batch_size = 200
-
-    proteins = {id: "" for id in uniprot_ids}
-    for i in range(0, len(uniprot_ids), batch_size):
-        batch_ids = uniprot_ids[i : i + batch_size]
-        proteins_nodes = get_nodes(node_type="protein", node_ids=batch_ids)
-        for protein in proteins_nodes:
-            proteins[protein["primaryDomainId"]] = protein
-    return proteins
+    proteins = list({id: "" for id in uniprot_ids})
+    result = getNodeDict(proteins, "protein")
+    return result
 
 
 def get_genes_to_proteins(uniprot_ids):
-    edges = [e for e in iter_edges("protein_encoded_by_gene")]
+    edges = getEdges("protein_encoded_by_gene", source_domain_ids=uniprot_ids)
     prot2gene = {}
     for uniprot_id in uniprot_ids:
         prot2gene[uniprot_id] = ""
@@ -60,19 +43,110 @@ def get_genes_to_proteins(uniprot_ids):
     return genes, prot2gene
 
 
-def get_node_dict(ids, batch_size, node_type):
-    result = []
-    for i in range(0, len(ids), batch_size):
-        batch_ids = ids[i : i + batch_size]
-        # get_nodes for current group of ids
-        nodes = get_nodes(node_type=node_type, node_ids=batch_ids)
-        result.extend(nodes)
-    result = {res["primaryDomainId"]: res for res in result}
+def getEdges(
+    type: str, source_domain_ids=[], target_domain_ids=[], extra_attributes=[]
+):
+    all_edges = []
+    attributes = ["sourceDomainId", "targetDomainId", "dataSources", "type"]
+    attributes.extend(extra_attributes)
+    upper_limit = 10000
+
+    body = {
+        "source_domain_id": source_domain_ids,
+        "target_domain_id": target_domain_ids,
+        "attributes": attributes,
+        "skip": 0,
+        "limit": upper_limit,
+    }
+    offset = 0
+    while True:
+        body["skip"] = offset
+        try:
+            response = requests.post(
+                url=f"{open_url}/{type}/attributes/json", json=body
+            )
+            response.raise_for_status()
+            data = response.json()
+            all_edges.extend(data)
+            if len(data) < upper_limit:
+                break
+            offset += upper_limit
+        except requests.exceptions.RequestException as e:
+            print(f"HTTP Anfrage fehlgeschlagen: {e}")
+            return None
+    return all_edges
+
+
+def getNodeDict(ids, node_type, extra_attributes=[]):
+    all_nodes = []
+    upper_limit = 10000
+    attributes = ["primaryDomainId", "type", "displayName"]
+    attributes.extend(extra_attributes)
+    body = {"node_ids": ids, "attributes": attributes, "skip": 0, "limit": upper_limit}
+    offset = 0
+    while True:
+        body["skip"] = offset
+        try:
+            response = requests.post(
+                url=f"{open_url}/{node_type}/attributes/json", json=body
+            )
+            response.raise_for_status()
+            data = response.json()
+            all_nodes.extend(data)
+            if len(data) < upper_limit:
+                break
+            offset += upper_limit
+        except requests.exceptions.RequestException as e:
+            print(f"HTTP Anfrage fehlgeschlagen: {e}")
+            return None
+    result = {res["primaryDomainId"]: res for res in all_nodes}
     return result
 
 
-def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) -> any:
-    batch_size = 300  # number of ids in each group
+def getNodesInBatches(nodes_to_get, type: str, extra_attributes=[]):
+    batch_size = 10000
+    all_nodes = {}
+
+    for i in range(0, len(nodes_to_get), batch_size):
+        batch_nodes = nodes_to_get[i : i + batch_size]
+        nodes_batch = getNodeDict(
+            batch_nodes,
+            type,
+            extra_attributes=extra_attributes,
+        )
+        if nodes_batch is not None:
+            all_nodes.update(nodes_batch)
+        else:
+            print(f"Error occurred while fetching batch starting at index {i}.")
+            break
+
+    return all_nodes
+
+
+def getEdgesInBatches(type: str, ids, sources=True, extra_attributes=[]):
+    batch_size = 10000
+    all_edges = []
+    for i in range(0, len(ids), batch_size):
+        batch_nodes = ids[i : i + batch_size]
+        if sources:
+            edges_batch = getEdges(
+                type, source_domain_ids=batch_nodes, extra_attributes=extra_attributes
+            )
+        else:
+            edges_batch = getEdges(
+                type, target_domain_ids=batch_nodes, extra_attributes=extra_attributes
+            )
+        if edges_batch is not None:
+            all_edges.extend(edges_batch)
+        else:
+            print(f"Error occurred while fetching batch starting at index {i}.")
+            break
+    return all_edges
+
+
+def get_nedrex_data(
+    entrez_ids: list[str], uniprot_ids=None, protein2gene=None, variants=False
+) -> any:
 
     proteins = []
 
@@ -98,76 +172,90 @@ def get_nedrex_data(entrez_ids: list[str], uniprot_ids=None, protein2gene=None) 
     proteins = get_proteins(uniprot_ids)
 
     # get all needed gene nodes + create dict for faster access
-    genes = get_node_dict(entrez_ids, batch_size, "gene")
+    genes = getNodesInBatches(entrez_ids, "gene")
 
     # list for all needed edges
     edges = []
-    edges_new = [e for e in iter_edges("gene_associated_with_disorder")]
 
-    # currently relevant edges
-    edges_relevant = []
-    nodes_to_get = set()
-    for e in edges_new:
-        if e["sourceDomainId"] in genes:
-            edges_relevant.append(e)
-            nodes_to_get.add(e["targetDomainId"])
+    edges_new = getEdgesInBatches("gene_associated_with_disorder", list(genes.keys()))
+    edges.extend(edges_new)
+    nodes_to_get_disorders_genes = list({e["targetDomainId"] for e in edges_new})
 
-    edges.extend(edges_relevant)
-    nodes_to_get = list(nodes_to_get)
+    if variants:
+        edges_new = getEdgesInBatches(
+            "variant_affects_gene", list(genes.keys()), sources=False
+        )
+        edges.extend(edges_new)
+        nodes_to_get = list({e["sourceDomainId"] for e in edges_new})
 
-    disorders = get_node_dict(nodes_to_get, batch_size, "disorder")
+        # number of variants could exceed the 16 MB limit of a passed json... that's why we need to get them in batches
+        variants = getNodesInBatches(
+            nodes_to_get,
+            "genomic_variant",
+            extra_attributes=["dataSources", "position", "variantType", "chromosome"],
+        )
+
+        edges_new = getEdgesInBatches(
+            "variant_associated_with_disorder", ids=list(variants.keys())
+        )
+        edges.extend(edges_new)
+        nodes_to_get_disorders_variants = list({e["targetDomainId"] for e in edges_new})
+    else:
+        nodes_to_get_disorders_variants = []
+        variants = {}
+    all_nodes_to_get = nodes_to_get_disorders_genes + nodes_to_get_disorders_variants
+
+    disorders = getNodesInBatches(all_nodes_to_get, "disorder")
 
     # get drugs that target a protein (encoded by our genes)
-    edges_new = [e for e in iter_edges("drug_has_target")]
-    edges_relevant = []
-    nodes_to_get = set()
-    for e in edges_new:
-        if e["targetDomainId"] in proteins:
-            edges_relevant.append(e)
-            nodes_to_get.add(e["sourceDomainId"])
-    edges.extend(edges_relevant)
-    nodes_to_get = list(nodes_to_get)
+    edges_new = getEdgesInBatches(
+        "drug_has_target", ids=list(proteins.keys()), sources=False
+    )
+    edges.extend(edges_new)
 
-    drugs = get_node_dict(nodes_to_get, batch_size, "drug")
+    nodes_to_get = list({e["sourceDomainId"] for e in edges_new})
+    drugs = getNodesInBatches(nodes_to_get, "drug")
 
     # get edges for go annotations; no nodes needed
-    new_edges = [e for e in iter_edges("protein_has_go_annotation")]
-
+    edges_new = getEdgesInBatches(
+        "protein_has_go_annotation",
+        ids=list(proteins.keys()),
+        extra_attributes=["qualifiers"],
+    )
     edges_relevant = []
-    for e in new_edges:
-        if e["sourceDomainId"] in proteins and "is_active_in" in e["qualifiers"]:
+    for e in edges_new:
+        if "is_active_in" in e["qualifiers"]:
             edges_relevant.append(e)
 
     edges.extend(edges_relevant)
 
     # get side effects for drugs
-    new_edges = [e for e in iter_edges("drug_has_side_effect")]
+    edges_new = getEdgesInBatches("drug_has_side_effect", ids=list(drugs.keys()))
+    edges.extend(edges_new)
 
-    edges_relevant = []
-    nodes_to_get = set()
-    for e in new_edges:
-        if e["sourceDomainId"] in drugs:
-            edges_relevant.append(e)
-            nodes_to_get.add(e["targetDomainId"])
-
-    edges.extend(edges_relevant)
-    nodes_to_get = list(nodes_to_get)
-
+    nodes_to_get = list({e["targetDomainId"] for e in edges_new})
     # get side effect nodes for drugs
-    sideeffects = get_node_dict(nodes_to_get, batch_size, "side_effect")
+    sideeffects = getNodesInBatches(nodes_to_get, "side_effect")
 
-    edge_types = ["drug_has_indication", "drug_has_contraindication"]
-    edges_new = [e for edge_type in edge_types for e in iter_edges(edge_type)]
-    edges_relevant = []
-    for e in edges_new:
-        if e["targetDomainId"] in disorders and e["sourceDomainId"] in drugs:
-            edges_relevant.append(e)
-    edges.extend(edges_relevant)
+    edges_new = getEdges(
+        "drug_has_indication",
+        source_domain_ids=list(drugs.keys()),
+        target_domain_ids=list(disorders.keys()),
+    )
+    edges.extend(edges_new)
+
+    edges_new = getEdges(
+        "drug_has_contraindication",
+        source_domain_ids=list(drugs.keys()),
+        target_domain_ids=list(disorders.keys()),
+    )
+    edges.extend(edges_new)
 
     return (
         genes,
         disorders,
         edges,
+        variants,
         drugs,
         proteins,
         protein2gene,
@@ -196,9 +284,12 @@ def create_dict_mapping(edges, type, switched_mapping=False):
 
 
 class BioPAXFactory:
-    def __init__(self, input_path: Path, id_space: str = "entrez"):
+    def __init__(
+        self, input_path: Path, id_space: str = "entrez", variants: bool = False
+    ):
         self.input_path = input_path
         self.id_space = id_space
+        self.variants = variants
         self.g = None
         self.biopaxmodel = None
         self.xRefs: dict[str, biopax.Xref] = {}
@@ -239,8 +330,31 @@ class BioPAXFactory:
                 id="MI:0354",
                 comment="cellular component",
             ),
+            "variant_associated_with_disorder.vocab": biopax.UnificationXref(
+                uid="variant_associated_with_disorder.XREF",
+                db="PSI-MI",
+                id="MI:0361",
+                comment="variant associated with disorder",
+            ),
+            "variant_affects_gene.vocab": biopax.UnificationXref(
+                uid="variant_affects_gene.XREF",
+                db="PSI-MI",
+                id="MI:0361",
+                comment="variant affects gene",
+            ),
+            "variant_on_chromosome.vocab": biopax.UnificationXref(
+                uid="variant_on_chromosome.XREF",
+                db="PSI-MI",
+                id="MI:0361",
+                comment="variant on chromosome",
+            ),
         }
         self.entities: dict[str, biopax.BioPaxObject] = {}
+        self.entityFeatures: dict[str, biopax.EntityFeature] = {}
+        self.featureLocationTypes: dict[str, biopax.SequenceRegionVocabulary] = {}
+        self.sequenceInterval: dict[str, biopax.SequenceInterval] = {}
+        self.sequenceSite: dict[str, biopax.SequenceSite] = {}
+        self.sequenceLocation: dict[str, biopax.SequenceLocation] = {}
         self.edgeTypes: dict[str, biopax.RelationshipTypeVocabulary] = {
             "gene_associated_with_disorder": biopax.RelationshipTypeVocabulary(
                 term=["additional information"],
@@ -248,8 +362,21 @@ class BioPAXFactory:
                 uid="gene_associated_with_disorder.vocab",
                 xref=self.entityRefs["gene_associated_with_disorder.vocab"],
             ),
-            # "variant_associated_with_disorder": biopax.RelationshipTypeVocabulary(term = ["variant associated with disorder"], uid = "variant_associated_with_disorder.XREF"),
-            # "variant_affects_gene": biopax.RelationshipTypeVocabulary(term = ["variant affects gene"], uid = "variant_affects_gene.XREF"),
+            "variant_on_chromosome": biopax.RelationshipTypeVocabulary(
+                term=["variant on chromosome"],
+                uid="variant_on_chromosome.vocab",
+                xref=self.entityRefs["variant_on_chromosome.vocab"],
+            ),
+            "variant_associated_with_disorder": biopax.RelationshipTypeVocabulary(
+                term=["variant associated with disorder"],
+                uid="variant_associated_with_disorder.vocab",
+                xref=self.entityRefs["variant_associated_with_disorder.vocab"],
+            ),
+            "variant_affects_gene": biopax.RelationshipTypeVocabulary(
+                term=["variant affects gene"],
+                uid="variant_affects_gene.vocab",
+                xref=self.entityRefs["variant_affects_gene.vocab"],
+            ),
             "gene_product": biopax.RelationshipTypeVocabulary(
                 term=["gene product"],
                 uid="gene_product.vocab",
@@ -261,10 +388,14 @@ class BioPAXFactory:
                 xref=self.entityRefs["cellular_component.vocab"],
             ),
             "drug_has_indication": biopax.RelationshipTypeVocabulary(
-                term=["drug has indication"], uid="drug_has_indication.XREF"
+                term=["drug has indication"],
+                uid="drug_has_indication.vocab",
+                xref=self.entityRefs["drug_has_indication.vocab"],
             ),
             "drug_has_contraindication": biopax.RelationshipTypeVocabulary(
-                term=["drug has contraindication"], uid="drug_has_contraindication.XREF"
+                term=["drug has contraindication"],
+                uid="drug_has_contraindication.vocab",
+                xref=self.entityRefs["drug_has_contraindication.vocab"],
             ),
             "drug_has_side_effect": biopax.RelationshipTypeVocabulary(
                 term=["additional information"],
@@ -290,7 +421,6 @@ class BioPAXFactory:
         if not self.g:
             self.load_graph()
         if self.id_space == "entrez":
-            # TODO: entrez prefix will already be added in the future
             entrez_ids = []
             for v_i in self.g.get_vertices():
                 präfix = (
@@ -301,7 +431,6 @@ class BioPAXFactory:
                 entrez_ids.append(präfix + self.g.vp["name"][v_i])
             self.add_info(entrez_ids)
         elif self.id_space == "uniprot":
-            # TODO: entrez prefix will already be added in the future
             uniprot_ids = []
             for v_i in self.g.get_vertices():
                 präfix = (
@@ -321,23 +450,25 @@ class BioPAXFactory:
                 genes,
                 disorders,
                 edges,
+                variants,
                 drugs,
                 proteins,
                 protein2gene,
                 gene2prot,
                 sideeffects,
-            ) = get_nedrex_data(entrez_ids, ids, prot2gene)
+            ) = get_nedrex_data(entrez_ids, ids, prot2gene, variants=self.variants)
         else:
             (
                 genes,
                 disorders,
                 edges,
+                variants,
                 drugs,
                 proteins,
                 protein2gene,
                 gene2prot,
                 sideeffects,
-            ) = get_nedrex_data(ids)
+            ) = get_nedrex_data(ids, variants=self.variants)
 
         # TODO: add disorders + sideeffects as soon as Biopax supports it
 
@@ -349,6 +480,16 @@ class BioPAXFactory:
             self.add_protein_info(proteins, protein2gene, protein2go, False, gene2prot)
 
         gene2disorder = create_dict_mapping(edges, "GeneAssociatedWithDisorder")
+        if self.variants:
+            variant2disorder = create_dict_mapping(
+                edges, "VariantAssociatedWithDisorder"
+            )
+            gene2variant = create_dict_mapping(edges, "VariantAffectsGene", True)
+            self.add_variant_info(variant2disorder, variants)
+
+        else:
+            variant2disorder = {}
+            gene2variant = {}
         drug2disorderIndication = create_dict_mapping(edges, "DrugHasIndication")
         drug2disorderContraindication = create_dict_mapping(
             edges, "DrugHasContraindication"
@@ -363,14 +504,163 @@ class BioPAXFactory:
             drug2disorderIndication,
             drug2disorderContraindication,
         )
-        self.add_gene_info(gene2disorder, genes)
+        self.add_gene_info(gene2disorder, genes, gene2variant)
 
-    def add_gene_info(self, gene2disorder, genes):
+    def add_variant_info(self, variant2disorder, variants):
+        for variant_id, variant in variants.items():
+            if variant_id in variant2disorder:
+                self.add_variant(variant_id, variant, variant2disorder[variant_id])
+            else:
+                self.add_variant(variant_id, variant)
+
+    def add_variant(self, variant_id, variant, associated_disorders=None):
+        display_name = "variant " + variant_id
+        uniXRef = [
+            self.xRefs.setdefault(
+                variant_id,
+                biopax.UnificationXref(
+                    uid=f"{variant_id}.XREF", db=variant["dataSources"], id=variant_id
+                ),
+            )
+        ]
+        if associated_disorders is not None:
+            for disorder in associated_disorders:
+                id = disorder["id"]
+                uniXRef.append(
+                    self.xRefs.setdefault(
+                        id + "_variant",
+                        biopax.RelationshipXref(
+                            uid=f"{id}.RREF_variant",
+                            db="MONDO",
+                            id=id,
+                            comment=disorder["dataSources"],
+                            relationship_type=self.edgeTypes[
+                                "variant_associated_with_disorder"
+                            ],
+                        ),
+                    )
+                )
+
+        position = str(variant["position"])
+
+        sequenceSites = [
+            self.sequenceSite.setdefault(
+                variant_id + ".begin",
+                biopax.SequenceSite(
+                    uid=f"{variant_id}.begin", sequence_position=position
+                ),
+            ),
+            self.sequenceSite.setdefault(
+                variant_id + ".end",
+                biopax.SequenceSite(
+                    uid=f"{variant_id}.end", sequence_position=position
+                ),
+            ),
+        ]
+
+        sequenceInterval = self.sequenceInterval.setdefault(
+            variant_id,
+            biopax.SequenceInterval(
+                uid=f"{variant_id}.interval",
+                sequence_interval_begin=sequenceSites[0],
+                sequence_interval_end=sequenceSites[1],
+            ),
+        )
+
+        variant_type_id = str(variant["variantType"]).replace(" ", "_")
+
+        termXref = self.entityRefs.setdefault(
+            variant["variantType"],
+            biopax.UnificationXref(
+                uid=f"{variant_type_id}.XREF", db="PSI-MI", id="MI:0361"
+            ),
+        )
+
+        variant_type = self.featureLocationTypes.setdefault(
+            variant_type_id,
+            biopax.SequenceRegionVocabulary(
+                term=[variant["variantType"]],
+                uid=f"{variant_type_id}.vocab",
+                xref=termXref,
+            ),
+        )
+
+        entityFeature = self.entityFeatures.setdefault(
+            variant_id,
+            biopax.EntityFeature(
+                uid=variant_id + ".feature",
+                feature_location=sequenceInterval,
+                feature_location_type=variant_type,
+            ),
+        )
+
+        entityRef = [
+            self.entityRefs.setdefault(
+                variant_id + ".REF",
+                biopax.DnaRegionReference(
+                    uid=f"{variant_id}.REF",
+                    xref=uniXRef,
+                    display_name=display_name,
+                    entity_feature=entityFeature,
+                    organism=self.organism["human"],
+                ),
+            )
+        ]
+
+        self.entities[variant_id] = biopax.DnaRegion(
+            uid=variant_id, entity_reference=entityRef, display_name=display_name
+        )
+
+        # create Chromosome
+        chromosome_id = "chr_" + variant["chromosome"]
+        uniXRefChromosome = [
+            self.xRefs.setdefault(
+                chromosome_id,
+                biopax.UnificationXref(
+                    uid=f"{chromosome_id}.XREF",
+                    db=variant["dataSources"],
+                    id=chromosome_id,
+                ),
+            )
+        ]
+
+        uniXRefChromosome.append(
+            self.xRefs.setdefault(
+                variant_id + "_" + chromosome_id,
+                biopax.RelationshipXref(
+                    uid=f"{variant_id}_{chromosome_id}.RREF",
+                    db=variant["dataSources"],
+                    id=variant_id + "_" + chromosome_id,
+                    relationship_type=self.edgeTypes["variant_on_chromosome"],
+                ),
+            )
+        )
+        self.entities[chromosome_id] = biopax.Gene(
+            uid=chromosome_id,
+            xref=uniXRefChromosome,
+            organism=self.organism["human"],
+            display_name=["chromosome " + variant["chromosome"]],
+        )
+
+    def add_gene_info(self, gene2disorder, genes, gene2variant=None):
         for entrez_id, gene in genes.items():
             if entrez_id in gene2disorder:
-                self.add_gene(entrez_id, gene, gene2disorder[entrez_id])
+                if entrez_id in gene2variant:
+                    self.add_gene(
+                        entrez_id,
+                        gene,
+                        gene2disorder[entrez_id],
+                        gene2variant[entrez_id],
+                    )
+                else:
+                    self.add_gene(entrez_id, gene, gene2disorder[entrez_id])
             else:
-                self.add_gene(entrez_id, gene)
+                if entrez_id in gene2variant:
+                    self.add_gene(
+                        entrez_id, gene, affecting_variants=gene2variant[entrez_id]
+                    )
+                else:
+                    self.add_gene(entrez_id, gene)
 
     def add_drug_info(
         self,
@@ -479,7 +769,6 @@ class BioPAXFactory:
 
         if uniprot_id:
             uniprot_id = uniprot_id.lstrip("uniprot.")
-            print(uniprot_id, drug_id)
             self.add_drug_protein_interaction(uniprot_id, drug_id)
 
     def add_protein_info(
@@ -579,6 +868,11 @@ class BioPAXFactory:
             + list(self.entities.values())
             + list(self.edgeTypes.values())
             + list(self.organism.values())
+            + list(self.entityFeatures.values())
+            + list(self.featureLocationTypes.values())
+            + list(self.sequenceInterval.values())
+            + list(self.sequenceSite.values())
+            + list(self.sequenceLocation.values())
         )
 
     def add_PPI(self, uniprot_id1, uniprot_id2):
@@ -598,7 +892,9 @@ class BioPAXFactory:
             comment="drug has target",
         )
 
-    def add_gene(self, entrez_id, gene, associated_disorders=None):
+    def add_gene(
+        self, entrez_id, gene, associated_disorders=None, affecting_variants=None
+    ):
         # in the biopax file: id-prefix entrez. should be removed
         entrez_id = entrez_id.lstrip("entrez.")
         uniXRef = [
@@ -624,6 +920,21 @@ class BioPAXFactory:
                             relationship_type=self.edgeTypes[
                                 "gene_associated_with_disorder"
                             ],
+                        ),
+                    )
+                )
+        if affecting_variants is not None:
+            for variant in affecting_variants:
+                id = variant["id"]
+                uniXRef.append(
+                    self.xRefs.setdefault(
+                        id,
+                        biopax.RelationshipXref(
+                            uid=f"{id}.XREF",
+                            db=variant["dataSources"],
+                            # remove mondo. prefix from id
+                            id=id.replace("clinvar.", ""),
+                            relationship_type=self.edgeTypes["variant_affects_gene"],
                         ),
                     )
                 )
@@ -659,6 +970,13 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
+        "-v",
+        "--variants",
+        help="If this flag is set, variants will be added as annotations.",
+        action="store_true",
+    )
+
+    parser.add_argument(
         "-l",
         "--log-level",
         help="The desired log level (default WARNING).",
@@ -676,7 +994,7 @@ def main(argv=None):
         logger.error(f"The given input file {args.file_in} was not found!")
         sys.exit(2)
     logger.debug(f"{args=}")
-    biopax = BioPAXFactory(args.file_in, args.idspace)
+    biopax = BioPAXFactory(args.file_in, args.idspace, args.variants)
     biopax.write()
 
 

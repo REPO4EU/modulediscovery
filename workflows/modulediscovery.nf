@@ -17,6 +17,7 @@ include { GT2TSV as GT2TSV_Network } from '../modules/local/gt2tsv/main'
 include { ADDHEADER                } from '../modules/local/addheader/main'
 include { DIGEST                   } from '../modules/local/digest/main'
 include { MODULEOVERLAP            } from '../modules/local/moduleoverlap/main'
+include { TOPOLOGY                 } from '../modules/local/topology/main'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -110,7 +111,7 @@ workflow MODULEDISCOVERY {
 
     // Visualize modules
     if(!params.skip_visualization){
-        VISUALIZEMODULES(ch_modules)
+        VISUALIZEMODULES(ch_modules, params.visualization_max_nodes)
         ch_versions = ch_versions.mix(VISUALIZEMODULES.out.versions)
     }
 
@@ -159,6 +160,13 @@ workflow MODULEDISCOVERY {
 
     }
 
+    TOPOLOGY(ch_modules)
+    ch_versions = ch_versions.mix(TOPOLOGY.out.versions)
+    ch_toplogy_multiqc = TOPOLOGY.out.multiqc
+        .map{ meta, path -> path }
+        .collectFile(name: 'topology_mqc.tsv', keepHeader: true)
+    ch_multiqc_files = ch_multiqc_files.mix(ch_toplogy_multiqc)
+
     // Collate and save software versions
     softwareVersionsToYAML(ch_versions)
         .collectFile(
@@ -167,7 +175,6 @@ workflow MODULEDISCOVERY {
             sort: true,
             newLine: true
         ).set { ch_collated_versions }
-
     //
     // MODULE: MultiQC
     //

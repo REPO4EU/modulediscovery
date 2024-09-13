@@ -13,6 +13,9 @@ export_plots: true
 
 disable_version_detection: true
 
+run_modules:
+  - custom_content
+
 custom_content:
   order:
     - input
@@ -24,6 +27,42 @@ custom_content:
     - digest
 
 custom_data:
+  topology:
+    description: "Topological properties of the network"
+    plot_type: "generalstats"
+    pconfig:
+      - nodes:
+          title: "Nodes"
+          description: "Number of nodes in the network"
+          format: "{:.0f}"
+      - edges:
+          title: "Edges"
+          description: "Number of edges in the network"
+          format: "{:.0f}"
+      - seeds:
+          title: "Seeds"
+          description: "Number of seed genes in the network"
+          format: "{:.0f}"
+      - diameter:
+          title: "Diameter"
+          description: "Pseudo diameter of the network"
+          format: "{:.0f}"
+      - components:
+          title: "Components"
+          description: "Number of connected components"
+          format: "{:.0f}"
+      - largest_component:
+          title: "Largest component"
+          description: "Number of nodes in the largest connected component"
+          format: "{:.0f}"
+      - max_dist_to_seed:
+          title: "Max distance to seed"
+          description: "Maximum distance from any added node to its closest seed node"
+          format: "{:.0f}"
+      - isolated_nodes:
+          title: "Isolated nodes"
+          description: "Number of nodes without any edges to other nodes"
+          format: "{:.0f}"
   input_seeds:
     parent_id: input
     parent_name: "Input"
@@ -70,4 +109,4 @@ custom_data:
     pconfig:
       title: "Number of shared nodes"
       zlab: "Number of shared nodes"
-      format: "{:,.0f}"
+      format: "{:.0f}"
