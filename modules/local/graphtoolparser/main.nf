@@ -1,7 +1,7 @@
 process GRAPHTOOLPARSER {
     label 'process_single'
 
-    container "docker.io/quirinmanz/gt2biopax:0.1.0"
+    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
 
     input:
     path network
