@@ -57,17 +57,61 @@ if __name__ == "__main__":
     g = gt.load_graph(graph_path)
 
     # average_distance = calculate_average_distances_all(g)
-    num_seeds = g.vp["is_seed"].a.sum() if "is_seed" in g.vp else ""
+    if "is_seed" in g.vp:
+        seeds = []
+        added_nodes = []
+        for v in g.vertices():
+            if g.vp["is_seed"][v] == 1:
+                seeds.append(v)
+            else:
+                added_nodes.append(v)
+
+        num_seeds = len(seeds)
+
+        max_dist_to_seed = float("-inf")
+        for added_node in added_nodes:
+            shortest_paths = gt.shortest_distance(g, source=added_node, target=seeds)
+            min_path_length = min(shortest_paths)
+            max_dist_to_seed = max(max_dist_to_seed, min_path_length)
+    else:
+        num_seeds = ""
+        max_dist_to_seed = ""
+
     component_labels, component_sizes = gt.label_components(g)
     num_components = len(component_sizes)
     largest_component = max(component_sizes)
 
     pseudo_diameter, pseudo_diameter_ends = gt.pseudo_diameter(g)
 
+    num_isolated_nodes = len([v for v in g.vertices() if g.vertex(v).out_degree() == 0])
+
+    # print(gt.shortest_distance(g, source=0, target=1))
+
     with open(out, "w") as file:
         file.write(
-            "sample\tnodes\tedges\tseeds\tdiameter\tcomponents\tlargest_component\n"
+            "\t".join(
+                [
+                    "sample",
+                    "nodes",
+                    "edges",
+                    "seeds",
+                    "max_dist_to_seed",
+                    "diameter",
+                    "components",
+                    "largest_component",
+                    "isolated_nodes",
+                ]
+            )
+            + "\n"
         )
         file.write(
-            f"{args.id}\t{g.num_vertices()}\t{g.num_edges()}\t{num_seeds}\t{pseudo_diameter}\t{num_components}\t{largest_component}\n"
+            f"{args.id}\t"
+            f"{g.num_vertices()}\t"
+            f"{g.num_edges()}\t"
+            f"{num_seeds}\t"
+            f"{max_dist_to_seed}\t"
+            f"{pseudo_diameter}\t"
+            f"{num_components}\t"
+            f"{largest_component}\t"
+            f"{num_isolated_nodes}\n"
         )
