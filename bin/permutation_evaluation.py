@@ -416,6 +416,15 @@ def main(argv=None):
     file_name_summary = f"{args.prefix}.permutation_evaluation_summary.tsv"
     write_output_tsv_file(np.transpose(data_summary), data_headers, file_name_summary)
 
+    # write multiqc summary
+    with open(f"{args.prefix}.permutation_multiqc_summary.tsv", "w") as f:
+        f.write(
+            "id\tavg_jaccard_index\trediscovery_rate\tnormalized_rediscovery_rate\n"
+        )
+        f.write(
+            f"{args.prefix}\t{avg_score_Jaccard}\t{avg_scores}\t{avg_scores_normalized}\n"
+        )
+
 
 if __name__ == "__main__":
     sys.exit(main())

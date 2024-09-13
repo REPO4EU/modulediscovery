@@ -97,7 +97,7 @@ workflow MODULEDISCOVERY {
     // Permutation based evaluation
     PERMUTATION(ch_seeds, ch_modules, ch_network_gt)
     ch_versions = ch_versions.mix(PERMUTATION.out.versions)
-
+    ch_multiqc_files = PERMUTATION.out.multiqc_files
 
     // Annotate with network properties
     NETWORKANNOTATION(ch_modules, ch_network_gt)

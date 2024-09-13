@@ -14,7 +14,8 @@ process PERMUTATIONEVALUATION {
     output:
     tuple val(meta), path("${meta.id}.permutation_evaluation_summary.tsv")
     tuple val(meta), path("${meta.id}.permutation_evaluation_detailed.tsv")
-    path "versions.yml"                                             , emit: versions
+    tuple val(meta), path("${meta.id}.permutation_multiqc_summary.tsv")     , emit: multiqc_summary
+    path "versions.yml"                                                     , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

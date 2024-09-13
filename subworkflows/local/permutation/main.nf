@@ -89,8 +89,12 @@ workflow PERMUTATION {
         ch_network
     )
     ch_versions = ch_versions.mix(PERMUTATIONEVALUATION.out.versions)
+    ch_multiqc_files = PERMUTATIONEVALUATION.out.multiqc_summary
+        .map{ meta, path -> path }
+        .collectFile(name: 'permutation_summary_mqc.tsv', keepHeader: true)
 
 
     emit:
     versions = ch_versions              // channel: [ versions.yml ]        emit collected versions
+    multiqc_files = ch_multiqc_files          // channel: [ multiqc_summary ]     emit collected multiqc files
 }
