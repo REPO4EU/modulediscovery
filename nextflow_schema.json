@@ -148,6 +148,10 @@
                     "help_text": "Flag for running the BioPAX validator client, i.e. validating at the baderlab server. If \"false\" will load OBO files locally, which can take some time but is recommended for files > 100Mb.",
                     "description": "Flag for validating online at baderlab.org.",
                     "fa_icon": "fas fa-globe"
+                },
+                "add_variants": {
+                    "type": "boolean",
+                    "description": "Flag for adding variants to the biopax annotation file."
                 }
             },
             "fa_icon": "far fa-edit"
