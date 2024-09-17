@@ -1,15 +1,16 @@
 process GRAPHTOOLPARSER {
     label 'process_single'
 
-    container "docker.io/quirinmanz/gt2biopax:0.1.0"
+    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
 
     input:
     path network
     val format
 
     output:
-    path "*${format}*" , emit: network
-    path "versions.yml", emit: versions
+    path "*${format}*"          , emit: network
+    path "input_network_mqc.tsv", emit: multiqc, optional: true
+    path "versions.yml"         , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

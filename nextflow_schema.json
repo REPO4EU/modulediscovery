@@ -15,7 +15,8 @@
                 "input": {
                     "type": "string",
                     "description": "Seed gene files (comma separated paths)",
-                    "help_text": "Multiple paths to seed gene files separated by commas. Each file must have one line per gene."
+                    "help_text": "Multiple paths to seed gene files separated by commas. Each file must have one line per gene.",
+                    "fa_icon": "fas fa-file-csv"
                 },
                 "network": {
                     "type": "string",
@@ -76,11 +77,6 @@
                     "fa_icon": "fas fa-forward",
                     "description": "Flag for skipping DIAMOnD"
                 },
-                "skip_digest": {
-                    "type": "boolean",
-                    "description": "Flag for skipping DIGEST",
-                    "fa_icon": "fas fa-forward"
-                },
                 "diamond_n": {
                     "type": "integer",
                     "default": 200,
@@ -100,18 +96,32 @@
                 },
                 "rwr_scaling": {
                     "type": "boolean",
-                    "description": "Add a scaling depending on the node's degree."
+                    "description": "Add a scaling depending on the node's degree.",
+                    "fa_icon": "fas fa-walking"
                 },
                 "rwr_symmetrical": {
                     "type": "boolean",
-                    "description": "Compute the symmetric instead of column-wise normalized Markov matrix."
+                    "description": "Compute the symmetric instead of column-wise normalized Markov matrix.",
+                    "fa_icon": "fas fa-walking"
                 },
                 "rwr_r": {
                     "type": "number",
                     "description": "Damping factor/restart probability.",
                     "default": 0.8,
                     "minimum": 0,
-                    "maximum": 1
+                    "maximum": 1,
+                    "fa_icon": "fas fa-walking"
+                },
+                "skip_visualization": {
+                    "type": "boolean",
+                    "description": "Skip module visualization",
+                    "fa_icon": "fas fa-forward"
+                },
+                "visualization_max_nodes": {
+                    "type": "integer",
+                    "default": 500,
+                    "description": "If a module has more nodes it will not be visualized.",
+                    "fa_icon": "fas fa-project-diagram"
                 }
             }
         },
@@ -123,18 +133,25 @@
             "properties": {
                 "skip_annotation": {
                     "type": "boolean",
-                    "description": "Flag for skipping the annotation part of the process."
+                    "description": "Flag for skipping the annotation part of the process.",
+                    "fa_icon": "fas fa-forward"
                 },
                 "id_space": {
                     "type": "string",
                     "enum": ["entrez", "uniprot"],
                     "default": "entrez",
-                    "description": "Either give graph with enter ids or uniprot ids."
+                    "description": "Either give graph with enter ids or uniprot ids.",
+                    "fa_icon": "fas fa-fingerprint"
                 },
                 "validate_online": {
                     "type": "boolean",
                     "help_text": "Flag for running the BioPAX validator client, i.e. validating at the baderlab server. If \"false\" will load OBO files locally, which can take some time but is recommended for files > 100Mb.",
-                    "description": "Flag for validating online at baderlab.org."
+                    "description": "Flag for validating online at baderlab.org.",
+                    "fa_icon": "fas fa-globe"
+                },
+                "add_variants": {
+                    "type": "boolean",
+                    "description": "Flag for adding variants to the biopax annotation file."
                 }
             },
             "fa_icon": "far fa-edit"
@@ -149,6 +166,11 @@
                 "skip_gprofiler": {
                     "type": "boolean",
                     "description": "Flag for skipping g:Profiler",
+                    "fa_icon": "fas fa-forward"
+                },
+                "skip_digest": {
+                    "type": "boolean",
+                    "description": "Flag for skipping DIGEST",
                     "fa_icon": "fas fa-forward"
                 }
             }

@@ -2,7 +2,7 @@ process INPUTCHECK {
     tag "$meta.id"
     label 'process_single'
 
-    container "docker.io/quirinmanz/gt2biopax:0.1.0"
+    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
 
     input:
     tuple val(meta), (path(seeds), stageAs: 'check/*')
@@ -11,7 +11,7 @@ process INPUTCHECK {
     output:
     tuple val(meta), path("${meta.id}.tsv")        , emit: seeds, optional: true
     tuple val(meta), path("${meta.id}.removed.tsv"), emit: removed_seeds, optional: true
-    tuple val(meta), path("${meta.id}.multiqc.tsv"), emit: multiqc, optional: true
+    tuple val(meta), path("${meta.id}.multiqc.tsv"), emit: multiqc
     path "versions.yml"                            , emit: versions
 
     when:

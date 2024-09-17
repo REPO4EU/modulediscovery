@@ -13,13 +13,100 @@ export_plots: true
 
 disable_version_detection: true
 
+run_modules:
+  - custom_content
+
+custom_content:
+  order:
+    - input
+    - input_seeds
+    - input_network
+    - overlap
+    - jaccard_similarity
+    - shared_nodes
+    - digest
+
 custom_data:
-  removed_seeds:
-    section_name: "WARNING: Removed seeds"
-    description: "Some seed files contained seeds, which were not present in network and were removed."
+  topology:
+    description: "Topological properties of the network"
+    plot_type: "generalstats"
+    pconfig:
+      - nodes:
+          title: "Nodes"
+          description: "Number of nodes in the network"
+          format: "{:.0f}"
+      - edges:
+          title: "Edges"
+          description: "Number of edges in the network"
+          format: "{:.0f}"
+      - seeds:
+          title: "Seeds"
+          description: "Number of seed genes in the network"
+          format: "{:.0f}"
+      - diameter:
+          title: "Diameter"
+          description: "Pseudo diameter of the network"
+          format: "{:.0f}"
+      - components:
+          title: "Components"
+          description: "Number of connected components"
+          format: "{:.0f}"
+      - largest_component:
+          title: "Largest component"
+          description: "Number of nodes in the largest connected component"
+          format: "{:.0f}"
+      - max_dist_to_seed:
+          title: "Max distance to seed"
+          description: "Maximum distance from any added node to its closest seed node"
+          format: "{:.0f}"
+      - isolated_nodes:
+          title: "Isolated nodes"
+          description: "Number of nodes without any edges to other nodes"
+          format: "{:.0f}"
+  input_seeds:
+    parent_id: input
+    parent_name: "Input"
+    section_name: "Seeds"
+    description: "Shows the number of seeds retained from the input files and the number of seeds removed (not in network)."
+    plot_type: "bargraph"
+    pconfig:
+      title: "Seeds"
+      format: "{:.0f}"
+  input_network:
+    parent_id: input
+    parent_name: "Input"
+    section_name: "Network"
     plot_type: "table"
     pconfig:
-      id: "removed_seeds_table"
-      table_title: "Removed seeds"
-      namespace: "Removed seeds"
+      title: "Network"
+      format: "{:.0f}"
+  digest:
+    section_name: "DIGEST"
+    description: "Empirical -log10 p-values for functional coherence calculated with
+      <a href='https://digest-validation.net/documentation'>DIGEST</a>. Columns represent different gene set data sources."
+    plot_type: "table"
+    pconfig:
+      title: "DIGEST p-values"
+      min: 0
+      max: 3
+      scale: "YlGn"
+      format: "{:,.3f}"
+  jaccard_similarity:
+    parent_id: overlap
+    parent_name: "Overlap"
+    section_name: "Jaccard similarity"
+    description: "Jaccard similarity between the gene sets of the modules"
+    plot_type: "heatmap"
+    pconfig:
+      title: "Module Jaccard similarity"
+      zlab: "Jaccard similarity"
+  shared_nodes:
+    parent_id: overlap
+    parent_name: "Overlap"
+    section_name: "Shared nodes"
+    description: "Number of shared nodes between the gene sets of the modules"
+    plot_type: "heatmap"
+    pconfig:
+      title: "Number of shared nodes"
+      zlab: "Number of shared nodes"
       format: "{:.0f}"

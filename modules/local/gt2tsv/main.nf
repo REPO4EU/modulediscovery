@@ -1,6 +1,6 @@
 process GT2TSV {
     tag "$meta.id"
-    container "docker.io/quirinmanz/gt2biopax:0.1.0"
+    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
 
     input:
     tuple val(meta), path(gt_file)
