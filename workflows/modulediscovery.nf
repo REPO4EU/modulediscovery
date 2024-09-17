@@ -15,7 +15,7 @@ include { GT2TSV as GT2TSV_Modules } from '../modules/local/gt2tsv/main'
 include { GT2TSV as GT2TSV_Network } from '../modules/local/gt2tsv/main'
 include { ADDHEADER                } from '../modules/local/addheader/main'
 include { DIGEST                   } from '../modules/local/digest/main'
-
+include { DRUGSTONEEXPORT          } from '../modules/local/drugstoneexport/main'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -144,7 +144,8 @@ workflow MODULEDISCOVERY {
     // Save modules
     SAVEMODULES(ch_modules)
     ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
-
+    // Drugstone export 
+    DRUGSTONEEXPORT(SAVEMODULES.out.graphml, id_space)
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
         GT_BIOPAX(ch_modules, id_space, validate_online)
