@@ -155,7 +155,7 @@ workflow MODULEDISCOVERY {
         VISUALIZEMODULES(ch_modules, params.visualization_max_nodes)
         ch_versions = ch_versions.mix(VISUALIZEMODULES.out.versions)
     }
-    // Drugstone export 
+    // Drugstone export
     DRUGSTONEEXPORT(SAVEMODULES.out.graphml, id_space)
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
