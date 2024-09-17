@@ -2,11 +2,11 @@
 
 import os
 import graph_tool.all as gt
-from pathlib import Path 
+from pathlib import Path
 import sys
-import json 
-import requests 
-import argparse 
+import json
+import requests
+import argparse
 
 
 def load_nodes(graph):
@@ -15,50 +15,48 @@ def load_nodes(graph):
     name = graph.vp["name"]
     seeds = graph.vp["is_seed"]
     for id, is_seed in zip(name, seeds):
-        if(is_seed):
+        if is_seed:
             group = "seedNode"
-        else: 
+        else:
             group = "default"
-        nodes.append({"id" : id, "group" : group})
+        nodes.append({"id": id, "group": group})
     return json.dumps(nodes)
 
+
 def load_edges(graph):
-    ##returns a list of edges in the JSON format needed for drugstone 
+    ##returns a list of edges in the JSON format needed for drugstone
     edges = []
     for source, target in graph.iter_edges():
         nodes = graph.vp["name"]
         source_node = nodes[source]
         target_node = nodes[target]
-        edges.append({"from" : source_node , "to" : target_node})
+        edges.append({"from": source_node, "to": target_node})
     return json.dumps(edges)
+
 
 def send_requests(nodes, edges, identifier):
     ## creates and sends the request to the drugstone api
 
-    url = 'https://api.drugst.one/create_network'
+    url = "https://api.drugst.one/create_network"
     data = {
-        "network": {
-            'nodes': nodes,
-            'edges': edges
-        },
-        "config": {
-            "identifier": identifier,
-            "autofillEdges": False
-        },
+        "network": {"nodes": nodes, "edges": edges},
+        "config": {"identifier": identifier, "autofillEdges": False},
     }
-    post_request = requests.post(url, json = data)
+    post_request = requests.post(url, json=data)
     id = post_request.text.strip('"')
-    result_url = f'https://drugst.one?id={id}'
+    result_url = f"https://drugst.one?id={id}"
     get_r = requests.get(result_url)
     return get_r.url
-    
+
+
 def save_urls(files, links):
-    with open('output.txt', 'w') as output:
-        for(file, link) in zip(files, links):
+    with open("output.txt", "w") as output:
+        for file, link in zip(files, links):
             output.write(f"file: {file} \n")
             output.write(f"link: \n{link} \n")
 
-def parse_args(argv = None):
+
+def parse_args(argv=None):
     parser = argparse.ArgumentParser(
         description="Parse the modules of different tools.",
         epilog="Example: python save_modules.py -m module1.gt -p 'module1'",
@@ -70,10 +68,7 @@ def parse_args(argv = None):
         type=Path,
     )
     parser.add_argument(
-        "-o",
-        "--output",
-        help="the output file.",
-        type=argparse.FileType('w')
+        "-o", "--output", help="the output file.", type=argparse.FileType("w")
     )
     parser.add_argument(
         "-l",
@@ -91,7 +86,8 @@ def parse_args(argv = None):
     )
     return parser.parse_args(argv)
 
-def main(argv = None):
+
+def main(argv=None):
     args = parse_args(argv)
     file = args.module
     id_space = args.id_space
@@ -103,5 +99,5 @@ def main(argv = None):
         output.write(f"{link}")
 
 
-if __name__  == "__main__":
+if __name__ == "__main__":
     main()
