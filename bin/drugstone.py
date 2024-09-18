@@ -49,17 +49,10 @@ def send_requests(nodes, edges, identifier):
     return get_r.url
 
 
-def save_urls(files, links):
-    with open("output.txt", "w") as output:
-        for file, link in zip(files, links):
-            output.write(f"file: {file} \n")
-            output.write(f"link: \n{link} \n")
-
-
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(
-        description="Parse the modules of different tools.",
-        epilog="Example: python save_modules.py -m module1.gt -p 'module1'",
+        description="generates a drugstone link for the module",
+        epilog="Example: python drugstone.py -m module.gt -o module.drugstonelink.txt -i Entrez",
     )
     parser.add_argument(
         "-m",
@@ -69,13 +62,6 @@ def parse_args(argv=None):
     )
     parser.add_argument(
         "-o", "--output", help="the output file.", type=argparse.FileType("w")
-    )
-    parser.add_argument(
-        "-l",
-        "--log-level",
-        help="The desired log level (default WARNING).",
-        choices=("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"),
-        default="WARNING",
     )
     parser.add_argument(
         "-i",
@@ -96,7 +82,7 @@ def main(argv=None):
     edges = load_edges(graph)
     link = send_requests(nodes, edges, id_space)
     with args.output as output:
-        output.write(f"{link}")
+        output.write(f"{link} \n")
 
 
 if __name__ == "__main__":

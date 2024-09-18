@@ -1,29 +1,23 @@
-
-// Many additional examples for nextflow modules are available at https://github.com/nf-core/modules/tree/master/modules/nf-core
-
-process DRUGSTONEEXPORT {                           // Process name, should be all upper case
-    tag "$meta.id"                          // Used to display the process in the progress overview
-    label 'process_single'                  // Used to allocate resources, "process_single" uses one thread and 6GB memory, for labels see conf/base.config
+process DRUGSTONEEXPORT{
+    tag "$meta.id"
+    label 'process_single'
 
     container "docker.io/kerstingjohannes/modulediscovery:1.0.0"
 
-    input:                                  // Define the input channels
-    tuple val(meta), path(module)           // Path to a network file
+    input:
+    tuple val(meta), path(module)
     val(id_space)
 
-    output:                                 // Define output files, "emit" is only used to access the corresponding outputs externally
-    tuple val(meta), path("${meta.id}.drugstonelink.txt")   , emit: link       // Define a pattern for the output file (can also be the full name, if known), emit -> the active module
-    path "versions.yml"                                                                     , emit: versions     // Software versions, this is not essential but nice, the collected versions will be part of the final multiqc report
+    output:
+    tuple val(meta), path("${meta.id}.drugstonelink.txt")   , emit: link
+    path "versions.yml"     , emit: versions
 
     when:
-    task.ext.when == null || task.ext.when  // Allows to prevent the execution of this process via a workflow logic, just put it in
+    task.ext.when == null || task.ext.when
 
-    // The script for executint DIAMOnD, in this case, the .py script is shipped with the container
-    // Access inputs, parameters, etc. with the "$" operator
-    // The part starting with "cat <<-END_VERSIONS > versions.yml" only collects software versions for the versions.yml file, not essential
     script:
     """
-    drugstone.py -l DEBUG -m $module -i $id_space -o ${meta.id}.drugstonelink.txt
+    drugstone.py -m $module -i $id_space -o ${meta.id}.drugstonelink.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

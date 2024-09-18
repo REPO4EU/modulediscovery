@@ -156,7 +156,8 @@ workflow MODULEDISCOVERY {
         ch_versions = ch_versions.mix(VISUALIZEMODULES.out.versions)
     }
     // Drugstone export
-    DRUGSTONEEXPORT(SAVEMODULES.out.graphml, id_space)
+    DRUGSTONEEXPORT(ch_modules, id_space)
+    ch_versions = ch_versions.mix(DRUGSTONEEXPORT.out.versions)
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
         GT_BIOPAX(ch_modules, id_space, validate_online)
