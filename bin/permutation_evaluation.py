@@ -115,7 +115,10 @@ def retrieval_score_from_removed_gene(
                 score += 1 / n_removed_genes
         scores.append(score)
         candidates = [k for k in lists_candidates[i] if k not in perturbed_seeds[i]]
-        scores_normalized.append(score / len(candidates))
+        if len(candidates) == 0:
+            scores_normalized.append(0)
+        else:
+            scores_normalized.append(score / len(candidates))
 
     avg_scores = round(np.mean(scores), 4)
     std_scores = round(np.std(scores), 4)
