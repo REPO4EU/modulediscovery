@@ -31,10 +31,6 @@ table_columns_visible:
     nodes: false
 
 custom_data:
-  general_stats:
-    order:
-      - topology
-      - permutation
   topology:
     plot_type: "generalstats"
     pconfig:
