@@ -82,7 +82,7 @@ def main(argv=None):
     edges = load_edges(graph)
     link = send_requests(nodes, edges, id_space)
     with args.output as output:
-        output.write(f"{link} \n")
+        output.write(f"{link}\n")
 
 
 if __name__ == "__main__":
