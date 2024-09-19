@@ -70,6 +70,11 @@ def read_input(args):
 
 
 def write_output_tsv_file(data, headers, file_name):
+
+    if len(data[0]) == (len(headers) + 1):
+        headers = [""] + headers
+    assert len(data[0]) == len(headers)
+
     with open(file_name, mode="w", newline="") as file:
         writer = csv.writer(file, delimiter="\t")
         writer.writerow(headers)
