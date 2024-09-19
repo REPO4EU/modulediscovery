@@ -95,11 +95,6 @@ workflow MODULEDISCOVERY {
     ch_modules = NETWORKEXPANSION.out.modules
     ch_versions = ch_versions.mix(NETWORKEXPANSION.out.versions)
 
-    // Permutation based evaluation
-    PERMUTATION(ch_seeds, ch_modules, ch_network_gt)
-    ch_versions = ch_versions.mix(PERMUTATION.out.versions)
-    ch_multiqc_files = ch_multiqc_files.mix(PERMUTATION.out.multiqc_files)
-
     // Annotate with network properties
     NETWORKANNOTATION(ch_modules, ch_network_gt)
     ch_modules = NETWORKANNOTATION.out.module
@@ -121,51 +116,64 @@ workflow MODULEDISCOVERY {
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
 
-    GT2TSV_Modules(ch_modules)
-    GT2TSV_Network(ch_network_gt.flatten().map{ it -> [ [ id: it.baseName ], it ] })
-    ADDHEADER(ch_seeds, "gene_id")
-    ch_nodes = GT2TSV_Modules.out
-    ch_nodes = ch_nodes.mix(ADDHEADER.out)
-
     // Evaluation
-    ch_overlap_input = ch_nodes
-        .multiMap { meta, path ->
-            ids: meta.id
-            nodes: path
-        }
-    MODULEOVERLAP(
-        ch_overlap_input.ids.collect().map{it.join(" ")},
-        ch_overlap_input.nodes.collect()
-    )
-    ch_multiqc_files = ch_multiqc_files.mix(MODULEOVERLAP.out)
+    if(!params.skip_evaluation){
 
-    if(!params.skip_gprofiler){
+        GT2TSV_Modules(ch_modules)
+        GT2TSV_Network(ch_network_gt.flatten().map{ it -> [ [ id: it.baseName ], it ] })
+        ADDHEADER(ch_seeds, "gene_id")
+        ch_nodes = GT2TSV_Modules.out
+        ch_nodes = ch_nodes.mix(ADDHEADER.out)
 
-        GPROFILER2_GOST (
-            ch_nodes,
-            [],
-            GT2TSV_Network.out.map{it[1]}.first()
+        // Module overlap
+        ch_overlap_input = ch_nodes
+            .multiMap { meta, path ->
+                ids: meta.id
+                nodes: path
+            }
+        MODULEOVERLAP(
+            ch_overlap_input.ids.collect().map{it.join(" ")},
+            ch_overlap_input.nodes.collect()
         )
-        ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
-    }
+        ch_multiqc_files = ch_multiqc_files.mix(MODULEOVERLAP.out)
 
-    if(!params.skip_digest){
-        DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
-        ch_versions = ch_versions.mix(DIGEST.out.versions)
-        ch_multiqc_files = ch_multiqc_files.mix(
-            DIGEST.out.multiqc
+        // Topology evaluation
+        TOPOLOGY(ch_modules)
+        ch_versions = ch_versions.mix(TOPOLOGY.out.versions)
+        ch_toplogy_multiqc = TOPOLOGY.out.multiqc
             .map{ meta, path -> path }
-            .collectFile(name: 'digest_mqc.tsv', keepHeader: true)
-        )
+            .collectFile(name: 'topology_mqc.tsv', keepHeader: true)
+        ch_multiqc_files = ch_multiqc_files.mix(ch_toplogy_multiqc)
+
+        // Overrepresentation analysis
+        if(!params.skip_gprofiler){
+            GPROFILER2_GOST (
+                ch_nodes,
+                [],
+                GT2TSV_Network.out.map{it[1]}.first()
+            )
+            ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
+        }
+
+        // Digest
+        if(!params.skip_digest){
+            DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
+            ch_versions = ch_versions.mix(DIGEST.out.versions)
+            ch_multiqc_files = ch_multiqc_files.mix(
+                DIGEST.out.multiqc
+                .map{ meta, path -> path }
+                .collectFile(name: 'digest_mqc.tsv', keepHeader: true)
+            )
+        }
+
+        // Seed permutation based evaluation
+        if(!params.skip_seed_permutation){
+            PERMUTATION(ch_seeds, ch_modules, ch_network_gt)
+            ch_versions = ch_versions.mix(PERMUTATION.out.versions)
+            ch_multiqc_files = ch_multiqc_files.mix(PERMUTATION.out.multiqc_files)
+        }
 
     }
-
-    TOPOLOGY(ch_modules)
-    ch_versions = ch_versions.mix(TOPOLOGY.out.versions)
-    ch_toplogy_multiqc = TOPOLOGY.out.multiqc
-        .map{ meta, path -> path }
-        .collectFile(name: 'topology_mqc.tsv', keepHeader: true)
-    ch_multiqc_files = ch_multiqc_files.mix(ch_toplogy_multiqc)
 
     // Collate and save software versions
     softwareVersionsToYAML(ch_versions)
