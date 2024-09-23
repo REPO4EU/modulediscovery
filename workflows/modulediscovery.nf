@@ -158,6 +158,8 @@ workflow MODULEDISCOVERY {
     // Drugstone export
     DRUGSTONEEXPORT(ch_modules, id_space)
     ch_versions = ch_versions.mix(DRUGSTONEEXPORT.out.versions)
+    ch_multiqc_files = ch_multiqc_files.mix(DRUGSTONEEXPORT.out.link.map{ meta, path -> path }
+            .collectFile(name: 'drugstone_link.tsv', keepHeader: true))
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
         GT_BIOPAX(ch_modules, id_space, validate_online)

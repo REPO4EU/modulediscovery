@@ -7,6 +7,7 @@ import sys
 import json
 import requests
 import argparse
+import csv
 
 
 def load_nodes(graph):
@@ -81,8 +82,12 @@ def main(argv=None):
     nodes = load_nodes(graph)
     edges = load_edges(graph)
     link = send_requests(nodes, edges, id_space)
+    header = ["Module_id", "drugstone_link"]
+    data = [f"{Path(args.module).stem}", f"{link}"]
     with args.output as output:
-        output.write(f"{link}\n")
+        writer = csv.writer(output, delimiter="\t")
+        writer.writerow(header)
+        writer.writerow(data)
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ process DRUGSTONEEXPORT{
     val(id_space)
 
     output:
-    tuple val(meta), path("${meta.id}.drugstonelink.txt")   , emit: link
+    tuple val(meta), path("${meta.id}.drugstonelink.tsv")   , emit: link
     path "versions.yml"     , emit: versions
 
     when:
@@ -17,7 +17,7 @@ process DRUGSTONEEXPORT{
 
     script:
     """
-    drugstone.py -m $module -i $id_space -o ${meta.id}.drugstonelink.txt
+    drugstone.py -m $module -i $id_space -o ${meta.id}.drugstonelink.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
