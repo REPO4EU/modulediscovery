@@ -132,7 +132,7 @@ workflow MODULEDISCOVERY {
     if(!params.skip_evaluation){
 
         GT2TSV_Modules(ch_modules)
-        GT2TSV_Network(ch_network_gt.flatten().map{ it -> [ [ id: it.baseName ], it ] })
+        GT2TSV_Network(ch_network_gt)
         ADDHEADER(ch_seeds, "gene_id")
         ch_nodes = GT2TSV_Modules.out
         ch_nodes = ch_nodes.mix(ADDHEADER.out)
@@ -159,17 +159,35 @@ workflow MODULEDISCOVERY {
 
         // Overrepresentation analysis
         if(!params.skip_gprofiler){
+
+            ch_gprofiler_input = ch_nodes
+                .map{ meta, path -> [meta.network_id, meta, path]}
+                .combine(GT2TSV_Network.out.map{meta, path -> [meta.id, path]}, by: 0)
+                .multiMap{key, meta, nodes, network ->
+                    nodes: [meta, nodes]
+                    network: network
+                }
+
             GPROFILER2_GOST (
-                ch_nodes,
+                ch_gprofiler_input.nodes,
                 [],
-                GT2TSV_Network.out.map{it[1]}.first()
+                ch_gprofiler_input.network
             )
             ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
         }
 
         // Digest
         if(!params.skip_digest){
-            DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
+
+            ch_digest_input = ch_nodes
+                .map{ meta, path -> [meta.network_id, meta, path]}
+                .combine(ch_network_gt.map{meta, path -> [meta.id, path]}, by: 0)
+                .multiMap{key, meta, nodes, network ->
+                    nodes: [meta, nodes]
+                    network: network
+                }
+
+            DIGEST (ch_digest_input.nodes, id_space, ch_digest_input.network, id_space)
             ch_versions = ch_versions.mix(DIGEST.out.versions)
             ch_multiqc_files = ch_multiqc_files.mix(
                 DIGEST.out.multiqc
