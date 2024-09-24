@@ -68,7 +68,7 @@ workflow MODULEDISCOVERY {
 
     // Brach channel, so, GRAPHTOOLPARSER runs only for supported network formats, which are not already .gt files
     ch_network_type = ch_network.branch {
-        gt: it.extension == "gt"
+        gt: it[1].extension == "gt"
         parse: true
     }
 
@@ -78,10 +78,16 @@ workflow MODULEDISCOVERY {
     ch_multiqc_files = ch_multiqc_files.mix(GRAPHTOOLPARSER.out.multiqc)
 
     // Mix into one .gt format channel
-    ch_network_gt = GRAPHTOOLPARSER.out.network.collect().mix(ch_network_type.gt).first()
+    ch_network_gt = GRAPHTOOLPARSER.out.network.mix(ch_network_type.gt)
+
+    // [meta, seeds, network] for input check
+    ch_seeds_network = ch_seeds
+        .map{ meta, path -> [meta.network_id, meta, path]}
+        .combine(ch_network_gt.map{meta, path -> [meta.id, path]}, by: 0)
+        .map{key, meta, seeds, network -> [meta, seeds, network]}
 
     // Check input
-    INPUTCHECK(ch_seeds, ch_network_gt)
+    INPUTCHECK(ch_seeds_network)
     ch_seeds = INPUTCHECK.out.seeds
     INPUTCHECK.out.removed_seeds | view {meta, path -> log.warn("Removed seeds from $meta.id. Check multiqc report.") }
     ch_seeds_multiqc = INPUTCHECK.out.multiqc
