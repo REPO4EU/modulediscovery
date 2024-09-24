@@ -13,15 +13,20 @@ workflow GT_FIRSTNEIGHBOR {
 
     ch_versions = Channel.empty()                                         // For collecting tool versions
 
-    FIRSTNEIGHBOR(ch_seeds, ch_network)                                   // Run first neighbor
+    // combine seed and network channel [meta, seeds, network]
+    ch_seeds_network = ch_seeds
+        .map{ meta, path -> [meta.network_id, meta, path]}
+        .combine(ch_network.map{meta, path -> [meta.id, path]}, by: 0)
+        .map{key, meta, seeds, network -> [meta, seeds, network]}
+
+    FIRSTNEIGHBOR(ch_seeds_network)                                   // Run first neighbor
     ch_versions = ch_versions.mix(FIRSTNEIGHBOR.out.versions.first())     // Collect versions
 
     ch_module = FIRSTNEIGHBOR.out.module                       // Extract the module
         .map{meta, path ->
             def dup = meta.clone()
-            dup.id = meta.id + ".firstneighbor"
             dup.amim = "firstneighbor"
-            dup.seeds = meta.id
+            dup.id = meta.id + "." + dup.amim
             [ dup, path ]
         }
 

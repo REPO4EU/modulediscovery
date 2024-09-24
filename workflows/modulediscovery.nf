@@ -76,17 +76,16 @@ workflow MODULEDISCOVERY {
     GRAPHTOOLPARSER(ch_network_type.parse, 'gt')
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
     ch_multiqc_files = ch_multiqc_files.mix(GRAPHTOOLPARSER.out.multiqc)
-
-    // Mix into one .gt format channel
     ch_network_gt = GRAPHTOOLPARSER.out.network.mix(ch_network_type.gt)
 
+
+    // Check input
     // [meta, seeds, network] for input check
     ch_seeds_network = ch_seeds
         .map{ meta, path -> [meta.network_id, meta, path]}
         .combine(ch_network_gt.map{meta, path -> [meta.id, path]}, by: 0)
         .map{key, meta, seeds, network -> [meta, seeds, network]}
 
-    // Check input
     INPUTCHECK(ch_seeds_network)
     ch_seeds = INPUTCHECK.out.seeds
     INPUTCHECK.out.removed_seeds | view {meta, path -> log.warn("Removed seeds from $meta.id. Check multiqc report.") }
@@ -101,8 +100,15 @@ workflow MODULEDISCOVERY {
     ch_modules = NETWORKEXPANSION.out.modules
     ch_versions = ch_versions.mix(NETWORKEXPANSION.out.versions)
 
+
     // Annotate with network properties
-    NETWORKANNOTATION(ch_modules, ch_network_gt)
+    // [meta, module, network] for input check
+    ch_module_network = ch_modules
+        .map{ meta, path -> [meta.network_id, meta, path]}
+        .combine(ch_network_gt.map{meta, path -> [meta.id, path]}, by: 0)
+        .map{key, meta, seeds, network -> [meta, seeds, network]}
+
+    NETWORKANNOTATION(ch_module_network)
     ch_modules = NETWORKANNOTATION.out.module
     ch_versions = ch_versions.mix(NETWORKANNOTATION.out.versions)
 
