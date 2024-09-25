@@ -62,7 +62,10 @@ def parse_args(argv=None):
         type=Path,
     )
     parser.add_argument(
-        "-o", "--output", help="the output file.", type=argparse.FileType("w")
+        "-p",
+        "--prefix",
+        help="Prefix to name the output files.",
+        type=str,
     )
     parser.add_argument(
         "-i",
@@ -83,8 +86,8 @@ def main(argv=None):
     edges = load_edges(graph)
     link = send_requests(nodes, edges, id_space)
     header = ["Module_id", "drugstone_link"]
-    data = [f"{Path(args.module).stem}", f"{link}"]
-    with args.output as output:
+    data = [f"{args.prefix}", f"{link}"]
+    with open(f"{args.prefix}.drugstonelink.tsv", "w") as output:
         writer = csv.writer(output, delimiter="\t")
         writer.writerow(header)
         writer.writerow(data)
