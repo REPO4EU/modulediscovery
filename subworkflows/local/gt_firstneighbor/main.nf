@@ -27,6 +27,7 @@ workflow GT_FIRSTNEIGHBOR {
             def dup = meta.clone()
             dup.amim = "firstneighbor"
             dup.id = meta.id + "." + dup.amim
+            dup.seeds_id = meta.id
             [ dup, path ]
         }
 

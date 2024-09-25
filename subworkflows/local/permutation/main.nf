@@ -21,18 +21,20 @@ workflow PERMUTATION {
     SEEDPERMUTATION(ch_seeds)
     ch_versions = ch_versions.mix(SEEDPERMUTATION.out.versions)
 
-    // Create shape [meta, permuted_seeds] for NETWORKEXPANSION
+    // Create required shape for NETWORKEXPANSION
+    // One channel element for each permuted seed file
+    // Shape: [meta, permuted_seeds]
     ch_permuted_seeds = SEEDPERMUTATION.out.permuted_seeds
         // Add original meta.id as original_seeds_id and n_permutations
         .map{meta, permuted_seeds ->
             def dup = meta.clone()
-            dup.original_seeds = meta.id
+            dup.original_seeds_id = meta.id
             dup.n_permutations = permuted_seeds.size()
             [ dup, permuted_seeds]
         }
         // Convert to long format
         .transpose()
-        // Update meta.id based on permuted seeds
+        // Update meta.id based on permuted seeds (original id is still stored as original_seeds_id)
         .map{meta, permuted_seeds ->
             def dup = meta.clone()
             dup.id = permuted_seeds.baseName
@@ -44,39 +46,48 @@ workflow PERMUTATION {
     NETWORKEXPANSION(ch_permuted_seeds, ch_network)
     ch_versions = ch_versions.mix(NETWORKEXPANSION.out.versions)
 
-
-    // Create shape [meta, [permuted_modules], [permuted_seeds]]
+    // Group by original_seeds_id, amim, and network_id
+    // One channel element for each original module
+    // Shape: [meta, [permuted_modules], [permuted_seeds]]
     ch_permuted_modules = NETWORKEXPANSION.out.modules
-        //  Combine with permuted seeds
-        .map{meta, module -> [meta.seeds, meta, module]}
-        .combine(ch_permuted_seeds.map{meta, seeds -> [meta.id, seeds]}, by: 0)
-        // Add original_seeds and amim to tuple for grouping
-        .map{seeds_id, meta, module, seeds ->
-            key = groupKey(meta.subMap("original_seeds", "amim"), meta.n_permutations)
-            [key, module, seeds]
+        //  Combine with permuted seeds (key is seeds_id)
+        .map{meta, permuted_module -> [meta.seeds_id, meta, permuted_module]}
+        .combine(ch_permuted_seeds.map{meta, permuted_seeds -> [meta.id, permuted_seeds]}, by: 0)
+        // Add original_seeds_id, amim, and network_id to tuple for grouping
+        .map{seeds_id, meta, permuted_module, permuted_seeds ->
+            key = groupKey(meta.subMap("original_seeds_id", "amim", "network_id"), meta.n_permutations)
+            [key, permuted_module, permuted_seeds]
         }
-        // Group by original_seeds and amim
+        // Group by original_seeds_id, amim, and network_id
         .groupTuple()
-        // Add an ID
-        .map{key, modules, seeds ->
-            [ [ id: key.original_seeds + "." + key.amim, amim: key.amim, seeds: key.original_seeds ], modules, seeds]
+        // Add an ID (based on the original seeds)
+        .map{key, permuted_modules, permuted_seeds ->
+            [ [ id: key.original_seeds_id + "." + key.amim, amim: key.amim, seeds_id: key.original_seeds_id, network_id: key.network_id], permuted_modules, permuted_seeds]
         }
 
 
-    // Combine with original modules and seeds
-    // Create shape [meta, original_module, original_seeds, [permuted_modules], [permuted_seeds]]
+    // Combine with original modules, seeds, and network
+    // One channel element for each individual modules
+    // Shape: [meta, original_module, original_seeds, [permuted_modules], [permuted_seeds], network]
     ch_evaluation = ch_modules
-        // Combine with original seeds
-        .map{meta, module -> [[id: meta.seeds], meta, module]}
-        .combine(ch_seeds, by: 0)
-        .map{seeds_meta, meta, module, seeds -> [meta, module, seeds]}
-        // Combine with original modules
+        // Combine modules with seeds (key is seeds_id)
+        .map{meta, module -> [meta.seeds_id, meta, module]}
+        .combine(ch_seeds.map{meta, seeds -> [meta.id, seeds]}, by: 0)
+        .map{key, meta, module, seeds -> [meta, module, seeds]}
+        // Combine with permuted modules and seeds (key is the entire meta map)
         .combine(ch_permuted_modules, by: 0)
-        .multiMap{meta, module, seeds, permuted_modules, permuted_seeds ->
+        // Combine with network (key is network_id)
+        .map{meta, module, seeds, permuted_modules, permuted_seeds ->
+            [meta.network_id, meta, module, seeds, permuted_modules, permuted_seeds]
+        }
+        .combine(ch_network.map{meta, network-> [meta.id, network]}, by: 0)
+        // Multimap to create the final shape
+        .multiMap{network_id, meta, module, seeds, permuted_modules, permuted_seeds, network ->
             module: [meta, module]
             seeds: seeds
             permuted_seeds: permuted_seeds
             permuted_modules: permuted_modules
+            network: network
         }
 
 
@@ -86,7 +97,7 @@ workflow PERMUTATION {
         ch_evaluation.seeds,
         ch_evaluation.permuted_modules,
         ch_evaluation.permuted_seeds,
-        ch_network
+        ch_evaluation.network
     )
     ch_versions = ch_versions.mix(PERMUTATIONEVALUATION.out.versions)
     ch_multiqc_files = PERMUTATIONEVALUATION.out.multiqc_summary

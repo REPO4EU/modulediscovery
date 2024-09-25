@@ -46,13 +46,13 @@ workflow REPO4EU_MODULEDISCOVERY {
     // [[id, seeds_id, network_id], path]
     ch_seeds = Channel
         .fromPath(params.input.split(',').flatten(), checkIfExists: true)
-        .map{ it -> [ [ seeds_id: it.baseName ], it ] }
+        .map{ it -> [ [ id: it.baseName ], it ] }
         .combine(ch_network.map{meta, path -> meta.id})
         .map{meta, path, network_id ->
             def dup = meta.clone()
-            dup.id = meta.seeds_id + "." + network_id
+            dup.id = meta.id + "." + network_id
             dup.network_id = network_id
-            [ dup, path]
+            [ dup, path ]
         }
 
     MODULEDISCOVERY (
