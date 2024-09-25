@@ -21,20 +21,26 @@ workflow GT_DIAMOND {
     GRAPHTOOLPARSER(ch_network, "diamond")                                  // Convert gt file to diamond specific format
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)             // Collect versions
 
-    DIAMOND(ch_seeds, GRAPHTOOLPARSER.out.network.collect(), n, alpha)      // Run diamond on parsed network
+    // combine seed and network channel [meta, seeds, network]
+    ch_seeds_network = ch_seeds
+        .map{ meta, path -> [meta.network_id, meta, path]}
+        .combine(GRAPHTOOLPARSER.out.network.map{meta, path -> [meta.id, path]}, by: 0)
+        .map{key, meta, seeds, network -> [meta, seeds, network]}
+
+    DIAMOND(ch_seeds_network, n, alpha)                                     // Run diamond on parsed network
     ch_versions = ch_versions.mix(DIAMOND.out.versions.first())
 
-    ch_module_seeds = DIAMOND.out.module                                          // Extract the module
-        .join(ch_seeds, failOnMismatch: true, failOnDuplicate: true)        // Join with seed files
-        .map{meta, module, seeds ->                                         // Adjust id
+    ch_module_parser_input = DIAMOND.out.module                                    // Extract the module
+        .join(ch_seeds_network, failOnMismatch: true, failOnDuplicate: true)        // Join with seed files
+        .map{meta, module, seeds, network ->                                         // Adjust id
             def dup = meta.clone()
             dup.id = meta.id + ".diamond"
             dup.amim = "diamond"
-            dup.seeds = meta.id
-            [ dup, module, seeds ]
+            dup.seeds_id = meta.id
+            [ dup, module, seeds, network ]
         }
 
-    MODULEPARSER(ch_network, "diamond", ch_module_seeds)                    // Convert module from diamond specific format to gt file
+    MODULEPARSER(ch_module_parser_input, "diamond")                    // Convert module from diamond specific format to gt file
     ch_versions = ch_versions.mix(MODULEPARSER.out.versions.first())
 
 
