@@ -10,8 +10,8 @@ include { MODULEPARSER      } from '../../../modules/local/moduleparser/main'
 
 workflow GT_DOMINO {                        // Define the subworkflow, usually starts with the main input file format (.gt)
     take:                                   // Workflow inputs
-    ch_seeds                                // File with seed genes
-    ch_network                              // File with network in gt format
+    ch_seeds                                // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    ch_network                              // channel: [ val(meta[id,network_id]), path(network) ]
 
 
     main:
@@ -23,31 +23,38 @@ workflow GT_DOMINO {                        // Define the subworkflow, usually s
     GRAPHTOOLPARSER(ch_network, "domino")                                   // Convert gt file to domino specific format, including prefixes
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)             // Collect versions
 
-    DOMINO_SLICER(GRAPHTOOLPARSER.out.network.collect())                    // Run the DOMINO preprocessing step on the parsed network
+    DOMINO_SLICER(GRAPHTOOLPARSER.out.network)                              // Run the DOMINO preprocessing step on the parsed networks
     ch_versions = ch_versions.mix(DOMINO_SLICER.out.versions)               // Collect versions
 
-    DOMINO_DOMINO(                                                          // Run DOMINO
-        PREFIXLINES.out,                                                    // First input is the prefixed seed gene sheet
-        GRAPHTOOLPARSER.out.network.collect(),                              // Second input is the parsed network
-        DOMINO_SLICER.out.slices.collect()                                  // Third input are the slices produced by the preprocessing step
-    )
+
+    // channel: [ val(meta[id,seeds_id,network_id), path(seeds), path(network), path(slices) ]
+    ch_domino_input = PREFIXLINES.out
+        .map{ meta, seeds -> [meta.network_id, meta, seeds]}
+        .combine(GRAPHTOOLPARSER.out.network.map{ meta, network -> [meta.network_id, network]}, by: 0)
+        .combine(DOMINO_SLICER.out.slices.map{meta, slices -> [meta.network_id, slices]}, by: 0)
+        .map{network_id, meta, seeds, network, slices -> [meta, seeds, network, slices]}
+
+    DOMINO_DOMINO(ch_domino_input)                                          // Run DOMINO on the preprocessed network
     ch_versions = ch_versions.mix(DOMINO_DOMINO.out.versions.first())       // Collect versions
 
-    ch_module_seeds = DOMINO_DOMINO.out.modules                                   // Get the modules discovered by DOMINO
-        .join(ch_seeds, failOnMismatch: true, failOnDuplicate: true)
-        .map{meta, module, seeds ->
+    // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module), path(seeds), path(network) ]
+    ch_module_parser_input = DOMINO_DOMINO.out.modules                                // Extract the module
+        .join(ch_seeds, failOnMismatch: true, failOnDuplicate: true)                  // Join with seed files
+        .map{meta, module, seeds -> [meta.network_id, meta, module, seeds]}           // Combine with networks
+        .combine(ch_network.map{meta, network -> [meta.network_id, network]}, by: 0)
+        .map{network_id, meta, module, seeds, network ->                              // Adjust id
             def dup = meta.clone()
-            dup.id = meta.id + ".domino"
             dup.amim = "domino"
-            dup.seeds = meta.id
-            [ dup, module, seeds ]
+            dup.id = meta.id + "." + dup.amim
+            dup.module_id = dup.id
+            [ dup, module, seeds, network ]
         }
 
-    MODULEPARSER(ch_network, "domino",  ch_module_seeds)          // Convert module from domino specific format to gt file
+    MODULEPARSER(ch_module_parser_input, "domino")                    // Convert module from diamond specific format to gt file
     ch_versions = ch_versions.mix(MODULEPARSER.out.versions.first())
 
 
-    emit:                                                                   // Define, what the subworkflow will return
-    module   = MODULEPARSER.out.network                                    // channel: [ modules ]             emit the modules discovered by DOMINO
-    versions = ch_versions                                                  // channel: [ versions.yml ]        emit collected versions
+    emit:
+    module   = MODULEPARSER.out.module  // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module) ]
+    versions = ch_versions              // channel: [ versions.yml ]        emit collected versions
 }

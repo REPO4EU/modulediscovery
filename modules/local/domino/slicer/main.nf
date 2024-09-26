@@ -7,12 +7,11 @@ process DOMINO_SLICER {             // Process name, should be all upper case. O
         'quay.io/biocontainers/domino:1.0.0--pyhdfd78af_0' }" // The preferred way to two define a container, if a biocontainer is available
 
     input:
-    path network                                                    // The input network
+    tuple val(meta), path (network)                       // The input network
 
-
-    output:                                                         // Define the expected outputs, the "emit:" keyword defines, how the output can be accessed by other processes
-    path "${network.baseName}.slices.txt",      emit: slices        // .baseName selects the name of the input network without file extension
-    path "versions.yml",                        emit: versions
+    output:                                                // Define the expected outputs, the "emit:" keyword defines, how the output can be accessed by other processes
+    tuple val(meta), path("${meta.id}.slices.txt"), emit: slices
+    path "versions.yml"                           , emit: versions
 
 
     when:
@@ -24,7 +23,7 @@ process DOMINO_SLICER {             // Process name, should be all upper case. O
     // The part starting with "cat <<-END_VERSIONS > versions.yml" only collects software versions for the versions.yml file, not essential
     script:
     """
-    slicer -n $network -o ${network.baseName}.slices.txt
+    slicer -n $network -o ${meta.id}.slices.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

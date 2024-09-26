@@ -22,18 +22,20 @@ workflow GT_DIAMOND {
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)             // Collect versions
 
     // channel: [ val(meta[id,seeds_id,network_id), path(seeds), path(network) ]
-    ch_seeds_network = ch_seeds
+    ch_diamond_input = ch_seeds
         .map{ meta, seeds -> [meta.network_id, meta, seeds]}
         .combine(GRAPHTOOLPARSER.out.network.map{ meta, network -> [meta.network_id, network]}, by: 0)
         .map{network_id, meta, seeds, network -> [meta, seeds, network]}
 
-    DIAMOND(ch_seeds_network, n, alpha)                                     // Run diamond on parsed network
+    DIAMOND(ch_diamond_input, n, alpha)                                     // Run diamond on parsed network
     ch_versions = ch_versions.mix(DIAMOND.out.versions.first())
 
     // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module), path(seeds), path(network) ]
-    ch_module_parser_input = DIAMOND.out.module                                    // Extract the module
-        .join(ch_seeds_network, failOnMismatch: true, failOnDuplicate: true)        // Join with seed files
-        .map{meta, module, seeds, network ->                                         // Adjust id
+    ch_module_parser_input = DIAMOND.out.module                                       // Extract the module
+        .join(ch_seeds, failOnMismatch: true, failOnDuplicate: true)                  // Join with seed files
+        .map{meta, module, seeds -> [meta.network_id, meta, module, seeds]}           // Combine with networks
+        .combine(ch_network.map{meta, network -> [meta.network_id, network]}, by: 0)
+        .map{network_id, meta, module, seeds, network ->                              // Adjust id
             def dup = meta.clone()
             dup.amim = "diamond"
             dup.id = meta.id + "." + dup.amim
