@@ -29,6 +29,8 @@ workflow GT_DIAMOND {
         .map{meta, module, seeds ->                                         // Adjust id
             def dup = meta.clone()
             dup.id = meta.id + ".diamond"
+            dup.amim = "diamond"
+            dup.seeds = meta.id
             [ dup, module, seeds ]
         }
 

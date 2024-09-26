@@ -26,43 +26,75 @@ custom_content:
     - shared_nodes
     - digest
 
+table_columns_visible:
+  topology:
+    nodes: false
+
 custom_data:
   topology:
-    description: "Topological properties of the network"
     plot_type: "generalstats"
     pconfig:
       - nodes:
           title: "Nodes"
           description: "Number of nodes in the network"
           format: "{:.0f}"
+          placement: 1000
       - edges:
           title: "Edges"
           description: "Number of edges in the network"
           format: "{:.0f}"
+          placement: 1001
       - seeds:
           title: "Seeds"
           description: "Number of seed genes in the network"
           format: "{:.0f}"
+          placement: 1002
       - diameter:
           title: "Diameter"
           description: "Pseudo diameter of the network"
           format: "{:.0f}"
+          placement: 1003
       - components:
           title: "Components"
           description: "Number of connected components"
           format: "{:.0f}"
+          placement: 1004
       - largest_component:
           title: "Largest component"
           description: "Number of nodes in the largest connected component"
           format: "{:.0f}"
+          placement: 1005
       - max_dist_to_seed:
           title: "Max distance to seed"
           description: "Maximum distance from any added node to its closest seed node"
           format: "{:.0f}"
+          placement: 1006
       - isolated_nodes:
           title: "Isolated nodes"
           description: "Number of nodes without any edges to other nodes"
           format: "{:.0f}"
+          placement: 1007
+  permutation:
+    plot_type: "generalstats"
+    pconfig:
+      - avg_jaccard_index:
+          title: "Robustness"
+          description: "Average Jaccard index between the original and permuted modules."
+          format: "{:.2f}"
+          scale: "RdYlGn"
+          placement: 2000
+      - rediscovery_rate:
+          title: "Seed rediscovery"
+          description: "Fraction of rediscovered seeds."
+          format: "{:.2f}"
+          scale: "RdYlGn"
+          placement: 2001
+      - normalized_rediscovery_rate:
+          title: "Seed rediscovery (normalized)"
+          description: "Fraction of rediscovered seeds divided by module size."
+          format: "{:.4f}"
+          scale: "RdYlGn"
+          placement: 2002
   input_seeds:
     parent_id: input
     parent_name: "Input"
@@ -109,4 +141,3 @@ custom_data:
     pconfig:
       title: "Number of shared nodes"
       zlab: "Number of shared nodes"
-      format: "{:.0f}"

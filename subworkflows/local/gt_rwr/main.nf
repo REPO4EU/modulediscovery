@@ -29,6 +29,8 @@ workflow GT_RWR {
         .map{meta, module, seeds ->
             def dup = meta.clone()
             dup.id = meta.id + ".rwr"
+            dup.amim = "rwr"
+            dup.seeds = meta.id
             [ dup, module, seeds ]
         }
 

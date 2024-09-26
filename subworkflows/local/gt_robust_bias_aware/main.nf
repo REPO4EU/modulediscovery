@@ -28,6 +28,8 @@ workflow GT_ROBUSTBIASAWARE {
         .map{meta, module, seeds ->
             def dup = meta.clone()
             dup.id = meta.id + ".robust_bias_aware"
+            dup.amim = "robust_bias_aware"
+            dup.seeds = meta.id
             [ dup, module, seeds ]
         }
 
