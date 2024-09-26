@@ -38,21 +38,17 @@ workflow REPO4EU_MODULEDISCOVERY {
     // WORKFLOW: Run pipeline
     //
 
-    // [[id], path]
+    // channel: [ val(meta[id,network_id]), path(network) ]
     ch_network = Channel
         .fromPath(params.network.split(',').flatten(), checkIfExists: true)
-        .map{ it -> [ [ id: it.baseName ], it ] }
+        .map{ it -> [ [ id: it.baseName, network_id: it.baseName ], it ] }
 
-    // [[id, seeds_id, network_id], path]
+    // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
     ch_seeds = Channel
         .fromPath(params.input.split(',').flatten(), checkIfExists: true)
-        .map{ it -> [ [ id: it.baseName ], it ] }
-        .combine(ch_network.map{meta, path -> meta.id})
-        .map{meta, path, network_id ->
-            def dup = meta.clone()
-            dup.id = meta.id + "." + network_id
-            dup.network_id = network_id
-            [ dup, path ]
+        .combine(ch_network.map{meta, network -> meta.network_id})
+        .map{seeds, network_id ->
+            [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
         }
 
     MODULEDISCOVERY (

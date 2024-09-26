@@ -11,8 +11,8 @@ include { GT_RWR                } from '../gt_rwr'
 
 workflow NETWORKEXPANSION {
     take:
-    ch_seeds                                // File with seed genes
-    ch_network                              // File with network in gt format
+    ch_seeds    // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    ch_network  // channel: [ val(meta[id,network_id]), path(network) ]
 
 
     main:
@@ -67,9 +67,7 @@ workflow NETWORKEXPANSION {
     }
 
 
-
-
     emit:
-    modules  = ch_modules               // channel: [ meta, module ]        emit the modules
-    versions = ch_versions              // channel: [ versions.yml ]        emit collected versions
+    modules  = ch_modules               // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module) ]
+    versions = ch_versions              // channel: [ versions.yml ]
 }

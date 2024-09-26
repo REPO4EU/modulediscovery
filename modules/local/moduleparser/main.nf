@@ -9,7 +9,7 @@ process MODULEPARSER {
     val tool
 
     output:
-    tuple val(meta), path("${meta.id}.gt")  , emit: network
+    tuple val(meta), path("${meta.id}.gt")  , emit: module
     path "versions.yml"                     , emit: versions
 
     when:

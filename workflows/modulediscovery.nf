@@ -52,8 +52,8 @@ workflow MODULEDISCOVERY {
 
 
     take:
-    ch_seeds // channel: samplesheet read in from --input
-    ch_network // channel: network file read in from --network
+    ch_seeds    // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    ch_network  // channel: [ val(meta[id,network_id]), path(network) ]
 
     main:
 
@@ -80,10 +80,10 @@ workflow MODULEDISCOVERY {
 
 
     // Check input
-    // [meta, seeds, network] for input check
+    // channel: [ val(meta[id,seeds_id,network_id]), path(seeds), path(network) ]
     ch_seeds_network = ch_seeds
-        .map{ meta, path -> [meta.network_id, meta, path]}
-        .combine(ch_network_gt.map{meta, path -> [meta.id, path]}, by: 0)
+        .map{ meta, seeds -> [meta.network_id, meta, seeds]}
+        .combine(ch_network_gt.map{meta, network -> [meta.network_id, network]}, by: 0)
         .map{key, meta, seeds, network -> [meta, seeds, network]}
 
     INPUTCHECK(ch_seeds_network)
@@ -97,16 +97,16 @@ workflow MODULEDISCOVERY {
 
     // Network expansion tools
     NETWORKEXPANSION(ch_seeds, ch_network_gt)
-    ch_modules = NETWORKEXPANSION.out.modules
+    ch_modules = NETWORKEXPANSION.out.modules // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module)]
     ch_versions = ch_versions.mix(NETWORKEXPANSION.out.versions)
 
 
     // Annotate with network properties
-    // [meta, module, network] for input check
+    // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module), path(network) ]
     ch_module_network = ch_modules
-        .map{ meta, path -> [meta.network_id, meta, path]}
-        .combine(ch_network_gt.map{meta, path -> [meta.id, path]}, by: 0)
-        .map{key, meta, seeds, network -> [meta, seeds, network]}
+        .map{ meta, module -> [meta.network_id, meta, module]}
+        .combine(ch_network_gt.map{meta, network -> [meta.network_id, network]}, by: 0)
+        .map{newtork_id, meta, module, network -> [meta, module, network]}
 
     NETWORKANNOTATION(ch_module_network)
     ch_modules = NETWORKANNOTATION.out.module
@@ -134,14 +134,16 @@ workflow MODULEDISCOVERY {
         GT2TSV_Modules(ch_modules)
         GT2TSV_Network(ch_network_gt)
         ADDHEADER(ch_seeds, "gene_id")
+
+        // channel: [ val(meta), path(nodes) ]
         ch_nodes = GT2TSV_Modules.out
         ch_nodes = ch_nodes.mix(ADDHEADER.out)
 
         // Module overlap
         ch_overlap_input = ch_nodes
-            .multiMap { meta, path ->
+            .multiMap { meta, nodes ->
                 ids: meta.id
-                nodes: path
+                nodes: nodes
             }
         MODULEOVERLAP(
             ch_overlap_input.ids.collect().map{it.join(" ")},
@@ -198,7 +200,7 @@ workflow MODULEDISCOVERY {
 
         // Seed permutation based evaluation
         if(!params.skip_seed_permutation){
-            PERMUTATION(ch_seeds, ch_modules, ch_network_gt)
+            PERMUTATION(ch_modules, ch_seeds, ch_network_gt)
             ch_versions = ch_versions.mix(PERMUTATION.out.versions)
             ch_multiqc_files = ch_multiqc_files.mix(PERMUTATION.out.multiqc_files)
         }
