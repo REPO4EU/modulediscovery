@@ -10,20 +10,31 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["input", "network", "outdir"],
+            "required": ["outdir"],
             "properties": {
                 "input": {
                     "type": "string",
-                    "description": "Seed gene files (comma separated paths)",
-                    "help_text": "Multiple paths to seed gene files separated by commas. Each file must have one line per gene.",
-                    "fa_icon": "fas fa-file-csv"
+                    "description": "Path to a CSV sample sheet defining seed file-network combinations",
+                    "help_text": "The file must have a header and can have two columns: \"seeds\" and \"network\". If either \"seeds\" or \"network\" are missing, the --seeds and --network parameters are expected as replacement. ",
+                    "fa_icon": "fas fa-file-csv",
+                    "pattern": "^\\S+\\.csv$",
+                    "format": "file-path",
+                    "mimetype": "text/csv",
+                    "schema": "/assets/schema_input.json"
+                },
+                "seeds": {
+                    "type": "string",
+                    "fa_icon": "fas fa-file-csv",
+                    "description": "Path(s) to one or multiple file(s) with seed genes",
+                    "help_text": "Multiple files have to be \",\" separated. Each file must have one line per seed gene. This parameter cannot be set, if there is a \"seeds\" column, in the sample sheet provided via --input."
                 },
                 "network": {
                     "type": "string",
-                    "description": "Path to a PPI network in gt, csv, graphml, xml, dot, or gml format.",
+                    "description": "Path(s) to one or multiple PPI network(s) in gt, csv, graphml, xml, dot, or gml format.",
                     "format": "file-path",
                     "fa_icon": "fas fa-file-csv",
-                    "pattern": "^\\S+.[csv|gt|graphml|xml|dot|gml]$"
+                    "pattern": "^\\S+.[csv|gt|graphml|xml|dot|gml]$",
+                    "help_text": "Multiple files have to be \",\" separated."
                 },
                 "outdir": {
                     "type": "string",

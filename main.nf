@@ -38,6 +38,8 @@ workflow REPO4EU_MODULEDISCOVERY {
     // WORKFLOW: Run pipeline
     //
 
+    ch_input = Channel.fromPath(params.input.split(',').flatten(), checkIfExists: true)
+
     // channel: [ val(meta[id,network_id]), path(network) ]
     ch_network = Channel
         .fromPath(params.network.split(',').flatten(), checkIfExists: true)
@@ -45,7 +47,7 @@ workflow REPO4EU_MODULEDISCOVERY {
 
     // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
     ch_seeds = Channel
-        .fromPath(params.input.split(',').flatten(), checkIfExists: true)
+        .fromPath(params.seeds.split(',').flatten(), checkIfExists: true)
         .combine(ch_network.map{meta, network -> meta.network_id})
         .map{seeds, network_id ->
             [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
@@ -82,6 +84,9 @@ workflow {
         params.monochrome_logs,
         args,
         params.outdir,
+        params.input,
+        params.seeds,
+        params.network
     )
 
     //
