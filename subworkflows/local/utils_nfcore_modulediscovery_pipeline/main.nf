@@ -75,6 +75,23 @@ workflow PIPELINE_INITIALISATION {
         nextflow_cli_args
     )
 
+    // channel: [ path(seeds), path(network) ]
+    ch_input = Channel
+        .fromSamplesheet("input")
+
+    ch_branch = ch_input.branch {
+        only_seeds: it[0].size() != 0 && it[1].size() == 0
+            return it[0]
+        only_network: it[0].size() == 0 && it[1].size() != 0
+            return it[1]
+        tuple: it[0].size() != 0 && it[1].size() != 0
+            return it
+        other: true
+    }
+    ch_branch.only_seeds | view
+    ch_branch.only_network | view
+    ch_branch.tuple | view
+
     emit:
     versions    = ch_versions
 }
