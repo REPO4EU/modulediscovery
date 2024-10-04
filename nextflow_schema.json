@@ -166,6 +166,34 @@
             },
             "fa_icon": "far fa-edit"
         },
+        "drug_prioritization": {
+            "title": "Drug prioritization",
+            "type": "object",
+            "description": "Parameters for the drug prioritization methods.",
+            "default": "",
+            "fa_icon": "fas fa-chart-network",
+            "properties": {
+                "skip_proximity": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Flag for skipping proximity"
+                },
+                "shortest_path": {
+                    "type": "string",
+                    "fa_icon": "far fa-check-circle",
+                    "description": "Local path to the shortest path pickle file used for proximity.",
+                    "default": "${projectDir}/input/nedrex_drug_target_geneid_20240208_nedrex.tsv",
+                    "hidden": true
+                },
+                "drug_to_target": {
+                    "type": "string",
+                    "fa_icon": "far fa-check-circle",
+                    "description": "Local path to the drug to targets file used for proximity.",
+                    "default": "${projectDir}/input/nedrex_drug_target_geneid_20240208_nedrex.tsv",
+                    "hidden": true
+                }
+            }
+        },
         "evaluation": {
             "title": "Evaluation",
             "type": "object",

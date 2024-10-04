@@ -18,6 +18,7 @@ include { ADDHEADER                } from '../modules/local/addheader/main'
 include { DIGEST                   } from '../modules/local/digest/main'
 include { MODULEOVERLAP            } from '../modules/local/moduleoverlap/main'
 include { TOPOLOGY                 } from '../modules/local/topology/main'
+include { PROXIMITY                } from '../modules/local/proximity/main'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -60,6 +61,8 @@ workflow MODULEDISCOVERY {
     // Params
     id_space = Channel.value(params.id_space)
     validate_online = Channel.value(params.validate_online)
+    proximity_sp = Channel.value(params.shortest_path)
+    proximity_dt = Channel.value(params.drug_to_target)
 
     // Channels
     ch_versions = Channel.empty()
@@ -114,6 +117,13 @@ workflow MODULEDISCOVERY {
     if(!params.skip_annotation){
         GT_BIOPAX(ch_modules, id_space, validate_online)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
+    }
+
+    // Drug prioritization - Proximity
+    if(!params.skip_proximity){
+        PROXIMITY(ch_network, ch_modules, proximity_sp, proximity_dt)
+        ch_versions = ch_versions.mix(PROXIMITY.out.versions)
+        ch_multiqc_files = ch_multiqc_files.mix(PROXIMITY.out.proxout)
     }
 
     // Evaluation
