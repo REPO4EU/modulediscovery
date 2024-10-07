@@ -78,22 +78,44 @@ workflow PIPELINE_INITIALISATION {
     // channel: [ path(seeds), path(network) ]
     ch_input = Channel
         .fromSamplesheet("input")
+        .map{seeds, network ->
+            if((seeds.size()==0) != params.seeds){
+                error("Seed genes have to specified through either the sampel sheet OR the --seeds paramater")
+            }
+            if((network.size()==0) != params.network){
+                error("Networks have to specified through either the sampel sheet OR the --network paramater")
+            }
+            [seeds, network]
+        }
+        .branch{
+            only_seeds: it[0].size() != 0 && it[1].size() == 0
+                return it[0]
+            only_network: it[0].size() == 0 && it[1].size() != 0
+                return it[1]
+            tuple: it[0].size() != 0 && it[1].size() != 0
+                return it
+            other: true
+        }
 
-    ch_branch = ch_input.branch {
-        only_seeds: it[0].size() != 0 && it[1].size() == 0
-            return it[0]
-        only_network: it[0].size() == 0 && it[1].size() != 0
-            return it[1]
-        tuple: it[0].size() != 0 && it[1].size() != 0
-            return it
-        other: true
+    ch_seeds = Channel.empty()
+    ch_network = Channel.empty()
+
+    if(params.seeds && params.network){
+
     }
-    ch_branch.only_seeds | view
-    ch_branch.only_network | view
-    ch_branch.tuple | view
+    else if(params.seeds && !params.network){
+
+    }
+    else if (!params.seeds && params.network){
+
+    } else {
+
+    }
 
     emit:
     versions    = ch_versions
+    seeds       = ch_seeds
+    network     = ch_network
 }
 
 /*
