@@ -78,6 +78,9 @@ workflow PIPELINE_INITIALISATION {
     ch_seeds = Channel.empty()      // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
     ch_network = Channel.empty()    // channel: [ val(meta[id,network_id]), path(network) ]
 
+    seed_param_set = (params.seeds != null)
+    network_param_set = (params.network != null)
+
     if(params.input){
 
         // Check sample sheet
@@ -86,22 +89,22 @@ workflow PIPELINE_INITIALISATION {
         ch_input = Channel
             .fromSamplesheet("input")
             .map{seeds, network ->
-                if((seeds.size()==0) ^ params.seeds ){
+                if((seeds.size()==0) ^ seed_param_set ){
                     error("Seed genes have to specified through either the sampel sheet OR the --seeds paramater")
                 }
-                if((network.size()==0) ^ params.network){
+                if((network.size()==0) ^ network_param_set ){
                     error("Networks have to specified through either the sampel sheet OR the --network paramater")
                 }
                 [seeds, network]
             }
 
-        if (params.seeds && params.network) {
+        if (seed_param_set && network_param_set) {
 
             error("You need to specify either a sample sheet (--input) OR the seeds (--seeds) and network (--network) files")
 
-        } else if (!params.seeds && !params.network) {
+        } else if (!seed_param_set && !network_param_set) {
 
-            // create network and seeds channel based on tuples in the sample sheet
+            log.info("Creating network and seeds channels based on tuples in the sample sheet")
 
             ch_network = ch_input
                 .map{ it -> it[1]}
@@ -116,14 +119,13 @@ workflow PIPELINE_INITIALISATION {
                     [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
                 }
 
-        } else if (params.seeds && !params.network) {
+        } else if (seed_param_set && !network_param_set) {
 
-            // create network based on the sample sheet and seeds based on the seeds parameter
+            log.info("Creating network channel based on the sample sheet and seeds channel based on the seeds parameter")
 
             ch_network = ch_input
                 .map{ it -> it[1]}
                 .map{ [ [ id: it.baseName, network_id: it.baseName ], it ] }
-                .unique()
 
             ch_seeds = Channel
                 .fromPath(params.seeds.split(',').flatten(), checkIfExists: true)
@@ -132,9 +134,9 @@ workflow PIPELINE_INITIALISATION {
                     [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
                 }
 
-        } else if (!params.seeds && params.network) {
+        } else if (!seed_param_set && network_param_set) {
 
-            // create network based on the network parameter and seeds based on the sample sheet
+            log.info("Creating network channel based on the network parameter and seeds channel based on the sample sheet")
 
             ch_network = Channel
                 .fromPath(params.network.split(',').flatten(), checkIfExists: true)
@@ -150,9 +152,9 @@ workflow PIPELINE_INITIALISATION {
         }
 
 
-    } else if (params.seeds && params.network){
+    } else if (seed_param_set && network_param_set){
 
-        // create  network and seeds channels based on the combination of all seed and network files provided
+        log.info("Creating network and seeds channels based on the combination of all seed and network files provided")
 
         ch_network = Channel
             .fromPath(params.network.split(',').flatten(), checkIfExists: true)
