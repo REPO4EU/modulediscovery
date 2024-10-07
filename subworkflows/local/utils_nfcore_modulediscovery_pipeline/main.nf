@@ -86,10 +86,10 @@ workflow PIPELINE_INITIALISATION {
         ch_input = Channel
             .fromSamplesheet("input")
             .map{seeds, network ->
-                if((seeds.size()==0) != params.seeds){
+                if((seeds.size()==0) ^ params.seeds ){
                     error("Seed genes have to specified through either the sampel sheet OR the --seeds paramater")
                 }
-                if((network.size()==0) != params.network){
+                if((network.size()==0) ^ params.network){
                     error("Networks have to specified through either the sampel sheet OR the --network paramater")
                 }
                 [seeds, network]
