@@ -30,6 +30,10 @@ include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_modu
 //
 workflow REPO4EU_MODULEDISCOVERY {
 
+    take:
+    ch_seeds    // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    ch_network  // channel: [ val(meta[id,network_id]), path(network) ]
+
     main:
 
     ch_versions = Channel.empty()
@@ -37,21 +41,6 @@ workflow REPO4EU_MODULEDISCOVERY {
     //
     // WORKFLOW: Run pipeline
     //
-
-    ch_input = Channel.fromPath(params.input.split(',').flatten(), checkIfExists: true)
-
-    // channel: [ val(meta[id,network_id]), path(network) ]
-    ch_network = Channel
-        .fromPath(params.network.split(',').flatten(), checkIfExists: true)
-        .map{ it -> [ [ id: it.baseName, network_id: it.baseName ], it ] }
-
-    // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
-    ch_seeds = Channel
-        .fromPath(params.seeds.split(',').flatten(), checkIfExists: true)
-        .combine(ch_network.map{meta, network -> meta.network_id})
-        .map{seeds, network_id ->
-            [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
-        }
 
     MODULEDISCOVERY (
         ch_seeds,
@@ -92,7 +81,7 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
-    REPO4EU_MODULEDISCOVERY ()
+    REPO4EU_MODULEDISCOVERY (PIPELINE_INITIALISATION.out.seeds, PIPELINE_INITIALISATION.out.network)
 
     //
     // SUBWORKFLOW: Run completion tasks

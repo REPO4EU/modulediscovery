@@ -75,47 +75,104 @@ workflow PIPELINE_INITIALISATION {
         nextflow_cli_args
     )
 
-    // channel: [ path(seeds), path(network) ]
-    ch_input = Channel
-        .fromSamplesheet("input")
-        .map{seeds, network ->
-            if((seeds.size()==0) != params.seeds){
-                error("Seed genes have to specified through either the sampel sheet OR the --seeds paramater")
+    ch_seeds = Channel.empty()      // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    ch_network = Channel.empty()    // channel: [ val(meta[id,network_id]), path(network) ]
+
+    if(params.input){
+
+        // Check sample sheet
+
+        // channel: [ path(seeds), path(network) ]
+        ch_input = Channel
+            .fromSamplesheet("input")
+            .map{seeds, network ->
+                if((seeds.size()==0) != params.seeds){
+                    error("Seed genes have to specified through either the sampel sheet OR the --seeds paramater")
+                }
+                if((network.size()==0) != params.network){
+                    error("Networks have to specified through either the sampel sheet OR the --network paramater")
+                }
+                [seeds, network]
             }
-            if((network.size()==0) != params.network){
-                error("Networks have to specified through either the sampel sheet OR the --network paramater")
+
+        if (params.seeds && params.network) {
+
+            error("You need to specify either a sample sheet (--input) OR the seeds (--seeds) and network (--network) files")
+
+        } else if (!params.seeds && !params.network) {
+
+            // create network and seeds channel based on tuples in the sample sheet
+
+            ch_network = ch_input
+                .map{ it -> it[1]}
+                .map{ [ [ id: it.baseName, network_id: it.baseName ], it ] }
+                .unique()
+
+            ch_seeds = ch_input
+                .map{ it ->
+                    seeds = it[0]
+                    network = it[1]
+                    network_id = network.baseName
+                    [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
+                }
+
+        } else if (params.seeds && !params.network) {
+
+            // create network based on the sample sheet and seeds based on the seeds parameter
+
+            ch_network = ch_input
+                .map{ it -> it[1]}
+                .map{ [ [ id: it.baseName, network_id: it.baseName ], it ] }
+                .unique()
+
+            ch_seeds = Channel
+                .fromPath(params.seeds.split(',').flatten(), checkIfExists: true)
+                .combine(ch_network.map{meta, network -> meta.network_id})
+                .map{seeds, network_id ->
+                    [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
+                }
+
+        } else if (!params.seeds && params.network) {
+
+            // create network based on the network parameter and seeds based on the sample sheet
+
+            ch_network = Channel
+                .fromPath(params.network.split(',').flatten(), checkIfExists: true)
+                .map{ it -> [ [ id: it.baseName, network_id: it.baseName ], it ] }
+
+            ch_seeds = ch_input
+                .map{ it -> it[0]}
+                .combine(ch_network.map{meta, network -> meta.network_id})
+                .map{seeds, network_id ->
+                    [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
+                }
+
+        }
+
+
+    } else if (params.seeds && params.network){
+
+        // create  network and seeds channels based on the combination of all seed and network files provided
+
+        ch_network = Channel
+            .fromPath(params.network.split(',').flatten(), checkIfExists: true)
+            .map{ it -> [ [ id: it.baseName, network_id: it.baseName ], it ] }
+
+        ch_seeds = Channel
+            .fromPath(params.seeds.split(',').flatten(), checkIfExists: true)
+            .combine(ch_network.map{meta, network -> meta.network_id})
+            .map{seeds, network_id ->
+                [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
             }
-            [seeds, network]
-        }
-        .branch{
-            only_seeds: it[0].size() != 0 && it[1].size() == 0
-                return it[0]
-            only_network: it[0].size() == 0 && it[1].size() != 0
-                return it[1]
-            tuple: it[0].size() != 0 && it[1].size() != 0
-                return it
-            other: true
-        }
-
-    ch_seeds = Channel.empty()
-    ch_network = Channel.empty()
-
-    if(params.seeds && params.network){
-
-    }
-    else if(params.seeds && !params.network){
-
-    }
-    else if (!params.seeds && params.network){
 
     } else {
-
+        error("You need to specify either a sample sheet (--input) or the seeds (--seeds) and network (--network) files")
     }
 
     emit:
     versions    = ch_versions
-    seeds       = ch_seeds
-    network     = ch_network
+    seeds       = ch_seeds      // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    network     = ch_network    // channel: [ val(meta[id,network_id]), path(network) ]
 }
 
 /*
