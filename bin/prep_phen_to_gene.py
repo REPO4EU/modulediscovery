@@ -15,23 +15,23 @@ def map_n_restructure(inpath, outpath, id_mapping_file=None):
 			mapping = {k: gene for k, gene in (l.strip().split("\t") for l in mapping)}
 	for f in list_files:
 		base = os.path.basename(f)
-		name = base.replace('.nodes.tsv', '') # name to use for .gmt file 
+		name = base.replace('.nodes.tsv', '') # name to use for .gmt file
 		# Read content.
 		file_content = pandas.read_csv(f,sep='\t')
 		genes = list(file_content['name'])
 		
 		if id_mapping_file:  # Perform mapping only if mapping file is provided
-			mapped_genes = [mapping.get(str(gene), gene) for gene in genes] 
+			mapped_genes = [mapping.get(str(gene), gene) for gene in genes]
 		else:
-			mapped_genes = genes 
+			mapped_genes = genes
 
 		dict_genes[name] = mapped_genes
 	with open(os.path.join(outpath + 'phenotype_to_gene.tsv'), 'w') as fout:
 		fout.write('phenotype\tgene\n') # write header
 		for key, list_values in dict_genes.items():
-			for gene_val in list_values : 
+			for gene_val in list_values :
 				line = f"{key}\t{gene_val}\n"
-				fout.write(line) 
+				fout.write(line)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description = 'Map enrez IDs to gene symbols and prepare phenotype to gene file.')
