@@ -102,7 +102,7 @@ seed_file_2.csv,network_2.csv
 seed_file_2.csv,network_1.csv
 ```
 
-Each row defines a seeds-network pair
+Each row defines a seeds-network pair.
 
 You can run the pipeline with a samplesheet using the `--input` parameter instead of `--seeds` and `--network`:
 
