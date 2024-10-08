@@ -16,7 +16,7 @@ process PROXIMITY {
     script:
     """
     # Reformat the disease module output.
-    prep_phen_to_gene.py --inpath ${launchDir}/${params.outdir}/ 
+    prep_phen_to_gene.py --inpath ${launchDir}/${params.outdir}/
 
     # Create a temporary configuration file.
     config_file=\$(mktemp)
@@ -29,14 +29,14 @@ cat <<EOT > \$config_file
     phenotype_to_gene = phenotype_to_gene.tsv
     phenotype_column = phenotype
     gene_column = gene
-    network_file = $network 
+    network_file = $network
     shortest_paths = $shortest_paths
     id_mapping_file = None
     output_file = proximity.tsv
 EOT
 
     # Run proximity.
-    proximity.py \$config_file 
+    proximity.py \$config_file
 
     # Delete the configfile once proximity script is done.
     rm \$config_file
