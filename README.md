@@ -24,6 +24,8 @@
 
 ## Usage
 
+### Setup
+
 > [!NOTE]
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
 
@@ -43,7 +45,7 @@ conda activate modulediscovery
 
 The pipeline should be run from outside of the code repository since nextflow, by default, will write into the execution directory.
 
-Run with test data:
+Run with included test data:
 
 ```bash
 nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
@@ -51,33 +53,94 @@ nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
    --outdir <OUTDIR>
 ```
 
-Now, you can run the pipeline using:
+### Running the pipeline
 
-<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
+Now, you can run the pipeline using:
 
 ```bash
 nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
    -profile <docker/singularity> \
-   --input <seed_file> \
-   --network <network_file> \
+   --seeds <SEED_FILE> \
+   --network <NETWORK_FILE> \
    --outdir <OUTDIR>
 ```
 
-Show all parameter options:
+This will run the pipeline based on the provided `<SEED_FILE>` and `<NETWORK_FILE>`. Results will be saved to the specified `<OUTDIR>`. Use `-profile` to set whether docker or singularity should be used for software deployment.
+
+You can display help text for all parameter options with:
 
 ```bash
 nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
 ```
 
-If you want to contribute to the pipeline, it is useful to set up pre-commit for code linting and quality checks:
-
-```bash
-pre-commit install
-```
-
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
 > see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
+
+#### Input options
+
+You can also use the `--seeds` and `--network` parameters to define multiple files as comma-separated lists:
+
+```bash
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
+   -profile <docker/singularity> \
+   --seeds <SEED_FILE_1,SEED_FILE_2,...> \
+   --network <NETWORK_FILE_1,NETWORK_FILE_2,...> \
+   --outdir <OUTDIR>
+```
+
+If multiple files are provided for both options, the pipeline will run for every possible combination of seeds and network files.
+
+In case you are only interested in specific combinations, seeds-network pairs can be specified via a CSV samplesheet:
+
+`samplesheet.csv`:
+
+```csv
+seeds,network
+seed_file_1.csv,network_1.csv
+seed_file_2.csv,network_2.csv
+seed_file_2.csv,network_1.csv
+```
+
+Each row defines a seeds-network pair
+
+You can run the pipeline with a samplesheet using the `--input` parameter instead of `--seeds` and `--network`:
+
+```bash
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
+   -profile <docker/singularity> \
+   --input samplesheet.csv \
+   --outdir <OUTDIR>
+```
+
+#### Skipping steps
+
+Most pipeline steps can be skipped using `--skip_<PIPELINE_STEP>`. E.g., if you are only interested in module discovery, you can skip the annotation and evaluation steps using:
+
+```bash
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
+   -profile <docker/singularity> \
+   --input samplesheet.csv \
+   --outdir <OUTDIR> \
+   --skip_annotation \
+   --skip_evaluation
+```
+
+You can then later continue the pipeline (including evaluation and annotation) using the `-resume` option:
+
+```bash
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
+   -profile <docker/singularity> \
+   --input samplesheet.csv \
+   --outdir <OUTDIR> \
+   -resume
+```
+
+To see the full list of skipping options, please run:
+
+```bash
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
+```
 
 ## Including a new active module detection tool
 
