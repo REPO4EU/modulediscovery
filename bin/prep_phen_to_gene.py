@@ -19,7 +19,7 @@ def map_n_restructure(inpath, outpath, id_mapping_file=None):
 		# Read content.
 		file_content = pandas.read_csv(f,sep='\t')
 		genes = list(file_content['name'])
-		
+
 		if id_mapping_file:  # Perform mapping only if mapping file is provided
 			mapped_genes = [mapping.get(str(gene), gene) for gene in genes]
 		else:
@@ -38,6 +38,6 @@ if __name__ == "__main__":
 	parser.add_argument('--inpath', type=str, default = '/Users/htoukabri/myFolder/testdisc/testout/', help= 'Path to modules folder.')
 	parser.add_argument('--outpath', type = str, default = './', help= 'Path to output folder.')
 	parser.add_argument('--id_mapping_file', type = str, default=None, help= 'Path to the ID-gene symbols mapping file.')
-	
+
 	args = parser.parse_args()
 	map_n_restructure(args.inpath, args.outpath, args.id_mapping_file)
