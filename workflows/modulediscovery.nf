@@ -18,6 +18,7 @@ include { ADDHEADER                } from '../modules/local/addheader/main'
 include { DIGEST                   } from '../modules/local/digest/main'
 include { MODULEOVERLAP            } from '../modules/local/moduleoverlap/main'
 include { TOPOLOGY                 } from '../modules/local/topology/main'
+include { DRUGSTONEEXPORT          } from '../modules/local/drugstoneexport/main'
 include { PROXIMITY                } from '../modules/local/proximity/main'
 
 //
