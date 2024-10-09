@@ -85,8 +85,8 @@ def main(argv=None):
     nodes = load_nodes(graph)
     edges = load_edges(graph)
     link = send_requests(nodes, edges, id_space)
-    header = ["Module_id", "drugstone_link"]
-    data = [f"{args.prefix}", f"{link}"]
+    header = ["Module_id", "drugstone_link", "link_raw"]
+    data = [f"{args.prefix}", f"<a href={link}>{args.prefix}</a>", f"{link}"]
     with open(f"{args.prefix}.drugstonelink.tsv", "w") as output:
         writer = csv.writer(output, delimiter="\t")
         writer.writerow(header)
