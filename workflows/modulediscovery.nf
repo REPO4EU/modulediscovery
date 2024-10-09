@@ -18,6 +18,7 @@ include { ADDHEADER                } from '../modules/local/addheader/main'
 include { DIGEST                   } from '../modules/local/digest/main'
 include { MODULEOVERLAP            } from '../modules/local/moduleoverlap/main'
 include { TOPOLOGY                 } from '../modules/local/topology/main'
+include { DRUGSTONEEXPORT          } from '../modules/local/drugstoneexport/main'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -109,7 +110,11 @@ workflow MODULEDISCOVERY {
         VISUALIZEMODULES(ch_modules, params.visualization_max_nodes)
         ch_versions = ch_versions.mix(VISUALIZEMODULES.out.versions)
     }
-
+    // Drugstone export
+    DRUGSTONEEXPORT(ch_modules, id_space)
+    ch_versions = ch_versions.mix(DRUGSTONEEXPORT.out.versions)
+    ch_multiqc_files = ch_multiqc_files.mix(DRUGSTONEEXPORT.out.link.map{ meta, path -> path }
+            .collectFile(name: 'drugstone_link_mqc.tsv', keepHeader: true))
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
         GT_BIOPAX(ch_modules, id_space, validate_online)
