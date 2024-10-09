@@ -75,7 +75,7 @@ custom_data:
       format: "{:.0f}"
   drugstone_link:
     id: "drugstone_link"
-    section_name: "drugstone_link"
+    section_name: "Drugstone Links"
     description: "Using the links in this table you can see the modules visualized with the drugst.one api"
     plot_type: "table"
     pconfig:
