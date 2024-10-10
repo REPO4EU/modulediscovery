@@ -2,6 +2,8 @@ process PROXIMITY {
     tag "$meta.id"
     label 'process_single'
 
+    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
+
     input:
     path network
     tuple val(meta), path(modules)
