@@ -249,7 +249,7 @@ def init_outFile(output_file, phenotype_to_info):
 
 def parse_input_file(f, source_column, target_column):
     source_to_targets = {}
-    data = pd.read_csv(f, sep="\t").set_index(source_column) #sep was "\t"
+    data = pd.read_csv(f, sep="\t").set_index(source_column)  # sep was "\t"
 
     for i, g in data.groupby(source_column):
         tmp = {i: [str(x) for x in g[target_column]]}
@@ -259,7 +259,7 @@ def parse_input_file(f, source_column, target_column):
 
 
 def parse_network(network_file, id_mapping_file=None):
-    network = nx.read_edgelist(network_file, delimiter = ",")
+    network = nx.read_edgelist(network_file, delimiter=",")
     component_nodes = max(nx.connected_components(network), key=len)
     network = nx.subgraph(network, component_nodes)
 
@@ -334,9 +334,7 @@ def main():
         config["phenotype_to_gene"], config["phenotype_column"], config["gene_column"]
     )
 
-    network = parse_network(
-        config["network_file"], config["id_mapping_file"]
-    )
+    network = parse_network(config["network_file"], config["id_mapping_file"])
 
     logging.info(
         f"Config file: {config_file}\ngene_set_file: {config['phenotype_to_gene']}\nTargets: {config['drug_to_target']}\n"
