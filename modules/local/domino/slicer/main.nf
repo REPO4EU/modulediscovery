@@ -1,5 +1,6 @@
 
 process DOMINO_SLICER {             // Process name, should be all upper case. Only the part before "_" will be used to define the output folder
+    tag "$meta.id"
     label 'process_single'          // Used to allocate resources, "process_single" uses one thread and 6GB memory, for labels see conf/base.config
     conda "bioconda::domino=1.0.0"  // Define software deployment via conda, "container" is more important right now
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
