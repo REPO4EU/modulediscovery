@@ -26,7 +26,7 @@ def map_n_restructure(inpath, outpath, id_mapping_file=None):
             mapped_genes = genes
 
         dict_genes[name] = mapped_genes
-    with open(os.path.join(outpath + "phenotype_to_gene.tsv"), "w") as fout:
+    with open(os.path.join(outpath, "phenotype_to_gene.tsv"), "w") as fout:
         fout.write("phenotype\tgene\n")  # write header
         for key, list_values in dict_genes.items():
             for gene_val in list_values:
