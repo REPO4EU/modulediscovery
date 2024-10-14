@@ -62,8 +62,10 @@ workflow MODULEDISCOVERY {
     // Params
     id_space = Channel.value(params.id_space)
     validate_online = Channel.value(params.validate_online)
-    proximity_sp = Channel.value(params.shortest_path)
-    proximity_dt = Channel.value(params.drug_to_target)
+    if(!params.skip_proximity){
+        proximity_sp = file(params.shortest_path)
+        proximity_dt = file(params.drug_to_target, checkIfExists:true)
+    }
 
     // Channels
     ch_versions = Channel.empty()
