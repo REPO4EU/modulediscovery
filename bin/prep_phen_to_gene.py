@@ -36,7 +36,7 @@ def map_n_restructure(inpath, outpath, id_mapping_file=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Map enrez IDs to gene symbols and prepare phenotype to gene file."
+        description="Prepare phenotype to gene file."
     )
     parser.add_argument(
         "--inpath",
