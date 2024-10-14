@@ -182,7 +182,7 @@
                     "type": "string",
                     "fa_icon": "far fa-check-circle",
                     "description": "Local path to the shortest path pickle file used for proximity.",
-                    "default": "${projectDir}/input/nedrex_drug_target_geneid_20240208_nedrex.tsv",
+                    "default": "${projectDir}/assets/NO_FILE",
                     "hidden": true
                 },
                 "drug_to_target": {
