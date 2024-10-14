@@ -20,7 +20,7 @@ process PROXIMITY {
     def drug_to_target = drug_to_target.name != 'NO_FILE' ? "$drug_to_target" : 'None'
     """
     # Reformat the disease module output.
-    prep_phen_to_gene.py --inpath ${launchDir}/${params.outdir}/
+    prep_phen_to_gene.py --inpath ${params.outdir}
 
     # Create a temporary configuration file.
     config_file=\$(mktemp)
