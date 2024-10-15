@@ -157,9 +157,27 @@
             "properties": {
                 "skip_drug_predictions": {
                     "type": "boolean",
-                    "description": "Flag for skipping drug predictions"
+                    "description": "Flag for skipping drug predictions",
+                    "fa_icon": "fas fa-forward"
+                },
+                "includeIndirectDrugs": {
+                    "type": "boolean",
+                    "description": "Drugst.One parameter for including indirect drugs.",
+                    "fa_icon": "fas fa-capsules"
+                },
+                "includeNonApprovedDrugs": {
+                    "type": "boolean",
+                    "description": "Drugst.One parameter for including non approved drugs.",
+                    "fa_icon": "fas fa-capsules"
+                },
+                "result_size": {
+                    "type": "integer",
+                    "default": 50,
+                    "description": "Drugst.One parameter for defining  the maximum number of returned drugs.",
+                    "fa_icon": "fas fa-expand-arrows-alt"
                 }
-            }
+            },
+            "fa_icon": "fas fa-capsules"
         },
         "evaluation": {
             "title": "Evaluation",
