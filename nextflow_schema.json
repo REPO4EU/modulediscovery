@@ -149,6 +149,18 @@
             },
             "fa_icon": "far fa-edit"
         },
+        "drug_predictions": {
+            "title": "Drug predictions",
+            "type": "object",
+            "description": "Parameters for the drug predictions.",
+            "default": "",
+            "properties": {
+                "skip_drug_predictions": {
+                    "type": "boolean",
+                    "description": "Flag for skipping drug predictions"
+                }
+            }
+        },
         "evaluation": {
             "title": "Evaluation",
             "type": "object",
@@ -379,6 +391,9 @@
         },
         {
             "$ref": "#/definitions/annotation"
+        },
+        {
+            "$ref": "#/definitions/drug_predictions"
         },
         {
             "$ref": "#/definitions/evaluation"

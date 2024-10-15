@@ -150,8 +150,10 @@ workflow MODULEDISCOVERY {
     ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
 
     // Drug predictions
-    DRUGPREDICTIONS(SAVEMODULES.out.nodes_tsv, id_space)
-    ch_versions = ch_versions.mix(DRUGPREDICTIONS.out.versions)
+    if(!params.skip_drug_predictions){
+        DRUGPREDICTIONS(SAVEMODULES.out.nodes_tsv, id_space)
+        ch_versions = ch_versions.mix(DRUGPREDICTIONS.out.versions)
+    }
 
     // Visualize modules
     if(!params.skip_visualization){
