@@ -6,8 +6,8 @@ process PROXIMITY {
     input:
     path network
     path modules
-    val shortest_paths
-    val drug_to_target
+    path shortest_paths
+    path drug_to_target
 
     output:
     path("*.tsv"), emit: proxout
