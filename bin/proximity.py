@@ -49,7 +49,6 @@ def run_proximity(
 
     k = 1
     f = init_outFile(output_file, phenotype_to_info)
-    print("HOOOooooooooliiii")
     for drug, targets in drug_to_targets.items():
         targets = set(targets) & nodes_network
 
