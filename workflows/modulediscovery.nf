@@ -130,7 +130,6 @@ workflow MODULEDISCOVERY {
     if(!params.skip_proximity){
         PROXIMITY(ch_network, SAVEMODULES.out.nodes_tsv.map{meta, path -> path}.collect(), proximity_sp, proximity_dt)
         ch_versions = ch_versions.mix(PROXIMITY.out.versions)
-        ch_multiqc_files = ch_multiqc_files.mix(PROXIMITY.out.proxout)
     }
 
     // Evaluation
