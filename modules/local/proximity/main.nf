@@ -41,9 +41,6 @@ EOT
     # Run proximity.
     proximity.py \$config_file
 
-    # Delete the configfile once proximity script is done.
-    rm \$config_file
-
 cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
