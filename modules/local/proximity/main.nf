@@ -21,25 +21,22 @@ process PROXIMITY {
     # Reformat the disease module output.
     prep_phen_to_gene.py --inpath ${modules}
 
-    # Create a temporary configuration file.
-    config_file=\$(mktemp)
-
-    cat <<EOT > \$config_file
-        [PROXIMITY]
-        drug_to_target = $drug_to_target
-        drug_column = drugbankId
-        target_column = targetDomainId
-        phenotype_to_gene = phenotype_to_gene.tsv
-        phenotype_column = phenotype
-        gene_column = gene
-        network_file = $network
-        shortest_paths = $shortest_paths
-        id_mapping_file = None
-        output_file = proximity.tsv
+    cat <<EOT > proximity_config.txt
+    [PROXIMITY]
+    drug_to_target = $drug_to_target
+    drug_column = drugbankId
+    target_column = targetDomainId
+    phenotype_to_gene = phenotype_to_gene.tsv
+    phenotype_column = phenotype
+    gene_column = gene
+    network_file = $network
+    shortest_paths = $shortest_paths
+    id_mapping_file = None
+    output_file = proximity.tsv
     EOT
 
     # Run proximity.
-    proximity.py \$config_file
+    proximity.py proximity_config.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
