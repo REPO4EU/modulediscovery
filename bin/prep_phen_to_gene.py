@@ -6,8 +6,8 @@ import pandas
 import argparse
 
 
-def map_n_restructure(inpath, outpath, id_mapping_file=None):
-    list_files = glob.glob(os.path.join(inpath, "modules/tsv_nodes/*.nodes.tsv"))
+def map_n_restructure(inpaths, outpath, id_mapping_file=None):
+    list_files = inpaths
     dict_genes = {}
 
     if id_mapping_file:
@@ -37,10 +37,10 @@ def map_n_restructure(inpath, outpath, id_mapping_file=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Prepare phenotype to gene file.")
     parser.add_argument(
-        "--inpath",
+        "--inpaths",
         type=str,
-        default="/Users/htoukabri/myFolder/testdisc/testout/",
-        help="Path to modules folder.",
+        nargs="+",
+        help="Paths to modules files (in tsv).",
     )
     parser.add_argument(
         "--outpath", type=str, default="./", help="Path to output folder."
@@ -53,4 +53,4 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    map_n_restructure(args.inpath, args.outpath, args.id_mapping_file)
+    map_n_restructure(args.inpaths, args.outpath, args.id_mapping_file)
