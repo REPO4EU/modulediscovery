@@ -43,7 +43,7 @@ def run_proximity(
     # Get shortest paths
     # Get degree binning
 
-    lengths = get_shortest_paths(network, network_dump_file)
+    lengths = get_shortest_paths(network_dump_file)
 
     bins = get_degree_binning(network, min_bin_size, lengths)
 
@@ -103,14 +103,9 @@ def run_proximity(
     return None
 
 
-def get_shortest_paths(graph, dump_file=None):
+def get_shortest_paths(dump_file):
     if os.path.exists(dump_file):
         lengths = pickle.load(open(dump_file, "rb"))
-    else:
-        lengths = dict(nx.shortest_path_length(graph))
-        if dump_file is not None:
-            logging.warn("Pickled file not found: {}".format(dump_file))
-            pickle.dump(lengths, open(dump_file, "wb"))
     return lengths
 
 
@@ -310,8 +305,8 @@ def parseConfigFile(config_file):
     config = config["PROXIMITY"]
 
     config = {x: config[x] for x in config}
-    if config["shortest_path_file"] == "None":
-        config["shortest_path_file"] = None
+    # if config["shortest_path_file"] == "None":
+    #     config["shortest_path_file"] = None
     if config["id_mapping_file"] == "None":
         config["id_mapping_file"] = None
     if config["degree_aware"] == "True":

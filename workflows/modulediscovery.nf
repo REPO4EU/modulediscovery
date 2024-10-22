@@ -19,7 +19,7 @@ include { DIGEST                   } from '../modules/local/digest/main'
 include { MODULEOVERLAP            } from '../modules/local/moduleoverlap/main'
 include { TOPOLOGY                 } from '../modules/local/topology/main'
 include { DRUGSTONEEXPORT          } from '../modules/local/drugstoneexport/main'
-include { PROXIMITY                } from '../modules/local/proximity/main'
+//include { PROXIMITY                } from '../modules/local/proximity/main'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -27,6 +27,7 @@ include { PROXIMITY                } from '../modules/local/proximity/main'
 include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
 include { NETWORKEXPANSION  } from '../subworkflows/local/networkexpansion/main'
 include { PERMUTATION       } from '../subworkflows/local/permutation/main'
+include { WF_PROXIMITY      } from '../subworkflows/local/wf_proximity/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -62,7 +63,7 @@ workflow MODULEDISCOVERY {
     // Params
     id_space = Channel.value(params.id_space)
     validate_online = Channel.value(params.validate_online)
-    if(!params.skip_proximity){
+    if(params.run_proximity){
         proximity_sp = file(params.shortest_path)
         proximity_dt = file(params.drug_to_target, checkIfExists:true)
     }
@@ -127,9 +128,9 @@ workflow MODULEDISCOVERY {
     }
 
     // Drug prioritization - Proximity
-    if(!params.skip_proximity){
-        PROXIMITY(ch_network, SAVEMODULES.out.nodes_tsv.map{meta, path -> path}.collect(), proximity_sp, proximity_dt)
-        ch_versions = ch_versions.mix(PROXIMITY.out.versions)
+    if(params.run_proximity){
+        WF_PROXIMITY(ch_network, SAVEMODULES.out.nodes_tsv.map{meta, path -> path}.collect(), proximity_sp, proximity_dt)
+        ch_versions = ch_versions.mix(WF_PROXIMITY.out.versions)
     }
 
     // Evaluation

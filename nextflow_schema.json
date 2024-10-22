@@ -173,10 +173,10 @@
             "default": "",
             "fa_icon": "fas fa-chart-network",
             "properties": {
-                "skip_proximity": {
+                "run_proximity": {
                     "type": "boolean",
                     "fa_icon": "fas fa-forward",
-                    "description": "Flag for skipping proximity"
+                    "description": "Flag for running proximity"
                 },
                 "shortest_path": {
                     "type": "string",
