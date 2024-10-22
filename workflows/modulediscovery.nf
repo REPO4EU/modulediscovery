@@ -149,9 +149,21 @@ workflow MODULEDISCOVERY {
     SAVEMODULES(ch_modules)
     ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
 
+
+    // specified drug prediction algorithms
+    ch_algorithms_drugs = Channel
+        .of(params.drugstone_algorithms.split(','))
+
+    ch_drugstone_input = SAVEMODULES.out.nodes_tsv
+        .combine(ch_algorithms_drugs)
+        .multiMap { meta, module, algorithm ->
+            module: [meta, module]
+            algorithm: algorithm
+        }
+
     // Drug predictions
     if(!params.skip_drug_predictions){
-        DRUGPREDICTIONS(SAVEMODULES.out.nodes_tsv, id_space)
+        DRUGPREDICTIONS(ch_drugstone_input.module, id_space, ch_drugstone_input.algorithm)
         ch_versions = ch_versions.mix(DRUGPREDICTIONS.out.versions)
     }
 

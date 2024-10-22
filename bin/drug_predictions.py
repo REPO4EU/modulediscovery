@@ -15,10 +15,17 @@ logger = logging.getLogger()
 
 
 class DrugPredictions:
-    def __init__(self, input_path: Path, id_space: str = "entrez", prefix: str = None):
+    def __init__(
+        self,
+        input_path: Path,
+        id_space: str = "entrez",
+        prefix: str = None,
+        algorithm: str = "trustrank",
+    ):
         self.input_path = input_path
         self.id_space = id_space
         self.prefix = prefix
+        self.algorithm = algorithm
         self.df = None
         self.nodes = None
 
@@ -36,10 +43,10 @@ class DrugPredictions:
         )
         self.nodes = set(self.df["name"])
 
-    def get_drug_set_trustrank(self, id_set, identifier, filename):
+    def get_drug_set_trustrank(self, id_set, identifier, filename, algorithm):
         parameters = {
             "identifier": identifier,
-            "algorithm": "trustrank",
+            "algorithm": algorithm,
             "target": "drug",
             "includeIndirectDrugs": False,
             "includeNonApprovedDrugs": False,
@@ -92,24 +99,31 @@ class DrugPredictions:
 
         expanded_df = pd.DataFrame(expanded_df_rows)
 
-        df_sorted_within_groups = (
-            expanded_df.groupby("name", group_keys=False)
-            .apply(lambda x: x.sort_values(by=["score"], ascending=[False]))
-            .reset_index(drop=True)
-        )
-
-        self.df = df_sorted_within_groups
+        if "score" in expanded_df.columns:
+            df_sorted_within_groups = (
+                expanded_df.groupby("name", group_keys=False)
+                .apply(lambda x: x.sort_values(by=["score"], ascending=[False]))
+                .reset_index(drop=True)
+            )
+            self.df = df_sorted_within_groups
+        else:
+            self.df = expanded_df
 
     def create_drug_predictions(self):
         if self.df is None:
             self.load_file(self.input_path)
         logger.debug("Creating drug predictions")
         drugs, nodeDetails = self.get_drug_set_trustrank(
-            self.nodes, self.id_space, str(self.prefix) + ".trustrank"
+            self.nodes,
+            self.id_space,
+            str(self.prefix) + "." + str(self.algorithm),
+            self.algorithm,
         )
         self.parse_drug_predictions(drugs, nodeDetails)
         self.df.to_csv(
-            str(self.prefix) + ".drug_predictions.tsv", sep="\t", index=False
+            str(self.prefix) + "." + str(self.algorithm) + ".drug_predictions.tsv",
+            sep="\t",
+            index=False,
         )
 
 
@@ -151,6 +165,14 @@ def parse_args(argv=None):
         type=str,
     )
 
+    parser.add_argument(
+        "-a",
+        "--algorithm",
+        help="Algorithm for the drug predictions.",
+        type=str,
+        default="trustrank",
+    )
+
     return parser.parse_args(argv)
 
 
@@ -162,7 +184,7 @@ def main(argv=None):
         logger.error(f"The given input file {args.file_in} was not found!")
         sys.exit(2)
     logger.debug(f"{args=}")
-    predictor = DrugPredictions(args.file_in, args.idspace, args.prefix)
+    predictor = DrugPredictions(args.file_in, args.idspace, args.prefix, args.algorithm)
     predictor.create_drug_predictions()
 
 

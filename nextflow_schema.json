@@ -175,6 +175,11 @@
                     "default": 50,
                     "description": "Drugst.One parameter for defining  the maximum number of returned drugs.",
                     "fa_icon": "fas fa-expand-arrows-alt"
+                },
+                "drugstone_algorithms": {
+                    "type": "string",
+                    "description": "Parameter for defining the Drugst.One algorithms to be used. Comma separated list.",
+                    "default": "trustrank"
                 }
             },
             "fa_icon": "fas fa-capsules"

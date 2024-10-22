@@ -7,10 +7,11 @@ process DRUGPREDICTIONS {
     input:
     tuple val(meta), path(module)
     val idspace
+    val algorithm
 
     output:
-    tuple val(meta), path("${meta.id}.drug_predictions.tsv")  , emit: drug_predictions
-    tuple val(meta), path("${meta.id}.trustrank.csv"), emit: trustrank
+    tuple val(meta), path("${meta.id}.${algorithm}.drug_predictions.tsv")  , emit: drug_predictions
+    tuple val(meta), path("${meta.id}.${algorithm}.csv"), emit: drugstone_download
     path "versions.yml"                          , emit: versions
 
     when:
@@ -18,7 +19,7 @@ process DRUGPREDICTIONS {
 
     script:
     """
-    drug_predictions.py --idspace "${idspace}" -p "${meta.id}" "${module}" -l DEBUG
+    drug_predictions.py --idspace "${idspace}" -p "${meta.id}" -a "${algorithm}" "${module}" -l DEBUG
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
