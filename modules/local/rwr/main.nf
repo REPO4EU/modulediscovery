@@ -2,7 +2,7 @@
 process RWR {
     tag "$meta.id"
     label 'process_low'
-    container 'docker.io/chloebubu/rwr'
+    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
 
     input:
     tuple val(meta), path(seeds)            // Path to seeds file

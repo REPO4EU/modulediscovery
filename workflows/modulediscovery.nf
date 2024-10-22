@@ -18,18 +18,15 @@ include { ADDHEADER                } from '../modules/local/addheader/main'
 include { DIGEST                   } from '../modules/local/digest/main'
 include { MODULEOVERLAP            } from '../modules/local/moduleoverlap/main'
 include { DRUGPREDICTIONS          } from '../modules/local/drugpredictions/main'
+include { TOPOLOGY                 } from '../modules/local/topology/main'
+include { DRUGSTONEEXPORT          } from '../modules/local/drugstoneexport/main'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { GT_DIAMOND         } from '../subworkflows/local/gt_diamond'
-include { GT_DOMINO          } from '../subworkflows/local/gt_domino'
-include { GT_ROBUST          } from '../subworkflows/local/gt_robust'
-include { GT_ROBUSTBIASAWARE } from '../subworkflows/local/gt_robust_bias_aware'
-include { GT_FIRSTNEIGHBOR   } from '../subworkflows/local/gt_firstneighbor'
-include { GT_RWR             } from '../subworkflows/local/gt_rwr'
-
-include { GT_BIOPAX          } from '../subworkflows/local/gt_biopax/main'
+include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
+include { NETWORKEXPANSION  } from '../subworkflows/local/networkexpansion/main'
+include { PERMUTATION       } from '../subworkflows/local/permutation/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -63,20 +60,12 @@ workflow MODULEDISCOVERY {
     main:
 
     // Params
-    diamond_n = Channel.value(params.diamond_n)
-    diamond_alpha = Channel.value(params.diamond_alpha)
-
-    rwr_scaling = Channel.value(params.rwr_scaling).map{it ? 1 : 0}
-    rwr_symmetrical = Channel.value(params.rwr_symmetrical).map{it ? 1 : 0}
-    rwr_r = Channel.value(params.rwr_r)
-
     id_space = Channel.value(params.id_space)
     validate_online = Channel.value(params.validate_online)
 
     // Channels
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
-    ch_modules = Channel.empty()
 
 
     // Brach channel, so, GRAPHTOOLPARSER runs only for supported network formats, which are not already .gt files
@@ -104,41 +93,9 @@ workflow MODULEDISCOVERY {
 
 
     // Network expansion tools
-    if(!params.skip_diamond){
-        GT_DIAMOND(ch_seeds, ch_network_gt, diamond_n, diamond_alpha)
-        ch_versions = ch_versions.mix(GT_DIAMOND.out.versions)
-        ch_modules = ch_modules.mix(GT_DIAMOND.out.module)
-    }
-
-    if(!params.skip_domino){
-        GT_DOMINO(ch_seeds, ch_network_gt)
-        ch_versions = ch_versions.mix(GT_DOMINO.out.versions)
-        ch_modules = ch_modules.mix(GT_DOMINO.out.module)
-    }
-
-    if(!params.skip_robust){
-        GT_ROBUST(ch_seeds, ch_network_gt)
-        ch_versions = ch_versions.mix(GT_ROBUST.out.versions)
-        ch_modules = ch_modules.mix(GT_ROBUST.out.module)
-    }
-
-    if(!params.skip_robust_bias_aware){
-        GT_ROBUSTBIASAWARE(ch_seeds, ch_network_gt, id_space)
-        ch_versions = ch_versions.mix(GT_ROBUSTBIASAWARE.out.versions)
-        ch_modules = ch_modules.mix(GT_ROBUSTBIASAWARE.out.module)
-    }
-
-    if(!params.skip_firstneighbor){
-        GT_FIRSTNEIGHBOR(ch_seeds, ch_network_gt)
-        ch_versions = ch_versions.mix(GT_FIRSTNEIGHBOR.out.versions)
-        ch_modules = ch_modules.mix(GT_FIRSTNEIGHBOR.out.module)
-    }
-
-    if(!params.skip_rwr){
-        GT_RWR(ch_seeds, ch_network_gt, rwr_scaling, rwr_symmetrical, rwr_r)
-        ch_versions = ch_versions.mix(GT_RWR.out.versions)
-        ch_modules = ch_modules.mix(GT_RWR.out.module)
-    }
+    NETWORKEXPANSION(ch_seeds, ch_network_gt)
+    ch_modules = NETWORKEXPANSION.out.modules
+    ch_versions = ch_versions.mix(NETWORKEXPANSION.out.versions)
 
     // Annotate with network properties
     NETWORKANNOTATION(ch_modules, ch_network_gt)
@@ -150,9 +107,17 @@ workflow MODULEDISCOVERY {
     ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
 
 
-    // specified drug prediction algorithms
+    def valid_algorithms = ['trustrank', 'closeness', 'degree']
+
+    // Split the algorithms and check if they are valid
     ch_algorithms_drugs = Channel
         .of(params.drugstone_algorithms.split(','))
+        .filter { algorithm ->
+            if (!valid_algorithms.contains(algorithm)) {
+                throw new IllegalArgumentException("Invalid algorithm: $algorithm. Must be one of: ${valid_algorithms.join(', ')}")
+            }
+            return true
+        }
 
     ch_drugstone_input = SAVEMODULES.out.nodes_tsv
         .combine(ch_algorithms_drugs)
@@ -163,58 +128,82 @@ workflow MODULEDISCOVERY {
 
     // Drug predictions
     if(!params.skip_drug_predictions){
-        DRUGPREDICTIONS(ch_drugstone_input.module, id_space, ch_drugstone_input.algorithm)
+        DRUGPREDICTIONS(ch_drugstone_input.module, id_space, ch_drugstone_input.algorithm, params.includeIndirectDrugs, params.includeNonApprovedDrugs, params.result_size)
         ch_versions = ch_versions.mix(DRUGPREDICTIONS.out.versions)
     }
 
     // Visualize modules
     if(!params.skip_visualization){
-        VISUALIZEMODULES(ch_modules)
+        VISUALIZEMODULES(ch_modules, params.visualization_max_nodes)
         ch_versions = ch_versions.mix(VISUALIZEMODULES.out.versions)
     }
-
+    // Drugstone export
+    DRUGSTONEEXPORT(ch_modules, id_space)
+    ch_versions = ch_versions.mix(DRUGSTONEEXPORT.out.versions)
+    ch_multiqc_files = ch_multiqc_files.mix(DRUGSTONEEXPORT.out.link.map{ meta, path -> path }
+            .collectFile(name: 'drugstone_link_mqc.tsv', keepHeader: true))
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
         GT_BIOPAX(ch_modules, id_space, validate_online)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
 
-    GT2TSV_Modules(ch_modules)
-    GT2TSV_Network(ch_network_gt.flatten().map{ it -> [ [ id: it.baseName ], it ] })
-    ADDHEADER(ch_seeds, "gene_id")
-    ch_nodes = GT2TSV_Modules.out
-    ch_nodes = ch_nodes.mix(ADDHEADER.out)
-
     // Evaluation
-    ch_overlap_input = ch_nodes
-        .multiMap { meta, path ->
-            ids: meta.id
-            nodes: path
-        }
-    MODULEOVERLAP(
-        ch_overlap_input.ids.collect().map{it.join(" ")},
-        ch_overlap_input.nodes.collect()
-    )
-    ch_multiqc_files = ch_multiqc_files.mix(MODULEOVERLAP.out)
+    if(!params.skip_evaluation){
 
-    if(!params.skip_gprofiler){
+        GT2TSV_Modules(ch_modules)
+        GT2TSV_Network(ch_network_gt.flatten().map{ it -> [ [ id: it.baseName ], it ] })
+        ADDHEADER(ch_seeds, "gene_id")
+        ch_nodes = GT2TSV_Modules.out
+        ch_nodes = ch_nodes.mix(ADDHEADER.out)
 
-        GPROFILER2_GOST (
-            ch_nodes,
-            [],
-            GT2TSV_Network.out.map{it[1]}.first()
+        // Module overlap
+        ch_overlap_input = ch_nodes
+            .multiMap { meta, path ->
+                ids: meta.id
+                nodes: path
+            }
+        MODULEOVERLAP(
+            ch_overlap_input.ids.collect().map{it.join(" ")},
+            ch_overlap_input.nodes.collect()
         )
-        ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
-    }
+        ch_multiqc_files = ch_multiqc_files.mix(MODULEOVERLAP.out)
 
-    if(!params.skip_digest){
-        DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
-        ch_versions = ch_versions.mix(DIGEST.out.versions)
-        ch_multiqc_files = ch_multiqc_files.mix(
-            DIGEST.out.multiqc
+        // Topology evaluation
+        TOPOLOGY(ch_modules)
+        ch_versions = ch_versions.mix(TOPOLOGY.out.versions)
+        ch_toplogy_multiqc = TOPOLOGY.out.multiqc
             .map{ meta, path -> path }
-            .collectFile(name: 'digest_mqc.tsv', keepHeader: true)
-        )
+            .collectFile(name: 'topology_mqc.tsv', keepHeader: true)
+        ch_multiqc_files = ch_multiqc_files.mix(ch_toplogy_multiqc)
+
+        // Overrepresentation analysis
+        if(!params.skip_gprofiler){
+            GPROFILER2_GOST (
+                ch_nodes,
+                [],
+                GT2TSV_Network.out.map{it[1]}.first()
+            )
+            ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
+        }
+
+        // Digest
+        if(!params.skip_digest){
+            DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
+            ch_versions = ch_versions.mix(DIGEST.out.versions)
+            ch_multiqc_files = ch_multiqc_files.mix(
+                DIGEST.out.multiqc
+                .map{ meta, path -> path }
+                .collectFile(name: 'digest_mqc.tsv', keepHeader: true)
+            )
+        }
+
+        // Seed permutation based evaluation
+        if(!params.skip_seed_permutation){
+            PERMUTATION(ch_seeds, ch_modules, ch_network_gt)
+            ch_versions = ch_versions.mix(PERMUTATION.out.versions)
+            ch_multiqc_files = ch_multiqc_files.mix(PERMUTATION.out.multiqc_files)
+        }
 
     }
 
@@ -226,7 +215,6 @@ workflow MODULEDISCOVERY {
             sort: true,
             newLine: true
         ).set { ch_collated_versions }
-
     //
     // MODULE: MultiQC
     //

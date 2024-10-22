@@ -1,24 +1,23 @@
-process FIRSTNEIGHBOR {
+process DRUGSTONEEXPORT{
     tag "$meta.id"
     label 'process_single'
 
-    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
+    container "docker.io/kerstingjohannes/modulediscovery:1.0.0"
 
     input:
-    tuple val(meta), path(seeds)
-    path network
+    tuple val(meta), path(module)
+    val(id_space)
 
     output:
-    tuple val(meta), path("${seeds.baseName}.firstneighbor.gt"), emit: module
-    path "versions.yml"                                 , emit: versions
+    tuple val(meta), path("${meta.id}.drugstonelink.tsv")   , emit: link
+    path "versions.yml"     , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     """
-    firstneighbor_tool.py -n $network -s $seeds -o "${seeds.baseName}.firstneighbor.gt"
-
+    drugstone_export.py -m $module -i $id_space -p "${meta.id}"
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')

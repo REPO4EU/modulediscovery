@@ -38,6 +38,12 @@ def parse_args(argv=None):
         type=str,
     )
     parser.add_argument(
+        "-n",
+        "--max_nodes",
+        help="If the module has more nodes it will not be visualized.",
+        type=int,
+    )
+    parser.add_argument(
         "-l",
         "--log-level",
         help="The desired log level (default WARNING).",
@@ -58,6 +64,13 @@ def main(argv=None):
 
     # load the module file
     g = util.load_graph(str(args.module))
+
+    # check if module is small enough
+    if g.num_vertices() > args.max_nodes:
+        logger.warn(
+            f"Not visualizing {args.prefix} since it has too many ({g.num_vertices()}) nodes"
+        )
+        sys.exit(0)
 
     # get vertex properties as dataframe
     vp_df = util.vp2df(g)

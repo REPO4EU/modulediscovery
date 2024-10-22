@@ -2,16 +2,17 @@ process VISUALIZEMODULES {
     tag "$meta.id"
     label 'process_single'
 
-    container "community.wave.seqera.io/library/graph-tool_networkx_pandas_pyvis_pruned:3b79bb1c134b59eb"
+    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
 
     input:
     tuple val(meta), path(module)
+    val max_nodes
 
     output:
-    tuple val(meta), path("${meta.id}.pdf")      , emit: pdf
-    tuple val(meta), path("${meta.id}.png")      , emit: png
-    tuple val(meta), path("${meta.id}.svg")      , emit: svg
-    tuple val(meta), path("${meta.id}.html")     , emit: html
+    tuple val(meta), path("${meta.id}.pdf")      , emit: pdf  , optional: true
+    tuple val(meta), path("${meta.id}.png")      , emit: png  , optional: true
+    tuple val(meta), path("${meta.id}.svg")      , emit: svg  , optional: true
+    tuple val(meta), path("${meta.id}.html")     , emit: html , optional: true
     path "versions.yml"                          , emit: versions
 
     when:
@@ -19,7 +20,7 @@ process VISUALIZEMODULES {
 
     script:
     """
-    visualize_modules.py -m "${module}" -p "${meta.id}" -l DEBUG
+    visualize_modules.py -m "${module}" -p "${meta.id}" -n ${max_nodes} -l DEBUG
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

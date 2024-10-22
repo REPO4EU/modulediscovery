@@ -5,11 +5,6 @@ import logging
 import sys
 import pandas as pd
 import drugstone
-from drugstone import new_task
-
-drugstone.print_license()
-drugstone.accept_license()
-
 
 logger = logging.getLogger()
 
@@ -21,11 +16,17 @@ class DrugPredictions:
         id_space: str = "entrez",
         prefix: str = None,
         algorithm: str = "trustrank",
+        includeIndirectDrugs: bool = False,
+        includeNonApprovedDrugs: bool = False,
+        result_size: int = 50,
     ):
         self.input_path = input_path
         self.id_space = id_space
         self.prefix = prefix
         self.algorithm = algorithm
+        self.includeIndirectDrugs = includeIndirectDrugs
+        self.includeNonApprovedDrugs = includeNonApprovedDrugs
+        self.result_size = result_size
         self.df = None
         self.nodes = None
 
@@ -43,16 +44,25 @@ class DrugPredictions:
         )
         self.nodes = set(self.df["name"])
 
-    def get_drug_set_trustrank(self, id_set, identifier, filename, algorithm):
+    def get_drug_set_trustrank(
+        self,
+        id_set,
+        identifier,
+        filename,
+        algorithm,
+        includeIndirectDrugs=False,
+        includeNonApprovedDrugs=False,
+        result_size=50,
+    ):
         parameters = {
             "identifier": identifier,
             "algorithm": algorithm,
             "target": "drug",
-            "includeIndirectDrugs": False,
-            "includeNonApprovedDrugs": False,
-            "result_size": 50,
+            "includeIndirectDrugs": includeIndirectDrugs,
+            "includeNonApprovedDrugs": includeNonApprovedDrugs,
+            "result_size": result_size,
         }
-        task = new_task(id_set, parameters)
+        task = drugstone.new_task(id_set, parameters)
         r = task.get_result()
         detailsForNodes = r.get_raw_result()["nodeAttributes"]["details"]
         r.download_drugs_csv(name=filename)
@@ -118,6 +128,9 @@ class DrugPredictions:
             self.id_space,
             str(self.prefix) + "." + str(self.algorithm),
             self.algorithm,
+            self.includeIndirectDrugs,
+            self.includeNonApprovedDrugs,
+            self.result_size,
         )
         self.parse_drug_predictions(drugs, nodeDetails)
         self.df.to_csv(
@@ -173,6 +186,27 @@ def parse_args(argv=None):
         default="trustrank",
     )
 
+    parser.add_argument(
+        "--includeIndirectDrugs",
+        help="Drugst.One parameter: Include indirect drugs in the prediction.",
+        type=bool,
+        default=False,
+    )
+
+    parser.add_argument(
+        "--includeNonApprovedDrugs",
+        help="Drugst.One parameter: Include non-approved drugs in the prediction.",
+        type=bool,
+        default=False,
+    )
+
+    parser.add_argument(
+        "--result_size",
+        help="Drugst.One parameter: Number of drugs to predict.",
+        type=int,
+        default=50,
+    )
+
     return parser.parse_args(argv)
 
 
@@ -184,7 +218,15 @@ def main(argv=None):
         logger.error(f"The given input file {args.file_in} was not found!")
         sys.exit(2)
     logger.debug(f"{args=}")
-    predictor = DrugPredictions(args.file_in, args.idspace, args.prefix, args.algorithm)
+    predictor = DrugPredictions(
+        args.file_in,
+        args.idspace,
+        args.prefix,
+        args.algorithm,
+        args.includeIndirectDrugs,
+        args.includeNonApprovedDrugs,
+        args.result_size,
+    )
     predictor.create_drug_predictions()
 
 

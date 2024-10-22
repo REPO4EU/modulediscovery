@@ -1,6 +1,6 @@
 process MODULEOVERLAP {
     label 'process_single'
-    container 'docker.io/quirinmanz/gt2biopax:0.1.1'
+    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
     debug true
 
     input:

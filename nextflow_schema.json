@@ -15,7 +15,8 @@
                 "input": {
                     "type": "string",
                     "description": "Seed gene files (comma separated paths)",
-                    "help_text": "Multiple paths to seed gene files separated by commas. Each file must have one line per gene."
+                    "help_text": "Multiple paths to seed gene files separated by commas. Each file must have one line per gene.",
+                    "fa_icon": "fas fa-file-csv"
                 },
                 "network": {
                     "type": "string",
@@ -110,18 +111,33 @@
                     "minimum": 0,
                     "maximum": 1,
                     "fa_icon": "fas fa-walking"
-                },
+                }
+            }
+        },
+        "visualization": {
+            "title": "Visualization",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "fa_icon": "fas fa-palette",
+            "properties": {
                 "skip_visualization": {
                     "type": "boolean",
                     "description": "Skip module visualization",
                     "fa_icon": "fas fa-forward"
+                },
+                "visualization_max_nodes": {
+                    "type": "integer",
+                    "default": 500,
+                    "description": "If a module has more nodes it will not be visualized.",
+                    "fa_icon": "fas fa-project-diagram"
                 }
             }
         },
         "annotation": {
             "title": "Annotation",
             "type": "object",
-            "description": "Set parameter regarding the annotation.",
+            "description": "Set parameters regarding the annotation.",
             "default": "",
             "properties": {
                 "skip_annotation": {
@@ -144,7 +160,8 @@
                 },
                 "add_variants": {
                     "type": "boolean",
-                    "description": "Flag for adding variants to the biopax annotation file."
+                    "description": "Flag for adding variants to the biopax annotation file.",
+                    "fa_icon": "fas fa-dna"
                 }
             },
             "fa_icon": "far fa-edit"
@@ -191,6 +208,11 @@
             "default": "",
             "fa_icon": "fas fa-search",
             "properties": {
+                "skip_evaluation": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Flag skipping the entire evaluation workflow"
+                },
                 "skip_gprofiler": {
                     "type": "boolean",
                     "description": "Flag for skipping g:Profiler",
@@ -200,6 +222,11 @@
                     "type": "boolean",
                     "description": "Flag for skipping DIGEST",
                     "fa_icon": "fas fa-forward"
+                },
+                "skip_seed_permutation": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Flag for skipping the seed permutation-based evaluation"
                 }
             }
         },
@@ -411,6 +438,9 @@
         },
         {
             "$ref": "#/definitions/network_expansion"
+        },
+        {
+            "$ref": "#/definitions/visualization"
         },
         {
             "$ref": "#/definitions/annotation"
