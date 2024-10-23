@@ -106,28 +106,26 @@ workflow MODULEDISCOVERY {
     SAVEMODULES(ch_modules)
     ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
 
-
-    def valid_algorithms = ['trustrank', 'closeness', 'degree']
-
-    // Split the algorithms and check if they are valid
-    ch_algorithms_drugs = Channel
-        .of(params.drugstone_algorithms.split(','))
-        .filter { algorithm ->
-            if (!valid_algorithms.contains(algorithm)) {
-                throw new IllegalArgumentException("Invalid algorithm: $algorithm. Must be one of: ${valid_algorithms.join(', ')}")
-            }
-            return true
-        }
-
-    ch_drugstone_input = SAVEMODULES.out.nodes_tsv
-        .combine(ch_algorithms_drugs)
-        .multiMap { meta, module, algorithm ->
-            module: [meta, module]
-            algorithm: algorithm
-        }
-
     // Drug predictions
     if(!params.skip_drug_predictions){
+        def valid_algorithms = ['trustrank', 'closeness', 'degree']
+
+        // Split the algorithms and check if they are valid
+        ch_algorithms_drugs = Channel
+            .of(params.drugstone_algorithms.split(','))
+            .filter { algorithm ->
+                if (!valid_algorithms.contains(algorithm)) {
+                    throw new IllegalArgumentException("Invalid algorithm: $algorithm. Must be one of: ${valid_algorithms.join(', ')}")
+                }
+                return true
+            }
+
+        ch_drugstone_input = SAVEMODULES.out.nodes_tsv
+            .combine(ch_algorithms_drugs)
+            .multiMap { meta, module, algorithm ->
+                module: [meta, module]
+                algorithm: algorithm
+            }
         DRUGPREDICTIONS(ch_drugstone_input.module, id_space, ch_drugstone_input.algorithm, params.includeIndirectDrugs, params.includeNonApprovedDrugs, params.result_size)
         ch_versions = ch_versions.mix(DRUGPREDICTIONS.out.versions)
     }

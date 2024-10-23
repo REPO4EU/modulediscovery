@@ -195,7 +195,7 @@
                 },
                 "drugstone_algorithms": {
                     "type": "string",
-                    "description": "Parameter for defining the Drugst.One algorithms to be used. Comma separated list.",
+                    "description": "Parameter for defining the Drugst.One algorithms to be used. Comma separated list. Options: 'trustrank', 'degree' and 'closeness'.",
                     "default": "trustrank"
                 }
             },
