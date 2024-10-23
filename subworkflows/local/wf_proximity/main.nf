@@ -16,15 +16,14 @@ workflow WF_PROXIMITY {
 
     ch_versions = Channel.empty()                                           // For collecting tool versions
 
-    SHORTEST_PATHS(network) // seed
-    sp = SHORTEST_PATHS.out.shortest_paths
+    SHORTEST_PATHS(network, shortest_paths) // seed
     ch_versions = ch_versions.mix(SHORTEST_PATHS.out.versions)
 
     PHEN_TO_GENE(modules)
     pg = PHEN_TO_GENE.out.phen_gene
     ch_versions = ch_versions.mix(PHEN_TO_GENE.out.versions)
 
-    PROXIMITY(network, SHORTEST_PATHS.out.shortest_paths, drug_to_target, PHEN_TO_GENE.out.phen_gene)
+    PROXIMITY(network, SHORTEST_PATHS.out.sp, drug_to_target, PHEN_TO_GENE.out.phen_gene)
     ch_versions = ch_versions.mix(PROXIMITY.out.versions)
 
     emit:
