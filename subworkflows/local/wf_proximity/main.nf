@@ -20,7 +20,6 @@ workflow WF_PROXIMITY {
     ch_versions = ch_versions.mix(SHORTEST_PATHS.out.versions)
 
     PHEN_TO_GENE(modules)
-    pg = PHEN_TO_GENE.out.phen_gene
     ch_versions = ch_versions.mix(PHEN_TO_GENE.out.versions)
 
     PROXIMITY(network, SHORTEST_PATHS.out.sp, drug_to_target, PHEN_TO_GENE.out.phen_gene)
