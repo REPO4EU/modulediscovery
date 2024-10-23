@@ -23,7 +23,7 @@ process PROXIMITY {
     drug_to_target = ${drug_to_target}
     drug_column = drugbankId
     target_column = targetDomainId
-    phenotype_to_gene = phenotype_to_gene.tsv
+    phenotype_to_gene = ${phen_to_gene}
     phenotype_column = phenotype
     gene_column = gene
     network_file = ${network}
