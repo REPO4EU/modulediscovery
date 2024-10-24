@@ -11,11 +11,10 @@ process PROXIMITY {
 
     output:
     path("*.tsv"), emit: proxout
+    path("proximity_config.txt"), emit: proxconfig
     path "versions.yml", emit: versions
 
     script:
-    def shortest_paths = shortest_paths.name != 'NO_FILE' ? "$shortest_paths" : 'None'
-    def drug_to_target = drug_to_target.name != 'NO_FILE' ? "$drug_to_target" : 'None'
     """
     # Create a config file.
     cat <<EOT > proximity_config.txt
