@@ -17,7 +17,7 @@ process DRUGSTONEEXPORT{
 
     script:
     """
-    drugstone.py -m $module -i $id_space -p "${meta.id}"
+    drugstone_export.py -m $module -i $id_space -p "${meta.id}"
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')

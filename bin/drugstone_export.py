@@ -53,7 +53,7 @@ def send_requests(nodes, edges, identifier):
                     },
                 },
                 "found": {
-                    "grouName": "Found Nodes",
+                    "groupName": "Found Nodes",
                     "color": "#002afc",
                     "shape": "circle",
                     "type": "found nodes",
