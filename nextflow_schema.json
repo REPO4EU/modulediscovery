@@ -192,7 +192,9 @@
                     "default": "${projectDir}/assets/NO_FILE",
                     "hidden": true
                 }
-            }
+            },
+            "fa_icon": "fas fa-capsules"
+        },
         "drug_predictions": {
             "title": "Drug predictions",
             "type": "object",
