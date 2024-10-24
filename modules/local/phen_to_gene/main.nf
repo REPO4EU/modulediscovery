@@ -7,7 +7,7 @@ process PHEN_TO_GENE {
     path modules
 
     output:
-    path("*.tsv"), emit: phen_gene
+    path("phenotype_to_gene.tsv"), emit: phen_gene
     path "versions.yml", emit: versions
 
     script:
