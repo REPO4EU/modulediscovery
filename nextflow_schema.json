@@ -193,6 +193,40 @@
                     "hidden": true
                 }
             }
+        "drug_predictions": {
+            "title": "Drug predictions",
+            "type": "object",
+            "description": "Parameters for the drug predictions.",
+            "default": "",
+            "properties": {
+                "skip_drug_predictions": {
+                    "type": "boolean",
+                    "description": "Flag for skipping drug predictions",
+                    "fa_icon": "fas fa-forward"
+                },
+                "includeIndirectDrugs": {
+                    "type": "boolean",
+                    "description": "Drugst.One parameter for including indirect drugs.",
+                    "fa_icon": "fas fa-capsules"
+                },
+                "includeNonApprovedDrugs": {
+                    "type": "boolean",
+                    "description": "Drugst.One parameter for including non approved drugs.",
+                    "fa_icon": "fas fa-capsules"
+                },
+                "result_size": {
+                    "type": "integer",
+                    "default": 50,
+                    "description": "Drugst.One parameter for defining  the maximum number of returned drugs.",
+                    "fa_icon": "fas fa-expand-arrows-alt"
+                },
+                "drugstone_algorithms": {
+                    "type": "string",
+                    "description": "Parameter for defining the Drugst.One algorithms to be used. Comma separated list. Options: 'trustrank', 'degree' and 'closeness'.",
+                    "default": "trustrank"
+                }
+            },
+            "fa_icon": "fas fa-capsules"
         },
         "evaluation": {
             "title": "Evaluation",
@@ -437,6 +471,9 @@
         },
         {
             "$ref": "#/definitions/annotation"
+        },
+        {
+            "$ref": "#/definitions/drug_predictions"
         },
         {
             "$ref": "#/definitions/evaluation"

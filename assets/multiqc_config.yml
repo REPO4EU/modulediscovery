@@ -21,6 +21,7 @@ custom_content:
     - input
     - input_seeds
     - input_network
+    - drugstone_link
     - overlap
     - jaccard_similarity
     - shared_nodes
@@ -104,6 +105,15 @@ custom_data:
     pconfig:
       title: "Seeds"
       format: "{:.0f}"
+  drugstone_link:
+    id: "drugstone_link"
+    section_name: "Drugstone Links"
+    description: "Using the links in this table you can see the modules visualized with the drugst.one api"
+    plot_type: "table"
+    pconfig:
+      id: "download_links_table"
+      namespace: "Download links"
+      scale: false
   input_network:
     parent_id: input
     parent_name: "Input"
