@@ -1,13 +1,11 @@
-include { SHORTEST_PATHS          } from '../shortest_paths'
-include { PHEN_TO_GENE            } from '../phen_to_gene'
-include { PROXIMITY               } from '../proximity'
+include { SHORTEST_PATHS          } from '../../../modules/local/shortest_paths'
+include { PHEN_TO_GENE            } from '../../../modules/local/phen_to_gene'
+include { PROXIMITY               } from '../../../modules/local/proximity'
 
-workflow WF_PROXIMITY {
+workflow GT_PROXIMITY {
 
     take:                                   // Workflow inputs
-
     network
-    // seed
     modules
     shortest_paths
     drug_to_target
@@ -16,7 +14,7 @@ workflow WF_PROXIMITY {
 
     ch_versions = Channel.empty()                                           // For collecting tool versions
 
-    SHORTEST_PATHS(network, shortest_paths) // seed
+    SHORTEST_PATHS(network, shortest_paths)
     ch_versions = ch_versions.mix(SHORTEST_PATHS.out.versions)
 
     PHEN_TO_GENE(modules)
