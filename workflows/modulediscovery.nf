@@ -27,7 +27,7 @@ include { DRUGSTONEEXPORT          } from '../modules/local/drugstoneexport/main
 include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
 include { NETWORKEXPANSION  } from '../subworkflows/local/networkexpansion/main'
 include { PERMUTATION       } from '../subworkflows/local/permutation/main'
-include { WF_PROXIMITY      } from '../subworkflows/local/wf_proximity/main'
+include { GT_PROXIMITY      } from '../subworkflows/local/gt_proximity/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -129,8 +129,8 @@ workflow MODULEDISCOVERY {
 
     // Drug prioritization - Proximity
     if(params.run_proximity){
-        WF_PROXIMITY(ch_network, SAVEMODULES.out.nodes_tsv.map{meta, path -> path}.collect(), proximity_sp, proximity_dt)
-        ch_versions = ch_versions.mix(WF_PROXIMITY.out.versions)
+        GT_PROXIMITY(ch_network, SAVEMODULES.out.nodes_tsv.map{meta, path -> path}.collect(), proximity_sp, proximity_dt)
+        ch_versions = ch_versions.mix(GT_PROXIMITY.out.versions)
     }
 
     // Evaluation
