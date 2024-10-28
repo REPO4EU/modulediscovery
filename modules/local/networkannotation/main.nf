@@ -2,8 +2,6 @@ process NETWORKANNOTATION {
     tag "$meta.id"
     label 'process_single'
 
-    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
-
     input:
     tuple val(meta), (path(subnetwork), stageAs: 'input/*')
     path network, stageAs: 'input/*'
