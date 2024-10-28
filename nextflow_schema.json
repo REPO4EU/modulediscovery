@@ -166,6 +166,34 @@
             },
             "fa_icon": "far fa-edit"
         },
+        "drug_prioritization": {
+            "title": "Drug prioritization",
+            "type": "object",
+            "description": "Parameters for the drug prioritization methods.",
+            "default": "",
+            "fa_icon": "fas fa-chart-network",
+            "properties": {
+                "run_proximity": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Flag for running proximity"
+                },
+                "shortest_path": {
+                    "type": "string",
+                    "fa_icon": "far fa-check-circle",
+                    "description": "Local path to the shortest path pickle file used for proximity.",
+                    "default": "${projectDir}/assets/NO_FILE",
+                    "hidden": true
+                },
+                "drug_to_target": {
+                    "type": "string",
+                    "fa_icon": "far fa-check-circle",
+                    "description": "Local path to the drug to targets file used for proximity.",
+                    "default": "${projectDir}/assets/NO_FILE",
+                    "hidden": true
+                }
+            }
+        },
         "drug_predictions": {
             "title": "Drug predictions",
             "type": "object",
