@@ -1,7 +1,5 @@
 process MODULEOVERLAP {
     label 'process_single'
-    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
-    debug true
 
     input:
     val(ids)

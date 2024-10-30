@@ -1,8 +1,6 @@
 process PHEN_TO_GENE {
     label 'process_single'
 
-    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
-
     input:
     path modules
 

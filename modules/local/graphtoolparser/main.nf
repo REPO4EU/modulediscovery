@@ -1,8 +1,6 @@
 process GRAPHTOOLPARSER {
     label 'process_single'
 
-    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
-
     input:
     path network
     val format
