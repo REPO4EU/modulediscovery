@@ -17,7 +17,10 @@ include { GT2TSV as GT2TSV_Network } from '../modules/local/gt2tsv/main'
 include { ADDHEADER                } from '../modules/local/addheader/main'
 include { DIGEST                   } from '../modules/local/digest/main'
 include { MODULEOVERLAP            } from '../modules/local/moduleoverlap/main'
+include { DRUGPREDICTIONS          } from '../modules/local/drugpredictions/main'
 include { TOPOLOGY                 } from '../modules/local/topology/main'
+include { DRUGSTONEEXPORT          } from '../modules/local/drugstoneexport/main'
+//include { PROXIMITY                } from '../modules/local/proximity/main'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -25,6 +28,7 @@ include { TOPOLOGY                 } from '../modules/local/topology/main'
 include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
 include { NETWORKEXPANSION  } from '../subworkflows/local/networkexpansion/main'
 include { PERMUTATION       } from '../subworkflows/local/permutation/main'
+include { GT_PROXIMITY      } from '../subworkflows/local/gt_proximity/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,6 +64,10 @@ workflow MODULEDISCOVERY {
     // Params
     id_space = Channel.value(params.id_space)
     validate_online = Channel.value(params.validate_online)
+    if(params.run_proximity){
+        proximity_sp = file(params.shortest_path)
+        proximity_dt = file(params.drug_to_target, checkIfExists:true)
+    }
 
     // Channels
     ch_versions = Channel.empty()
@@ -116,16 +124,50 @@ workflow MODULEDISCOVERY {
     SAVEMODULES(ch_modules)
     ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
 
+    // Drug predictions
+    if(!params.skip_drug_predictions){
+        def valid_algorithms = ['trustrank', 'closeness', 'degree']
+
+        // Split the algorithms and check if they are valid
+        ch_algorithms_drugs = Channel
+            .of(params.drugstone_algorithms.split(','))
+            .filter { algorithm ->
+                if (!valid_algorithms.contains(algorithm)) {
+                    throw new IllegalArgumentException("Invalid algorithm: $algorithm. Must be one of: ${valid_algorithms.join(', ')}")
+                }
+                return true
+            }
+
+        ch_drugstone_input = SAVEMODULES.out.nodes_tsv
+            .combine(ch_algorithms_drugs)
+            .multiMap { meta, module, algorithm ->
+                module: [meta, module]
+                algorithm: algorithm
+            }
+        DRUGPREDICTIONS(ch_drugstone_input.module, id_space, ch_drugstone_input.algorithm, params.includeIndirectDrugs, params.includeNonApprovedDrugs, params.result_size)
+        ch_versions = ch_versions.mix(DRUGPREDICTIONS.out.versions)
+    }
+
     // Visualize modules
     if(!params.skip_visualization){
         VISUALIZEMODULES(ch_modules, params.visualization_max_nodes)
         ch_versions = ch_versions.mix(VISUALIZEMODULES.out.versions)
     }
-
+    // Drugstone export
+    DRUGSTONEEXPORT(ch_modules, id_space)
+    ch_versions = ch_versions.mix(DRUGSTONEEXPORT.out.versions)
+    ch_multiqc_files = ch_multiqc_files.mix(DRUGSTONEEXPORT.out.link.map{ meta, path -> path }
+            .collectFile(name: 'drugstone_link_mqc.tsv', keepHeader: true))
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
         GT_BIOPAX(ch_modules, id_space, validate_online)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
+    }
+
+    // Drug prioritization - Proximity
+    if(params.run_proximity){
+        GT_PROXIMITY(ch_network, SAVEMODULES.out.nodes_tsv.map{meta, path -> path}.collect(), proximity_sp, proximity_dt)
+        ch_versions = ch_versions.mix(GT_PROXIMITY.out.versions)
     }
 
     // Evaluation

@@ -2,8 +2,6 @@ process MODULEPARSER {
     tag "$meta.id"
     label 'process_single'
 
-    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
-
     input:
     tuple val(meta), path(module), path(seeds), path(network)
     val tool
