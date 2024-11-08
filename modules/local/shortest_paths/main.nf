@@ -1,17 +1,18 @@
 process SHORTEST_PATHS {
+    tag "$meta.id"
     label 'process_single'
 
     input:
-    path network
+    tuple val(meta), path (network)
     path shortest_paths
     //path seed // still don't get it, no matter what are the seeds, the network's shortest paths should be the same ?
 
     output:
-    path "${shortest_paths.name != 'NO_FILE' ? shortest_paths : 'shortest_paths.pkl'}", emit: sp
+    tuple val(meta), path ("${shortest_paths.name != 'NO_FILE' ? shortest_paths : '*.shortest_paths.pkl'}"), emit: sp
     path "versions.yml", emit: versions
 
     script:
-    def output_sp = shortest_paths.name != 'NO_FILE' ? "$shortest_paths" : 'shortest_paths.pkl'
+    def output_sp = shortest_paths.name != 'NO_FILE' ? "$shortest_paths" : "${meta.id}.shortest_paths.pkl"
     // Check if shortest_paths does not exist
     if (!file(output_sp).exists()) {
         // Generate the shortest paths file

@@ -166,7 +166,7 @@ workflow MODULEDISCOVERY {
 
     // Drug prioritization - Proximity
     if(params.run_proximity){
-        GT_PROXIMITY(ch_network, SAVEMODULES.out.nodes_tsv.map{meta, path -> path}.collect(), proximity_sp, proximity_dt)
+        GT_PROXIMITY(ch_network, SAVEMODULES.out.nodes_tsv, proximity_sp, proximity_dt)
         ch_versions = ch_versions.mix(GT_PROXIMITY.out.versions)
     }
 
