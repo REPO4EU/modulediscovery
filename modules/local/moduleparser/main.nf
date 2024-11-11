@@ -2,15 +2,12 @@ process MODULEPARSER {
     tag "$meta.id"
     label 'process_single'
 
-    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
-
     input:
-    path network
+    tuple val(meta), path(module), path(seeds), path(network)
     val tool
-    tuple val(meta), path(module), path(seeds)
 
     output:
-    tuple val(meta), path("${meta.id}.gt")  , emit: network
+    tuple val(meta), path("${meta.id}.gt")  , emit: module
     path "versions.yml"                     , emit: versions
 
     when:

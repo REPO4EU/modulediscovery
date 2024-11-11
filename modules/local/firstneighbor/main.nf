@@ -2,11 +2,8 @@ process FIRSTNEIGHBOR {
     tag "$meta.id"
     label 'process_single'
 
-    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
-
     input:
-    tuple val(meta), path(seeds)
-    path network
+    tuple val(meta), path(seeds), path (network)
 
     output:
     tuple val(meta), path("${seeds.baseName}.firstneighbor.gt"), emit: module

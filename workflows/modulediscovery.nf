@@ -17,8 +17,10 @@ include { GT2TSV as GT2TSV_Network } from '../modules/local/gt2tsv/main'
 include { ADDHEADER                } from '../modules/local/addheader/main'
 include { DIGEST                   } from '../modules/local/digest/main'
 include { MODULEOVERLAP            } from '../modules/local/moduleoverlap/main'
+include { DRUGPREDICTIONS          } from '../modules/local/drugpredictions/main'
 include { TOPOLOGY                 } from '../modules/local/topology/main'
 include { DRUGSTONEEXPORT          } from '../modules/local/drugstoneexport/main'
+//include { PROXIMITY                } from '../modules/local/proximity/main'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -26,6 +28,7 @@ include { DRUGSTONEEXPORT          } from '../modules/local/drugstoneexport/main
 include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
 include { NETWORKEXPANSION  } from '../subworkflows/local/networkexpansion/main'
 include { PERMUTATION       } from '../subworkflows/local/permutation/main'
+include { GT_PROXIMITY      } from '../subworkflows/local/gt_proximity/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -53,14 +56,18 @@ workflow MODULEDISCOVERY {
 
 
     take:
-    ch_seeds // channel: samplesheet read in from --input
-    ch_network // channel: network file read in from --network
+    ch_seeds    // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    ch_network  // channel: [ val(meta[id,network_id]), path(network) ]
 
     main:
 
     // Params
     id_space = Channel.value(params.id_space)
     validate_online = Channel.value(params.validate_online)
+    if(params.run_proximity){
+        proximity_sp = file(params.shortest_path)
+        proximity_dt = file(params.drug_to_target, checkIfExists:true)
+    }
 
     // Channels
     ch_versions = Channel.empty()
@@ -69,7 +76,7 @@ workflow MODULEDISCOVERY {
 
     // Brach channel, so, GRAPHTOOLPARSER runs only for supported network formats, which are not already .gt files
     ch_network_type = ch_network.branch {
-        gt: it.extension == "gt"
+        gt: it[1].extension == "gt"
         parse: true
     }
 
@@ -77,12 +84,17 @@ workflow MODULEDISCOVERY {
     GRAPHTOOLPARSER(ch_network_type.parse, 'gt')
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
     ch_multiqc_files = ch_multiqc_files.mix(GRAPHTOOLPARSER.out.multiqc)
+    ch_network_gt = GRAPHTOOLPARSER.out.network.mix(ch_network_type.gt)
 
-    // Mix into one .gt format channel
-    ch_network_gt = GRAPHTOOLPARSER.out.network.collect().mix(ch_network_type.gt).first()
 
     // Check input
-    INPUTCHECK(ch_seeds, ch_network_gt)
+    // channel: [ val(meta[id,seeds_id,network_id]), path(seeds), path(network) ]
+    ch_seeds_network = ch_seeds
+        .map{ meta, seeds -> [meta.network_id, meta, seeds]}
+        .combine(ch_network_gt.map{meta, network -> [meta.network_id, network]}, by: 0)
+        .map{key, meta, seeds, network -> [meta, seeds, network]}
+
+    INPUTCHECK(ch_seeds_network)
     ch_seeds = INPUTCHECK.out.seeds
     INPUTCHECK.out.removed_seeds | view {meta, path -> log.warn("Removed seeds from $meta.id. Check multiqc report.") }
     ch_seeds_multiqc = INPUTCHECK.out.multiqc
@@ -93,17 +105,48 @@ workflow MODULEDISCOVERY {
 
     // Network expansion tools
     NETWORKEXPANSION(ch_seeds, ch_network_gt)
-    ch_modules = NETWORKEXPANSION.out.modules
+    ch_modules = NETWORKEXPANSION.out.modules // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module)]
     ch_versions = ch_versions.mix(NETWORKEXPANSION.out.versions)
 
+
     // Annotate with network properties
-    NETWORKANNOTATION(ch_modules, ch_network_gt)
+    // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module), path(network) ]
+    ch_module_network = ch_modules
+        .map{ meta, module -> [meta.network_id, meta, module]}
+        .combine(ch_network_gt.map{meta, network -> [meta.network_id, network]}, by: 0)
+        .map{newtork_id, meta, module, network -> [meta, module, network]}
+
+    NETWORKANNOTATION(ch_module_network)
     ch_modules = NETWORKANNOTATION.out.module
     ch_versions = ch_versions.mix(NETWORKANNOTATION.out.versions)
 
     // Save modules
     SAVEMODULES(ch_modules)
     ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
+
+    // Drug predictions
+    if(!params.skip_drug_predictions){
+        def valid_algorithms = ['trustrank', 'closeness', 'degree']
+
+        // Split the algorithms and check if they are valid
+        ch_algorithms_drugs = Channel
+            .of(params.drugstone_algorithms.split(','))
+            .filter { algorithm ->
+                if (!valid_algorithms.contains(algorithm)) {
+                    throw new IllegalArgumentException("Invalid algorithm: $algorithm. Must be one of: ${valid_algorithms.join(', ')}")
+                }
+                return true
+            }
+
+        ch_drugstone_input = SAVEMODULES.out.nodes_tsv
+            .combine(ch_algorithms_drugs)
+            .multiMap { meta, module, algorithm ->
+                module: [meta, module]
+                algorithm: algorithm
+            }
+        DRUGPREDICTIONS(ch_drugstone_input.module, id_space, ch_drugstone_input.algorithm, params.includeIndirectDrugs, params.includeNonApprovedDrugs, params.result_size)
+        ch_versions = ch_versions.mix(DRUGPREDICTIONS.out.versions)
+    }
 
     // Visualize modules
     if(!params.skip_visualization){
@@ -121,20 +164,28 @@ workflow MODULEDISCOVERY {
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
 
+    // Drug prioritization - Proximity
+    if(params.run_proximity){
+        GT_PROXIMITY(ch_network, SAVEMODULES.out.nodes_tsv, proximity_sp, proximity_dt)
+        ch_versions = ch_versions.mix(GT_PROXIMITY.out.versions)
+    }
+
     // Evaluation
     if(!params.skip_evaluation){
 
         GT2TSV_Modules(ch_modules)
-        GT2TSV_Network(ch_network_gt.flatten().map{ it -> [ [ id: it.baseName ], it ] })
+        GT2TSV_Network(ch_network_gt)
         ADDHEADER(ch_seeds, "gene_id")
+
+        // channel: [ val(meta), path(nodes) ]
         ch_nodes = GT2TSV_Modules.out
         ch_nodes = ch_nodes.mix(ADDHEADER.out)
 
         // Module overlap
         ch_overlap_input = ch_nodes
-            .multiMap { meta, path ->
+            .multiMap { meta, nodes ->
                 ids: meta.id
-                nodes: path
+                nodes: nodes
             }
         MODULEOVERLAP(
             ch_overlap_input.ids.collect().map{it.join(" ")},
@@ -152,17 +203,35 @@ workflow MODULEDISCOVERY {
 
         // Overrepresentation analysis
         if(!params.skip_gprofiler){
+
+            ch_gprofiler_input = ch_nodes
+                .map{ meta, path -> [meta.network_id, meta, path]}
+                .combine(GT2TSV_Network.out.map{meta, path -> [meta.id, path]}, by: 0)
+                .multiMap{key, meta, nodes, network ->
+                    nodes: [meta, nodes]
+                    network: network
+                }
+
             GPROFILER2_GOST (
-                ch_nodes,
+                ch_gprofiler_input.nodes,
                 [],
-                GT2TSV_Network.out.map{it[1]}.first()
+                ch_gprofiler_input.network
             )
             ch_versions = ch_versions.mix(GPROFILER2_GOST.out.versions)
         }
 
         // Digest
         if(!params.skip_digest){
-            DIGEST (ch_nodes, id_space, ch_network_gt, id_space)
+
+            ch_digest_input = ch_nodes
+                .map{ meta, path -> [meta.network_id, meta, path]}
+                .combine(ch_network_gt.map{meta, path -> [meta.id, path]}, by: 0)
+                .multiMap{key, meta, nodes, network ->
+                    nodes: [meta, nodes]
+                    network: network
+                }
+
+            DIGEST (ch_digest_input.nodes, id_space, ch_digest_input.network, id_space)
             ch_versions = ch_versions.mix(DIGEST.out.versions)
             ch_multiqc_files = ch_multiqc_files.mix(
                 DIGEST.out.multiqc
@@ -173,7 +242,7 @@ workflow MODULEDISCOVERY {
 
         // Seed permutation based evaluation
         if(!params.skip_seed_permutation){
-            PERMUTATION(ch_seeds, ch_modules, ch_network_gt)
+            PERMUTATION(ch_modules, ch_seeds, ch_network_gt)
             ch_versions = ch_versions.mix(PERMUTATION.out.versions)
             ch_multiqc_files = ch_multiqc_files.mix(PERMUTATION.out.multiqc_files)
         }

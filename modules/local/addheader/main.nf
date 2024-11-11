@@ -1,6 +1,5 @@
 process ADDHEADER {
     tag "$meta.id"
-    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
 
     input:
     tuple val(meta), path(file)

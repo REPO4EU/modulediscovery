@@ -10,6 +10,9 @@ import graph_tool.all as gt
 import csv
 import argparse
 import pyintergraph
+import logging
+
+logger = logging.getLogger()
 
 # =============================================================================
 
@@ -201,7 +204,7 @@ def topological_measures(reference_candidates, G, lists_candidates):
 
     # normalized number of interedges
     interedges = candidate_network.number_of_edges()
-    print(reference_candidates)
+
     n_possible_connections = (
         sum([G.degree(s) for s in reference_candidates]) - interedges
     )
@@ -215,6 +218,16 @@ def topological_measures(reference_candidates, G, lists_candidates):
     l_random_modularity = []
 
     for l in lists_candidates:
+
+        # check if the list is empty
+        if not l:
+            l_random_lcc.append(0)
+            l_interconnected_genes.append(0)
+            l_random_edgibility.append(0)
+            l_random_modularity.append(0)
+            logger.warning("Empty list of permuted candidates")
+            continue
+
         G_sub = nx.subgraph(G, l)
         n_candidates_perturbed = G_sub.number_of_nodes()
 
@@ -356,6 +369,7 @@ def parse_args(argv=None):
 def main(argv=None):
 
     args = parse_args(argv)
+    logging.basicConfig(level=args.log_level, format="[%(levelname)s] %(message)s")
     print(args)
 
     reference_candidates, original_seeds, lists_candidates, perturbed_seeds, G = (

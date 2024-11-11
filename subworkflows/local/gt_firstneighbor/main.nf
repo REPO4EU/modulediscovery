@@ -5,27 +5,34 @@
 include { FIRSTNEIGHBOR     } from '../../../modules/local/firstneighbor/main'
 
 workflow GT_FIRSTNEIGHBOR {
-    take:                                   // Workflow inputs
-    ch_seeds                                // File with seed genes
-    ch_network                              // File with network in gt format
+    take:
+    ch_seeds    // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    ch_network  // channel: [ val(meta[id,network_id]), path(network) ]
 
     main:
 
-    ch_versions = Channel.empty()                                         // For collecting tool versions
+    ch_versions = Channel.empty()
 
-    FIRSTNEIGHBOR(ch_seeds, ch_network)                                   // Run first neighbor
-    ch_versions = ch_versions.mix(FIRSTNEIGHBOR.out.versions.first())     // Collect versions
+    // channel: [ val(meta[id,seeds_id,network_id), path(seeds), path(network) ]
+    ch_seeds_network = ch_seeds
+        .map{ meta, seeds -> [meta.network_id, meta, seeds]}
+        .combine(ch_network.map{meta, network -> [meta.network_id, network]}, by: 0)
+        .map{network_id, meta, seeds, network -> [meta, seeds, network]}
 
-    ch_module = FIRSTNEIGHBOR.out.module                       // Extract the module
+    FIRSTNEIGHBOR(ch_seeds_network)
+    ch_versions = ch_versions.mix(FIRSTNEIGHBOR.out.versions.first())
+
+    // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module) ]
+    ch_module = FIRSTNEIGHBOR.out.module
         .map{meta, path ->
             def dup = meta.clone()
-            dup.id = meta.id + ".firstneighbor"
             dup.amim = "firstneighbor"
-            dup.seeds = meta.id
+            dup.id = meta.id + "." + dup.amim
+            dup.module_id = dup.id
             [ dup, path ]
         }
 
     emit:
-    module = ch_module // channel: [ module ]              emit the module extracted using first neighbors
-    versions = ch_versions        // channel: [ versions.yml ]        emit collected versions
+    module = ch_module      // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module) ]
+    versions = ch_versions  // channel: [ versions.yml ]
 }

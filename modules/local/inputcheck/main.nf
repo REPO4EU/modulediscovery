@@ -2,11 +2,8 @@ process INPUTCHECK {
     tag "$meta.id"
     label 'process_single'
 
-    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
-
     input:
-    tuple val(meta), (path(seeds), stageAs: 'check/*')
-    path network, stageAs: 'check/*'
+    tuple val(meta ), (path(seeds), stageAs: 'check/*'), (path(network), stageAs: 'check/*')
 
     output:
     tuple val(meta), path("${meta.id}.tsv")        , emit: seeds, optional: true

@@ -17,9 +17,9 @@ def load_nodes(graph):
     seeds = graph.vp["is_seed"]
     for id, is_seed in zip(name, seeds):
         if is_seed:
-            group = "seedNode"
+            group = "seeds"
         else:
-            group = "default"
+            group = "found"
         nodes.append({"id": id, "group": group})
     return json.dumps(nodes)
 
@@ -41,6 +41,28 @@ def send_requests(nodes, edges, identifier):
     url = "https://api.drugst.one/create_network"
     data = {
         "network": {"nodes": nodes, "edges": edges},
+        "groups": {
+            "nodeGroups": {
+                "seeds": {
+                    "groupName": "Seed Nodes",
+                    "color": "#fc0000",
+                    "shape": "circle",
+                    "type": "seed nodes",
+                    "font": {
+                        "color": "#ffffff",
+                    },
+                },
+                "found": {
+                    "groupName": "Found Nodes",
+                    "color": "#002afc",
+                    "shape": "circle",
+                    "type": "found nodes",
+                    "font": {
+                        "color": "#ffffff",
+                    },
+                },
+            }
+        },
         "config": {"identifier": identifier, "autofillEdges": False},
     }
     post_request = requests.post(url, json=data)
@@ -85,8 +107,8 @@ def main(argv=None):
     nodes = load_nodes(graph)
     edges = load_edges(graph)
     link = send_requests(nodes, edges, id_space)
-    header = ["Module_id", "drugstone_link"]
-    data = [f"{args.prefix}", f"{link}"]
+    header = ["Module_id", "drugstone_link", "link_raw"]
+    data = [f"{args.prefix}", f"<a href={link}>{args.prefix}</a>", f"{link}"]
     with open(f"{args.prefix}.drugstonelink.tsv", "w") as output:
         writer = csv.writer(output, delimiter="\t")
         writer.writerow(header)

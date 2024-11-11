@@ -35,6 +35,9 @@ workflow PIPELINE_INITIALISATION {
     monochrome_logs   // boolean: Do not use coloured log outputs
     nextflow_cli_args //   array: List of positional nextflow CLI args
     outdir            //  string: The output directory where the results will be saved
+    input             //  string: Path to sample sheet
+    seeds             //  string: Path(s) to seed file(s)
+    network           //  string: Path(s) to network file(s)
 
     main:
 
@@ -55,7 +58,7 @@ workflow PIPELINE_INITIALISATION {
     //
     pre_help_text = nfCoreLogo(monochrome_logs)
     post_help_text = '\n' + workflowCitation() + '\n' + dashedLine(monochrome_logs)
-    def String workflow_command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --input <seed_file> --network <network_file> --outdir <OUTDIR>"
+    def String workflow_command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --seeds <seed_file> --network <network_file> --outdir <OUTDIR>"
     UTILS_NFVALIDATION_PLUGIN (
         help,
         workflow_command,
@@ -72,8 +75,106 @@ workflow PIPELINE_INITIALISATION {
         nextflow_cli_args
     )
 
+    ch_seeds = Channel.empty()      // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    ch_network = Channel.empty()    // channel: [ val(meta[id,network_id]), path(network) ]
+
+    seed_param_set = (params.seeds != null)
+    network_param_set = (params.network != null)
+
+    if(params.input){
+
+        // Check sample sheet
+
+        // channel: [ path(seeds), path(network) ]
+        ch_input = Channel
+            .fromSamplesheet("input")
+            .map{seeds, network ->
+                if((seeds.size()==0) ^ seed_param_set ){
+                    error("Seed genes have to specified through either the sampel sheet OR the --seeds paramater")
+                }
+                if((network.size()==0) ^ network_param_set ){
+                    error("Networks have to specified through either the sampel sheet OR the --network paramater")
+                }
+                [seeds, network]
+            }
+
+        if (seed_param_set && network_param_set) {
+
+            error("You need to specify either a sample sheet (--input) OR the seeds (--seeds) and network (--network) files")
+
+        } else if (!seed_param_set && !network_param_set) {
+
+            log.info("Creating network and seeds channels based on tuples in the sample sheet")
+
+            ch_network = ch_input
+                .map{ it -> it[1]}
+                .map{ [ [ id: it.baseName, network_id: it.baseName ], it ] }
+                .unique()
+
+            ch_seeds = ch_input
+                .map{ it ->
+                    seeds = it[0]
+                    network = it[1]
+                    network_id = network.baseName
+                    [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
+                }
+
+        } else if (seed_param_set && !network_param_set) {
+
+            log.info("Creating network channel based on the sample sheet and seeds channel based on the seeds parameter")
+
+            ch_network = ch_input
+                .map{ it -> it[1]}
+                .map{ [ [ id: it.baseName, network_id: it.baseName ], it ] }
+
+            ch_seeds = Channel
+                .fromPath(params.seeds.split(',').flatten(), checkIfExists: true)
+                .combine(ch_network.map{meta, network -> meta.network_id})
+                .map{seeds, network_id ->
+                    [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
+                }
+
+        } else if (!seed_param_set && network_param_set) {
+
+            log.info("Creating network channel based on the network parameter and seeds channel based on the sample sheet")
+
+            ch_network = Channel
+                .fromPath(params.network.split(',').flatten(), checkIfExists: true)
+                .map{ it -> [ [ id: it.baseName, network_id: it.baseName ], it ] }
+
+            ch_seeds = ch_input
+                .map{ it -> it[0]}
+                .combine(ch_network.map{meta, network -> meta.network_id})
+                .map{seeds, network_id ->
+                    [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
+                }
+
+        }
+
+
+    } else if (seed_param_set && network_param_set){
+
+        log.info("Creating network and seeds channels based on the combination of all seed and network files provided")
+
+        ch_network = Channel
+            .fromPath(params.network.split(',').flatten(), checkIfExists: true)
+            .map{ it -> [ [ id: it.baseName, network_id: it.baseName ], it ] }
+
+        ch_seeds = Channel
+            .fromPath(params.seeds.split(',').flatten(), checkIfExists: true)
+            .combine(ch_network.map{meta, network -> meta.network_id})
+            .map{seeds, network_id ->
+                [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
+            }
+
+    } else {
+        error("You need to specify either a sample sheet (--input) or the seeds (--seeds) and network (--network) files")
+    }
+
     emit:
     versions    = ch_versions
+    seeds       = ch_seeds      // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    network     = ch_network    // channel: [ val(meta[id,network_id]), path(network) ]
 }
 
 /*
