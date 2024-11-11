@@ -75,7 +75,7 @@ custom_data:
           description: "Number of nodes without any edges to other nodes"
           format: "{:.0f}"
           placement: 1007
-  permutation:
+  seed_permutation:
     plot_type: "generalstats"
     pconfig:
       - avg_jaccard_index:

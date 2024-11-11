@@ -6,7 +6,7 @@ include { NETWORKEXPANSION           } from '../networkexpansion'
 include { SEEDPERMUTATION            } from '../../../modules/local/seedpermutation/main'
 include { PERMUTATIONEVALUATION      } from '../../../modules/local/permutationevaluation/main'
 
-workflow PERMUTATION {
+workflow GT_SEEDPERMUTATION {
     take:
     ch_modules  // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module) ]
     ch_seeds    // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
@@ -104,7 +104,7 @@ workflow PERMUTATION {
     ch_versions = ch_versions.mix(PERMUTATIONEVALUATION.out.versions)
     ch_multiqc_files = PERMUTATIONEVALUATION.out.multiqc_summary
         .map{ meta, path -> path }
-        .collectFile(name: 'permutation_mqc.tsv', keepHeader: true)
+        .collectFile(name: 'seed_permutation_mqc.tsv', keepHeader: true)
 
 
     emit:

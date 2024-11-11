@@ -20,15 +20,14 @@ include { MODULEOVERLAP            } from '../modules/local/moduleoverlap/main'
 include { DRUGPREDICTIONS          } from '../modules/local/drugpredictions/main'
 include { TOPOLOGY                 } from '../modules/local/topology/main'
 include { DRUGSTONEEXPORT          } from '../modules/local/drugstoneexport/main'
-//include { PROXIMITY                } from '../modules/local/proximity/main'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { GT_BIOPAX         } from '../subworkflows/local/gt_biopax/main'
-include { NETWORKEXPANSION  } from '../subworkflows/local/networkexpansion/main'
-include { PERMUTATION       } from '../subworkflows/local/permutation/main'
-include { GT_PROXIMITY      } from '../subworkflows/local/gt_proximity/main'
+include { GT_BIOPAX          } from '../subworkflows/local/gt_biopax/main'
+include { NETWORKEXPANSION   } from '../subworkflows/local/networkexpansion/main'
+include { GT_SEEDPERMUTATION } from '../subworkflows/local/gt_seedpermutation/main'
+include { GT_PROXIMITY       } from '../subworkflows/local/gt_proximity/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -242,9 +241,9 @@ workflow MODULEDISCOVERY {
 
         // Seed permutation based evaluation
         if(!params.skip_seed_permutation){
-            PERMUTATION(ch_modules, ch_seeds, ch_network_gt)
-            ch_versions = ch_versions.mix(PERMUTATION.out.versions)
-            ch_multiqc_files = ch_multiqc_files.mix(PERMUTATION.out.multiqc_files)
+            GT_SEEDPERMUTATION(ch_modules, ch_seeds, ch_network_gt)
+            ch_versions = ch_versions.mix(GT_SEEDPERMUTATION.out.versions)
+            ch_multiqc_files = ch_multiqc_files.mix(GT_SEEDPERMUTATION.out.multiqc_files)
         }
 
     }
