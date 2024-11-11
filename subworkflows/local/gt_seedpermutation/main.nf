@@ -1,5 +1,5 @@
 //
-// Runs input permutation based evluation of network expansion methods
+// Runs seed permutation based evaluation of network expansion methods
 //
 
 include { NETWORKEXPANSION           } from '../networkexpansion'

@@ -193,14 +193,14 @@
                     "type": "string",
                     "fa_icon": "far fa-check-circle",
                     "description": "Local path to the shortest path pickle file used for proximity.",
-                    "default": "${projectDir}/assets/NO_FILE",
+                    "default": "/home/johannes/workspace/modulediscovery/modulediscovery/assets/NO_FILE",
                     "hidden": true
                 },
                 "drug_to_target": {
                     "type": "string",
                     "fa_icon": "far fa-check-circle",
                     "description": "Local path to the drug to targets file used for proximity.",
-                    "default": "${projectDir}/assets/NO_FILE",
+                    "default": "/home/johannes/workspace/modulediscovery/modulediscovery/assets/NO_FILE",
                     "hidden": true
                 }
             }
@@ -491,6 +491,9 @@
             "$ref": "#/definitions/evaluation"
         },
         {
+            "$ref": "#/definitions/drug_prioritization"
+        },
+        {
             "$ref": "#/definitions/institutional_config_options"
         },
         {
@@ -499,5 +502,10 @@
         {
             "$ref": "#/definitions/generic_options"
         }
-    ]
+    ],
+    "properties": {
+        "skip_network_permutation": {
+            "type": "boolean"
+        }
+    }
 }
