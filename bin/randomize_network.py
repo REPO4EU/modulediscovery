@@ -40,77 +40,79 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
-def connected_double_edge_swap(G, is_weighted=False, nswap=5, _window_threshold=3, seed=random):
+def connected_double_edge_swap(
+    G, is_weighted=False, nswap=5, _window_threshold=3, seed=random
+):
     """Attempts the specified number of double-edge swaps in the graph `G`.
 
-	A double-edge swap removes two randomly chosen edges `(u, v)` and `(x,
-	y)` and creates the new edges `(u, x)` and `(v, y)`:
+        A double-edge swap removes two randomly chosen edges `(u, v)` and `(x,
+        y)` and creates the new edges `(u, x)` and `(v, y)`:
 
-	 u--v            u  v
-			becomes  |  |
-	 x--y            x  y
+         u--v            u  v
+                        becomes  |  |
+         x--y            x  y
 
-	If either `(u, x)` or `(v, y)` already exist, then no swap is performed
-	so the actual number of swapped edges is always *at most* `nswap`.
+        If either `(u, x)` or `(v, y)` already exist, then no swap is performed
+        so the actual number of swapped edges is always *at most* `nswap`.
 
-	Parameters
-	----------
-	G : networkx graph
-	   An undirected graph
+        Parameters
+        ----------
+        G : networkx graph
+           An undirected graph
 
     is_weighted : boolean (default = False)
        Consider a weighted network or not
 
-	nswap : integer (optional, default=5)
-	   Number of double-edge swaps to perform
+        nswap : integer (optional, default=5)
+           Number of double-edge swaps to perform
 
-	_window_threshold : integer (default = 3)
-	   The window size below which connectedness of the graph will be checked
-	   after each swap.
+        _window_threshold : integer (default = 3)
+           The window size below which connectedness of the graph will be checked
+           after each swap.
 
-	   The "window" in this function is a dynamically updated integer that
-	   represents the number of swap attempts to make before checking if the
-	   graph remains connected. It is an optimization used to decrease the
-	   running time of the algorithm in exchange for increased complexity of
-	   implementation.
+           The "window" in this function is a dynamically updated integer that
+           represents the number of swap attempts to make before checking if the
+           graph remains connected. It is an optimization used to decrease the
+           running time of the algorithm in exchange for increased complexity of
+           implementation.
 
-	   If the window size is below this threshold, then the algorithm checks
-	   after each swap if the graph remains connected by checking if there is a
-	   path joining the two nodes whose edge was just removed. If the window
-	   size is above this threshold, then the algorithm performs do all the
-	   swaps in the window and only then check if the graph is still connected.
+           If the window size is below this threshold, then the algorithm checks
+           after each swap if the graph remains connected by checking if there is a
+           path joining the two nodes whose edge was just removed. If the window
+           size is above this threshold, then the algorithm performs do all the
+           swaps in the window and only then check if the graph is still connected.
 
-	seed : integer, random (default), or None 
-		Indicator of random number generation state.
-		See :ref:`Randomness<randomness>`.
+        seed : integer, random (default), or None
+                Indicator of random number generation state.
+                See :ref:`Randomness<randomness>`.
 
-	Returns
-	-------
+        Returns
+        -------
     networkx graph : the randomized network
-        
-	int :  The number of successful swaps
 
-	Raises
-	------
+        int :  The number of successful swaps
 
-	NetworkXError
+        Raises
+        ------
 
-	   If the input graph is not connected, or if the graph has fewer than four
-	   nodes.
+        NetworkXError
 
-	Notes
-	-----
+           If the input graph is not connected, or if the graph has fewer than four
+           nodes.
 
-	The initial graph `G` must be connected, and the resulting graph is
-	connected. The graph `G` is modified in place.
+        Notes
+        -----
 
-	References
-	----------
-	.. [1] C. Gkantsidis and M. Mihail and E. Zegura,
-		   The Markov chain simulation method for generating connected
-		   power law random graphs, 2003.
-		   https://faculty.cc.gatech.edu/~ewz/papers/markovgen.pdf
-	"""
+        The initial graph `G` must be connected, and the resulting graph is
+        connected. The graph `G` is modified in place.
+
+        References
+        ----------
+        .. [1] C. Gkantsidis and M. Mihail and E. Zegura,
+                   The Markov chain simulation method for generating connected
+                   power law random graphs, 2003.
+                   https://faculty.cc.gatech.edu/~ewz/papers/markovgen.pdf
+    """
     if not nx.is_connected(G):
         raise nx.NetworkXError("Graph not connected")
     if len(G) < 4:
@@ -126,34 +128,34 @@ def connected_double_edge_swap(G, is_weighted=False, nswap=5, _window_threshold=
     while n < nswap:
         wcount = 0
         swapped = []
-		# If the window is small, we just check each time whether the graph is
-		# connected by checking if the nodes that were just separated are still
-		# connected.
+        # If the window is small, we just check each time whether the graph is
+        # connected by checking if the nodes that were just separated are still
+        # connected.
         if window < _window_threshold:
-			# This Boolean keeps track of whether there was a failure or not.
+            # This Boolean keeps track of whether there was a failure or not.
             fail = False
             while wcount < window and n < nswap:
-				# Pick two random edges without creating the edge list. Choose
-				# source nodes from the discrete degree distribution.
+                # Pick two random edges without creating the edge list. Choose
+                # source nodes from the discrete degree distribution.
                 (ui, xi) = discrete_sequence(2, cdistribution=cdf, seed=seed)
-				# If the source nodes are the same, skip this pair.
+                # If the source nodes are the same, skip this pair.
                 while ui == xi:
                     (ui, xi) = nx.utils.discrete_sequence(2, cdistribution=cdf)
-				# Convert an index to a node label.
+                # Convert an index to a node label.
                 u = dk[ui]
                 x = dk[xi]
-				# Choose targets uniformly from neighbors.
+                # Choose targets uniformly from neighbors.
                 v = seed.choice(list(G.neighbors(u)))
                 y = seed.choice(list(G.neighbors(x)))
 
-				# If the target nodes are the same, skip this pair.
+                # If the target nodes are the same, skip this pair.
                 if v == y:
                     continue
 
                 if x not in G[u] and y not in G[v]:
                     if is_weighted:
-                        G.add_edge(u, x, weight=G[u][v]['weight'])
-                        G.add_edge(v, y, weight=G[x][y]['weight'])
+                        G.add_edge(u, x, weight=G[u][v]["weight"])
+                        G.add_edge(v, y, weight=G[x][y]["weight"])
                     else:
                         G.add_edge(u, x)
                         G.add_edge(v, y)
@@ -162,19 +164,19 @@ def connected_double_edge_swap(G, is_weighted=False, nswap=5, _window_threshold=
 
                     swapped.append((u, v, x, y))
                     swapcount += 1
-                else: 
+                else:
                     fail = True
                 n += 1
 
-				# If G remains connected...
+                # If G remains connected...
                 if nx.has_path(G, u, v):
                     wcount += 1
 
-				# Otherwise, undo the changes.
+                # Otherwise, undo the changes.
                 else:
                     if is_weighted:
-                        G.add_edge(u, v, weight=G[u][x]['weight'])
-                        G.add_edge(x, y, weight=G[v][y]['weight'])
+                        G.add_edge(u, v, weight=G[u][x]["weight"])
+                        G.add_edge(x, y, weight=G[v][y]["weight"])
                     else:
                         G.add_edge(u, v)
                         G.add_edge(x, y)
@@ -182,38 +184,38 @@ def connected_double_edge_swap(G, is_weighted=False, nswap=5, _window_threshold=
                     G.remove_edge(v, y)
                     swapcount -= 1
                     fail = True
-			# If one of the swaps failed, reduce the window size.
+            # If one of the swaps failed, reduce the window size.
             if fail:
                 window = int(math.ceil(window / 2))
             else:
                 window += 1
-		# If the window is large, then there is a good chance that a bunch of
-		# swaps will work. It's quicker to do all those swaps first and then
-		# check if the graph remains connected.
+        # If the window is large, then there is a good chance that a bunch of
+        # swaps will work. It's quicker to do all those swaps first and then
+        # check if the graph remains connected.
         else:
             while wcount < window and n < nswap:
-				# Pick two random edges without creating the edge list. Choose
-				# source nodes from the discrete degree distribution.
+                # Pick two random edges without creating the edge list. Choose
+                # source nodes from the discrete degree distribution.
                 (ui, xi) = nx.utils.discrete_sequence(2, cdistribution=cdf)
-				# If the source nodes are the same, skip this pair.
+                # If the source nodes are the same, skip this pair.
                 while ui == xi:
                     (ui, xi) = nx.utils.discrete_sequence(2, cdistribution=cdf)
 
-				# Convert an index to a node label.
+                # Convert an index to a node label.
                 u = dk[ui]
                 x = dk[xi]
-				# Choose targets uniformly from neighbors.
+                # Choose targets uniformly from neighbors.
                 v = seed.choice(list(G.neighbors(u)))
-                y = seed.choice(list(G.neighbors(x)))                    
+                y = seed.choice(list(G.neighbors(x)))
 
-				# If the target nodes are the same, skip this pair.
+                # If the target nodes are the same, skip this pair.
                 if v == y:
                     continue
 
                 if x not in G[u] and y not in G[v]:
                     if is_weighted:
-                        G.add_edge(u, x, weight=G[u][v]['weight'])
-                        G.add_edge(v, y, weight=G[x][y]['weight'])
+                        G.add_edge(u, x, weight=G[u][v]["weight"])
+                        G.add_edge(v, y, weight=G[x][y]["weight"])
                     else:
                         G.add_edge(u, x)
                         G.add_edge(v, y)
@@ -228,15 +230,15 @@ def connected_double_edge_swap(G, is_weighted=False, nswap=5, _window_threshold=
             if nx.is_connected(G):
                 window += 1
 
-			# Otherwise, undo the changes from the previous window and decrease
-			# the window size.
+            # Otherwise, undo the changes from the previous window and decrease
+            # the window size.
             else:
                 removed_edges = []
                 while swapped:
                     (u, v, x, y) = swapped.pop()
                     if is_weighted:
-                        G.add_edge(u, v, weight=G[u][x]['weight'])
-                        G.add_edge(x, y, weight=G[v][y]['weight'])
+                        G.add_edge(u, v, weight=G[u][x]["weight"])
+                        G.add_edge(x, y, weight=G[v][y]["weight"])
                     else:
                         G.add_edge(u, v)
                         G.add_edge(x, y)
@@ -244,7 +246,7 @@ def connected_double_edge_swap(G, is_weighted=False, nswap=5, _window_threshold=
                     try:
                         G.remove_edge(u, x)
                         removed_edges.append(sorted((u, x)))
-                    except: 
+                    except:
                         print(("PROBLEM"))
                         print("failed: ", u, x)
                         print(x in G[u], u in G[x])
@@ -271,7 +273,7 @@ def main(argv=None):
     """Coordinate argument parsing and program execution."""
     args = parse_args(argv)
     logging.basicConfig(level=args.log_level, format="[%(levelname)s] %(message)s")
-    if not args.seeds.is_file():
+    if not args.network.is_file():
         logger.error(f"The given input file {args.network} was not found!")
         sys.exit(2)
     logger.debug(f"{args=}")
@@ -283,16 +285,19 @@ def main(argv=None):
 
     if not nx.is_connected(nx_graph):
 
-        logging.warning('Provided network is not connected! \
-                        Will output randomized network from largest connected component.')
+        logging.warning(
+            "Provided network is not connected! \
+                        Will output randomized network from largest connected component."
+        )
         gcc = sorted(nx.connected_components(nx_graph), key=len, reverse=True)
-        nx_connected_graph = nx_graph.subgraph(gcc[0])
+        nx_connected_graph = nx_graph.subgraph(gcc[0]).copy()
+        print(nx.is_frozen(nx_connected_graph))
 
     else:
         nx_connected_graph = copy.deepcopy(nx_graph)
 
     for i in range(1000):
-        nx_G = connected_double_edge_swap(nx_connected_graph, is_weighted = weighted)[0]
+        nx_G = connected_double_edge_swap(nx_connected_graph, is_weighted=weighted)[0]
         gt_G = pyintergraph.nx2gt(nx_G, labelname="name")
         output_file = "rd_net_" + str(i) + ".gt"
         gt_G.save(output_file)
