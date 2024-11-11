@@ -278,6 +278,9 @@ def main(argv=None):
         sys.exit(2)
     logger.debug(f"{args=}")
 
+    stem = Path(args.network).stem
+    extension = Path(args.network).suffix
+
     g = util.load_graph(str(args.network))
     nx_graph = pyintergraph.gt2nx(g, labelname="name")
 
@@ -299,7 +302,7 @@ def main(argv=None):
     for i in range(1000):
         nx_G = connected_double_edge_swap(nx_connected_graph, is_weighted=weighted)[0]
         gt_G = pyintergraph.nx2gt(nx_G, labelname="name")
-        output_file = "rd_net_" + str(i) + ".gt"
+        output_file = f"{stem}.perm_{i}{extension}"
         gt_G.save(output_file)
 
 
