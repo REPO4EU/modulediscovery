@@ -20,7 +20,8 @@ workflow GT_FIRSTNEIGHBOR {
         .map{network_id, seeds_meta, seeds, network_meta, network ->
             def meta = seeds_meta + network_meta
             meta.id = seeds_meta.seeds_id + "." + network_meta.id
-        [meta, seeds, network]}
+            [meta, seeds, network]
+        }
 
     FIRSTNEIGHBOR(ch_seeds_network)
     ch_versions = ch_versions.mix(FIRSTNEIGHBOR.out.versions.first())

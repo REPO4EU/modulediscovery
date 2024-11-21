@@ -4,7 +4,6 @@ process MODULEPARSER {
 
     input:
     tuple val(meta), path(module), path(seeds), path(network)
-    val tool
 
     output:
     tuple val(meta), path("${meta.id}.gt")  , emit: module
@@ -15,7 +14,7 @@ process MODULEPARSER {
 
     script:
     """
-    module_parser.py $network -t $tool -l DEBUG -m $module -s $seeds -o ${meta.id}.gt
+    module_parser.py $network -t ${meta.amim} -l DEBUG -m $module -s $seeds -o ${meta.id}.gt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

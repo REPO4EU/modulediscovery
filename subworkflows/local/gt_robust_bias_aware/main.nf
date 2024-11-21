@@ -3,8 +3,7 @@
 //
 
 include { GRAPHTOOLPARSER   } from '../../../modules/local/graphtoolparser/main'
-include { ROBUSTBIASAWARE } from '../../../modules/local/robust_bias_aware/main'
-include { MODULEPARSER      } from '../../../modules/local/moduleparser/main'
+include { ROBUSTBIASAWARE   } from '../../../modules/local/robust_bias_aware/main'
 
 workflow GT_ROBUSTBIASAWARE {
     take:
@@ -24,30 +23,20 @@ workflow GT_ROBUSTBIASAWARE {
     // channel: [ val(meta[id,seeds_id,network_id), path(seeds), path(network) ]
     ch_robust_bias_aware_input = ch_seeds
         .map{ meta, seeds -> [meta.network_id, meta, seeds]}
-        .combine(GRAPHTOOLPARSER.out.network.map{ meta, network -> [meta.network_id, network]}, by: 0)
-        .map{network_id, meta, seeds, network -> [meta, seeds, network]}
+        .combine(GRAPHTOOLPARSER.out.network.map{ meta, network -> [meta.network_id, meta, network]}, by: 0)
+        .map{network_id, seeds_meta, seeds, network_meta, network ->
+            def meta = seeds_meta + network_meta
+            meta.id = seeds_meta.seeds_id + "." + network_meta.id
+            meta.amim = "robust_bias_aware"
+            [meta, seeds, network]
+        }
 
     ROBUSTBIASAWARE(ch_robust_bias_aware_input, idspaceUpper)
     ch_versions = ch_versions.mix(ROBUSTBIASAWARE.out.versions.first())
 
-    // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module), path(seeds), path(network) ]
-    ch_module_parser_input = ROBUSTBIASAWARE.out.module                               // Extract the module
-        .join(ch_seeds, failOnMismatch: true, failOnDuplicate: true)                  // Join with seed files
-        .map{meta, module, seeds -> [meta.network_id, meta, module, seeds]}           // Combine with networks
-        .combine(ch_network.map{meta, network -> [meta.network_id, network]}, by: 0)
-        .map{network_id, meta, module, seeds, network ->                              // Adjust id
-            def dup = meta.clone()
-            dup.amim = "robust_bias_aware"
-            dup.id = meta.id + "." + dup.amim
-            dup.module_id = dup.id
-            [ dup, module, seeds, network ]
-        }
-
-    MODULEPARSER(ch_module_parser_input, "robust")                    // Convert module from robust specific format to gt file
-    ch_versions = ch_versions.mix(MODULEPARSER.out.versions.first())
 
 
     emit:
-    module   = MODULEPARSER.out.module  // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module) ]
-    versions = ch_versions              // channel: [ versions.yml ]        emit collected versions
+    module   = ROBUSTBIASAWARE.out.module  // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module) ]
+    versions = ch_versions                 // channel: [ versions.yml ]        emit collected versions
 }

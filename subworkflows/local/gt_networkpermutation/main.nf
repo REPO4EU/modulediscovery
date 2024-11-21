@@ -33,9 +33,9 @@ workflow GT_NETWORKPERMUTATION {
         .map{meta, permuted_network ->
             def dup = meta.clone()
             dup.id = permuted_network.baseName
+            dup.permuted_network_id = dup.id
             [ dup, permuted_network]
         }
-        .view{it}
 
     // Run network expansion tools on permuted networks
     NETWORKEXPANSION(ch_seeds, ch_permuted_networks)
