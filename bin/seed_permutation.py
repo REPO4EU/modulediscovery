@@ -24,6 +24,12 @@ def parse_args(argv=None):
         required=True,
     )
     parser.add_argument(
+        "-p",
+        "--prefix",
+        help="Prefix to name the output files.",
+        type=str,
+    )
+    parser.add_argument(
         "-l",
         "--log-level",
         help="The desired log level (default WARNING).",
@@ -54,7 +60,7 @@ def main(argv=None):
 
     # leave one seed out
     for i, seed in enumerate(seeds):
-        with open(f"{stem}.perm_{i}{extension}", "w") as file:
+        with open(f"{args.prefix}.perm_{i}{extension}", "w") as file:
             for j, other_seed in enumerate(seeds):
                 if not i == j:
                     file.write(f"{other_seed}\n")

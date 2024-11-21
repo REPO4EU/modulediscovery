@@ -48,6 +48,56 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_modu
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Channel guide
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ch_seeds: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    meta.id:
+        - unique identifier for the specific seed file (combination of seeds_id and network_id)
+        - used for process tags and output file names
+    meta.seeds_id:
+        - identifier for the input seed file (network_id not included)
+        - used for naming modules (together with meta.id from ch_network)
+        - used for merging ch_seeds and ch_modules (only in combination with meta.network_id!)
+    meta.network_id:
+        - used for merging ch_seeds and ch_network
+        - used for merging ch_seeds and ch_modules (only in combination with meta.seeds_id!)
+    seeds:
+        - path to the seed file
+
+ch_network: [ val(meta[id,network_id]), path(network) ]
+    meta.id:
+        - unique identifier for the specific network file (network_id)
+        - used for process tags and output file names
+        - used of naming modules (together with meta.seeds_id from ch_seeds)
+    meta.network_id:
+        - identifier for the input network file
+        - used for merging ch_seeds and ch_network
+    network:
+        - path to the network file
+
+ch_modules: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module) ]
+    meta.id:
+        - unique identifier for the specific module file (combination of seeds_id, network_id, and amim)
+        - used for process tags and output file names
+    meta.module_id:
+        - currently the same as meta.id
+    meta.seeds_id:
+        - identifier for the input seed file (network_id not included)
+        - used for merging ch_modules and ch_seeds (only in combination with meta.network_id!)
+    meta.network_id:
+        - identifier for the input network file
+        - used for merging ch_modules and ch_seeds (only in combination with meta.seeds_id!)
+    meta.amim:
+        - identifier for the network expansion method
+    module:
+        - path to the module file
+
+*/
+
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */

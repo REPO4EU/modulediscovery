@@ -7,15 +7,15 @@ process SEEDPERMUTATION {
     tuple val(meta), path(seeds)
 
     output:
-    tuple val(meta), path("${seeds.baseName}.*.${seeds.extension}") , emit: permuted_seeds
-    path "versions.yml"                                             , emit: versions
+    tuple val(meta), path("${meta.seeds_id}.*.${seeds.extension}") , emit: permuted_seeds
+    path "versions.yml"                                            , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     """
-    seed_permutation.py --seeds ${seeds}
+    seed_permutation.py --seeds ${seeds} --prefix ${meta.seeds_id}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -299,7 +299,7 @@ def main(argv=None):
     else:
         nx_connected_graph = copy.deepcopy(nx_graph)
 
-    for i in range(1000):
+    for i in range(10):
         nx_G = connected_double_edge_swap(nx_connected_graph, is_weighted=weighted)[0]
         gt_G = pyintergraph.nx2gt(nx_G, labelname="name")
         output_file = f"{stem}.perm_{i}{extension}"

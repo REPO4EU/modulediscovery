@@ -24,7 +24,6 @@ workflow GT_NETWORKPERMUTATION {
         // Add original meta.id as original_network_id and n_permutations
         .map{meta, permuted_networks ->
             def dup = meta.clone()
-            dup.original_network_id = meta.network_id
             dup.n_permutations = permuted_networks.size()
             [ dup, permuted_networks]
         }
@@ -34,13 +33,13 @@ workflow GT_NETWORKPERMUTATION {
         .map{meta, permuted_network ->
             def dup = meta.clone()
             dup.id = permuted_network.baseName
-            dup.network_id = dup.id
             [ dup, permuted_network]
         }
-        //.view{it}
+        .view{it}
 
-        // Generate module id based on seed_id and network_id
-        // Network and seed id always belong to original? -> module id = meta.id + "." + meta.id -> return sum of maps?
+    // Run network expansion tools on permuted networks
+    NETWORKEXPANSION(ch_seeds, ch_permuted_networks)
+    ch_versions = ch_versions.mix(NETWORKEXPANSION.out.versions)
 
     emit:
     versions = ch_versions              // channel: [ versions.yml ]        emit collected versions

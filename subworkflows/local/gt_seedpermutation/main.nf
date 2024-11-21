@@ -36,8 +36,8 @@ workflow GT_SEEDPERMUTATION {
         // Update id and seeds_id based on permuted seeds (original id is still stored as original_seeds_id)
         .map{meta, permuted_seeds ->
             def dup = meta.clone()
-            dup.id = permuted_seeds.baseName
-            dup.seeds_id = dup.id
+            dup.id = permuted_seeds.baseName + "." + meta.network_id
+            dup.seeds_id = permuted_seeds.baseName
             [ dup, permuted_seeds]
         }
 
@@ -50,10 +50,10 @@ workflow GT_SEEDPERMUTATION {
     // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), [path(permuted_modules)], [path(permuted_seeds)] ]
     ch_permuted_modules = NETWORKEXPANSION.out.modules
         //  Combine with permuted seeds
-        .map{meta, permuted_module -> [meta.seeds_id, meta, permuted_module]}
-        .combine(ch_permuted_seeds.map{meta, permuted_seeds -> [meta.seeds_id, permuted_seeds]}, by: 0)
+        .map{meta, permuted_module -> [meta.seeds_id, meta.network_id, meta, permuted_module]}
+        .combine(ch_permuted_seeds.map{meta, permuted_seeds -> [meta.seeds_id, meta.network_id, permuted_seeds]}, by: [0,1])
         // Add original_seeds_id, amim, and network_id to tuple for grouping
-        .map{seeds_id, meta, permuted_module, permuted_seeds ->
+        .map{seeds_id, network_id, meta, permuted_module, permuted_seeds ->
             key = groupKey(meta.subMap("original_seeds_id", "amim", "network_id"), meta.n_permutations)
             [key, meta, permuted_module, permuted_seeds]
         }
@@ -61,7 +61,7 @@ workflow GT_SEEDPERMUTATION {
         .groupTuple()
         // Add an ID (based on the original seeds)
         .map{key, meta, permuted_modules, permuted_seeds ->
-            [ [ id: key.original_seeds_id + "." + key.amim, module_id: key.original_seeds_id + "." + key.amim, amim: key.amim, seeds_id: key.original_seeds_id, network_id: key.network_id], permuted_modules, permuted_seeds]
+            [ [ id: key.original_seeds_id + "." + key.network_id + "." + key.amim, module_id: key.original_seeds_id + "." + key.network_id + "." + key.amim, amim: key.amim, seeds_id: key.original_seeds_id, network_id: key.network_id], permuted_modules, permuted_seeds]
         }
 
 
@@ -69,9 +69,9 @@ workflow GT_SEEDPERMUTATION {
     // Shape: [val(meta[id,module_id,amim,seeds_id,network_id]), path(original_module), path(original_seeds), [path(permuted_modules)], [path(permuted_seeds)], network]
     ch_evaluation = ch_modules
         // Combine modules with seeds
-        .map{meta, module -> [meta.seeds_id, meta, module]}
-        .combine(ch_seeds.map{meta, seeds -> [meta.seeds_id, seeds]}, by: 0)
-        .map{seeds_id, meta, module, seeds -> [meta.module_id, meta, module, seeds]}
+        .map{meta, module -> [meta.seeds_id, meta.network_id, meta, module]}
+        .combine(ch_seeds.map{meta, seeds -> [meta.seeds_id, meta.network_id, seeds]}, by: [0,1])
+        .map{seeds_id, network_id, meta, module, seeds -> [meta.module_id, meta, module, seeds]}
         // Joine modules with permuted modules and seeds
         .join(ch_permuted_modules
             .map{ meta, permuted_modules, permuted_seeds ->
@@ -109,5 +109,5 @@ workflow GT_SEEDPERMUTATION {
 
     emit:
     versions = ch_versions              // channel: [ versions.yml ]        emit collected versions
-    multiqc_files = ch_multiqc_files          // channel: [ multiqc_summary ]     emit collected multiqc files
+    multiqc_files = ch_multiqc_files    // channel: [ multiqc_summary ]     emit collected multiqc files
 }

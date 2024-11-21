@@ -116,7 +116,7 @@ workflow PIPELINE_INITIALISATION {
                     seeds = it[0]
                     network = it[1]
                     network_id = network.baseName
-                    [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
+                    [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName, network_id: network_id ] , seeds ]
                 }
 
         } else if (seed_param_set && !network_param_set) {
@@ -131,7 +131,7 @@ workflow PIPELINE_INITIALISATION {
                 .fromPath(params.seeds.split(',').flatten(), checkIfExists: true)
                 .combine(ch_network.map{meta, network -> meta.network_id})
                 .map{seeds, network_id ->
-                    [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
+                    [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName, network_id: network_id ] , seeds ]
                 }
 
         } else if (!seed_param_set && network_param_set) {
@@ -146,7 +146,7 @@ workflow PIPELINE_INITIALISATION {
                 .map{ it -> it[0]}
                 .combine(ch_network.map{meta, network -> meta.network_id})
                 .map{seeds, network_id ->
-                    [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
+                    [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName, network_id: network_id ] , seeds ]
                 }
 
         }
@@ -164,7 +164,7 @@ workflow PIPELINE_INITIALISATION {
             .fromPath(params.seeds.split(',').flatten(), checkIfExists: true)
             .combine(ch_network.map{meta, network -> meta.network_id})
             .map{seeds, network_id ->
-                [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
+                [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName, network_id: network_id ] , seeds ]
             }
 
     } else {
