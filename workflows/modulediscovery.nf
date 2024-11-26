@@ -132,7 +132,9 @@ workflow MODULEDISCOVERY {
                 module: [meta, module]
                 algorithm: algorithm
             }
-        DRUGPREDICTIONS(ch_drugstone_input.module, id_space, ch_drugstone_input.algorithm, params.includeIndirectDrugs, params.includeNonApprovedDrugs, params.result_size)
+        includeIndirectDrugs = Channel.value(params.includeIndirectDrugs).map{it ? 1 : 0}
+        includeNonApprovedDrugs = Channel.value(params.includeNonApprovedDrugs).map{it ? 1 : 0}
+        DRUGPREDICTIONS(ch_drugstone_input.module, id_space, ch_drugstone_input.algorithm, includeIndirectDrugs, includeNonApprovedDrugs, params.result_size)
         ch_versions = ch_versions.mix(DRUGPREDICTIONS.out.versions)
     }
 
