@@ -20,9 +20,9 @@ workflow GT_NETWORKPERMUTATION {
     ch_versions = ch_versions.mix(NETWORKPERMUTATION.out.versions)
 
     // Create required shape for NETWORKEXPANSION
-    // channel: [val(meta[id,seeds_id,network_id,original_network_id,n_permutations]), path(permuted_networks)]
+    // channel: [val(meta[id,seeds_id,network_id,permuted_network_id,n_permutations]), path(permuted_networks)]
     ch_permuted_networks = NETWORKPERMUTATION.out.permuted_networks
-        // Add original meta.id as original_network_id and n_permutations
+        // Add n_permutations
         .map{meta, permuted_networks ->
             def dup = meta.clone()
             dup.n_permutations = permuted_networks.size()
@@ -30,7 +30,7 @@ workflow GT_NETWORKPERMUTATION {
         }
         // Convert to long format
         .transpose()
-        // Update id and network_id based on permuted network (original id is still stored as original_network_id)
+        // Update id and permuted_network_id based on permuted network (original id is still stored as network_id) for the module parser
         .map{meta, permuted_network ->
             def dup = meta.clone()
             dup.id = permuted_network.baseName
@@ -42,8 +42,8 @@ workflow GT_NETWORKPERMUTATION {
     NETWORKEXPANSION(ch_seeds, ch_permuted_networks)
     ch_versions = ch_versions.mix(NETWORKEXPANSION.out.versions)
 
-    // Group by original_seeds_id, amim, and network_id to get one element per original module
-    // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), [path(permuted_modules)], [path(permuted_seeds)] ]
+    // Group by seeds_id, amim, and network_id to get one element per original module
+    // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), [path(permuted_modules)] ]
     ch_permuted_modules = NETWORKEXPANSION.out.modules
         .map{meta, permuted_module->
             key = groupKey(meta.subMap("seeds_id", "amim", "network_id"), meta.n_permutations)
@@ -51,7 +51,7 @@ workflow GT_NETWORKPERMUTATION {
         }
         // Group by seeds_id, amim, and network_id
         .groupTuple()
-        // Add an ID (based on the original seeds)
+        // Add id and module_id based on the original modules
         .map{key, meta, permuted_modules ->
             [ [ id: key.seeds_id + "." + key.network_id + "." + key.amim, module_id: key.seeds_id + "." + key.network_id + "." + key.amim, amim: key.amim, seeds_id: key.seeds_id, network_id: key.network_id], permuted_modules]
         }

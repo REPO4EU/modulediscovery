@@ -8,7 +8,7 @@ include { GT_ROBUST             } from '../gt_robust'
 include { GT_ROBUSTBIASAWARE    } from '../gt_robust_bias_aware'
 include { GT_FIRSTNEIGHBOR      } from '../gt_firstneighbor'
 include { GT_RWR                } from '../gt_rwr'
-include { MODULEPARSER      } from '../../../modules/local/moduleparser/main'
+include { MODULEPARSER          } from '../../../modules/local/moduleparser/main'
 
 workflow NETWORKEXPANSION {
     take:
@@ -71,15 +71,18 @@ workflow NETWORKEXPANSION {
     // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module), path(seeds), path(network) ]
     ch_module_parser_input = ch_raw_modules
         .map{meta, module -> [meta.seeds_id, meta.network_id, meta, module]}
+        // combine with seeds
         .combine(ch_seeds.map{meta, seeds -> [meta.seeds_id, meta.network_id, seeds]}, by: [0,1])
         .map{seeds_id, network_id, meta, module, seeds ->
-            [meta.permuted_network_id==null ?  meta.network_id: meta.permuted_network_id , meta, module, seeds]
+            [meta.permuted_network_id==null ?  meta.network_id: meta.permuted_network_id , meta, module, seeds] // Use permuted_network_id, if available
         }
+        // combine with network (permuted network, if available)
         .combine(
             ch_network.map{ meta, network ->
-                [meta.permuted_network_id==null ?  meta.network_id: meta.permuted_network_id, network]
+                [meta.permuted_network_id==null ?  meta.network_id: meta.permuted_network_id, network] // Use permuted_network_id, if available
             }, by: 0
         )
+        // add amim to id and module_id
         .map{network_id, meta, module, seeds, network ->
             def dup = meta.clone()
             dup.id = meta.id + "." + dup.amim
