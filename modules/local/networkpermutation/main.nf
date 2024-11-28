@@ -5,6 +5,7 @@ process NETWORKPERMUTATION {
 
     input:
     tuple val(meta), path(network)
+    val n_network_permutations
 
     output:
     tuple val(meta), path("${network.baseName}.*.${network.extension}") , emit: permuted_networks
@@ -15,7 +16,7 @@ process NETWORKPERMUTATION {
 
     script:
     """
-    randomize_network.py --network ${network}
+    randomize_network.py --network ${network} --n_network_permutations ${n_network_permutations}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

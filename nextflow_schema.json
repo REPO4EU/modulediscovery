@@ -506,6 +506,10 @@
     "properties": {
         "skip_network_permutation": {
             "type": "boolean"
+        },
+        "n_network_permutations": {
+            "type": "integer",
+            "default": 1000
         }
     }
 }

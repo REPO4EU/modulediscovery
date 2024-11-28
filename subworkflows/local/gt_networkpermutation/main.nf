@@ -15,7 +15,7 @@ workflow GT_NETWORKPERMUTATION {
     ch_versions = Channel.empty()
 
     // Permute the input network(s)
-    NETWORKPERMUTATION(ch_network)
+    NETWORKPERMUTATION(ch_network, params.n_network_permutations)
     ch_versions = ch_versions.mix(NETWORKPERMUTATION.out.versions)
 
     // Create required shape for NETWORKEXPANSION

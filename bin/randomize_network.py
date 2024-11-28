@@ -31,6 +31,13 @@ def parse_args(argv=None):
         required=True,
     )
     parser.add_argument(
+        "-n",
+        "--n_network_permutations",
+        help="Number of permuted networks that should be generated.",
+        type=int,
+        required=True,
+    )
+    parser.add_argument(
         "-l",
         "--log-level",
         help="The desired log level (default WARNING).",
@@ -54,14 +61,17 @@ def main(argv=None):
 
     graph = util.load_graph(str(args.network))
 
-    for i in range(1000):
+    for i in range(args.n_network_permutations):
         gt_graph = gt.Graph(graph, prune=True)
-        new_G = gt.random_rewire(gt_graph, 
-                              model="constrained-configuration", 
-                              n_iter=100, 
-                              edge_sweep=True)
+        n_failed = gt.random_rewire(
+            gt_graph, model="constrained-configuration", n_iter=100, edge_sweep=True
+        )
         output_file = f"{stem}.perm_{i}{extension}"
-        new_G.save(output_file)
+        gt_graph.save(output_file)
+        if n_failed > 0:
+            logger.warning(
+                f"Number of rejected edge moves (due to parallel edges or self-loops): {n_failed}"
+            )
 
 
 if __name__ == "__main__":
