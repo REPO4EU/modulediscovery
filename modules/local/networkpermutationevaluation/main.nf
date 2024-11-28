@@ -1,19 +1,12 @@
-
-process PERMUTATIONEVALUATION {
+process NETWORKPERMUTATIONEVALUATION {
     tag "$meta.id"
     label 'process_single'
 
     input:
     tuple val(meta), path(module)
-    path(seeds)
     path(permuted_modules)
-    path(permuted_seeds)
-    path(network)
 
     output:
-    tuple val(meta), path("${meta.id}.permutation_evaluation_summary.tsv")
-    tuple val(meta), path("${meta.id}.permutation_evaluation_detailed.tsv")
-    tuple val(meta), path("${meta.id}.permutation_multiqc_summary.tsv")     , emit: multiqc_summary
     path "versions.yml"                                                     , emit: versions
 
     when:
@@ -22,13 +15,12 @@ process PERMUTATIONEVALUATION {
 
     script:
     """
-    permutation_evaluation.py \\
+    echo "
+    network_permutation_evaluation.py \\
         --prefix ${meta.id} \\
         --module ${module} \\
-        --seeds ${seeds} \\
         --permuted_modules ${permuted_modules} \\
-        --permuted_seeds ${permuted_seeds} \\
-        --network ${network}
+    "
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

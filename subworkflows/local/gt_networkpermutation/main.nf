@@ -2,8 +2,9 @@
 // Runs network permutation based evaluation of network expansion methods
 //
 
-include { NETWORKEXPANSION           } from '../networkexpansion'
-include { NETWORKPERMUTATION         } from '../../../modules/local/networkpermutation/main'
+include { NETWORKEXPANSION             } from '../networkexpansion'
+include { NETWORKPERMUTATION           } from '../../../modules/local/networkpermutation/main'
+include { NETWORKPERMUTATIONEVALUATION } from '../../../modules/local/networkpermutationevaluation/main'
 
 workflow GT_NETWORKPERMUTATION {
     take:
@@ -40,6 +41,37 @@ workflow GT_NETWORKPERMUTATION {
     // Run network expansion tools on permuted networks
     NETWORKEXPANSION(ch_seeds, ch_permuted_networks)
     ch_versions = ch_versions.mix(NETWORKEXPANSION.out.versions)
+
+    // Group by original_seeds_id, amim, and network_id to get one element per original module
+    // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), [path(permuted_modules)], [path(permuted_seeds)] ]
+    ch_permuted_modules = NETWORKEXPANSION.out.modules
+        .map{meta, permuted_module->
+            key = groupKey(meta.subMap("seeds_id", "amim", "network_id"), meta.n_permutations)
+            [key, meta, permuted_module]
+        }
+        // Group by seeds_id, amim, and network_id
+        .groupTuple()
+        // Add an ID (based on the original seeds)
+        .map{key, meta, permuted_modules ->
+            [ [ id: key.seeds_id + "." + key.network_id + "." + key.amim, module_id: key.seeds_id + "." + key.network_id + "." + key.amim, amim: key.amim, seeds_id: key.seeds_id, network_id: key.network_id], permuted_modules]
+        }
+
+    // Join permuted modules with original modules
+    ch_evaluation = ch_modules
+        // Join with permuted modules
+        .join(ch_permuted_modules, by: 0, failOnDuplicate: true, failOnMismatch: true)
+        // Prepare channel for evaluation
+        .multiMap{meta, module, permuted_modules ->
+            module: [meta, module]
+            permuted_modules: permuted_modules
+        }
+
+    NETWORKPERMUTATIONEVALUATION(
+        ch_evaluation.module,
+        ch_evaluation.permuted_modules,
+    )
+    ch_versions = ch_versions.mix(NETWORKPERMUTATIONEVALUATION.out.versions)
+
 
     emit:
     versions = ch_versions              // channel: [ versions.yml ]        emit collected versions

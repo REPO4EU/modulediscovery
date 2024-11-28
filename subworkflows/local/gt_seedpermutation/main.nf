@@ -4,7 +4,7 @@
 
 include { NETWORKEXPANSION           } from '../networkexpansion'
 include { SEEDPERMUTATION            } from '../../../modules/local/seedpermutation/main'
-include { PERMUTATIONEVALUATION      } from '../../../modules/local/permutationevaluation/main'
+include { SEEDPERMUTATIONEVALUATION      } from '../../../modules/local/seedpermutationevaluation/main'
 
 workflow GT_SEEDPERMUTATION {
     take:
@@ -94,15 +94,15 @@ workflow GT_SEEDPERMUTATION {
 
 
     // Evaluation
-    PERMUTATIONEVALUATION(
+    SEEDPERMUTATIONEVALUATION(
         ch_evaluation.module,
         ch_evaluation.seeds,
         ch_evaluation.permuted_modules,
         ch_evaluation.permuted_seeds,
         ch_evaluation.network
     )
-    ch_versions = ch_versions.mix(PERMUTATIONEVALUATION.out.versions)
-    ch_multiqc_files = PERMUTATIONEVALUATION.out.multiqc_summary
+    ch_versions = ch_versions.mix(SEEDPERMUTATIONEVALUATION.out.versions)
+    ch_multiqc_files =  SEEDPERMUTATIONEVALUATION.out.multiqc_summary
         .map{ meta, path -> path }
         .collectFile(name: 'seed_permutation_mqc.tsv', keepHeader: true)
 

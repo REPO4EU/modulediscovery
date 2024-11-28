@@ -22,8 +22,6 @@ process NETWORKPERMUTATION {
     "${task.process}":
         python: \$(python3 --version | sed 's/Python //g')
         graph-tool: \$(python -c "import graph_tool; print(graph_tool.__version__)")
-        networkx: \$(python -c "import networkx; print(networkx.__version__)")
-        pyintergraph: \$(pip show pyintergraph | grep Version | awk '{print \$2}')
     END_VERSIONS
     """
 }
