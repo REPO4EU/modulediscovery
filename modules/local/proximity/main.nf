@@ -6,7 +6,7 @@ process PROXIMITY {
     path network
     path shortest_paths
     path drug_to_target
-    tuple val(meta), path (phen_to_gene)
+    tuple val(meta), path (module)
 
     output:
     path("${meta.id}.proximity.tsv"), emit: proxout
@@ -20,9 +20,10 @@ process PROXIMITY {
     drug_to_target = ${drug_to_target}
     drug_column = drugbankId
     target_column = targetDomainId
-    phenotype_to_gene = ${phen_to_gene}
-    phenotype_column = phenotype
-    gene_column = gene
+    phenotype_to_gene = ${module}
+    phenotype_column = None
+    prefix = ${meta.id}
+    gene_column = name
     network_file = ${network}
     shortest_paths = ${shortest_paths}
     id_mapping_file = None

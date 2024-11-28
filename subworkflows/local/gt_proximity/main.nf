@@ -1,5 +1,4 @@
 include { SHORTEST_PATHS          } from '../../../modules/local/shortest_paths'
-include { PHEN_TO_GENE            } from '../../../modules/local/phen_to_gene'
 include { PROXIMITY               } from '../../../modules/local/proximity'
 
 workflow GT_PROXIMITY {
@@ -17,10 +16,7 @@ workflow GT_PROXIMITY {
     SHORTEST_PATHS(ch_network, shortest_paths)
     ch_versions = ch_versions.mix(SHORTEST_PATHS.out.versions.first())
 
-    PHEN_TO_GENE(ch_modules)
-    ch_versions = ch_versions.mix(PHEN_TO_GENE.out.versions.first())
-
-    ch_proximity_input = PHEN_TO_GENE.out.phen_gene
+    ch_proximity_input = ch_modules
         .map{meta, module -> [meta.network_id, meta, module]}
         .combine(ch_network.map{meta, network -> [meta.network_id, network]}, by: 0)
         .combine(SHORTEST_PATHS.out.sp.map{meta, sp -> [meta.network_id, sp]}, by: 0)
