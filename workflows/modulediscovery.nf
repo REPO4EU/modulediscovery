@@ -65,7 +65,7 @@ workflow MODULEDISCOVERY {
     id_space = Channel.value(params.id_space)
     validate_online = Channel.value(params.validate_online)
     if(params.run_proximity){
-        proximity_sp = file(params.shortest_path)
+        proximity_sp = file("${projectDir}/assets/NO_FILE", checkIfExists:true)
         proximity_dt = file(params.drug_to_target, checkIfExists:true)
     }
 
