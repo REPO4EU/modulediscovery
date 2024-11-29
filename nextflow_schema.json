@@ -193,14 +193,12 @@
                     "type": "string",
                     "fa_icon": "far fa-check-circle",
                     "description": "Local path to the shortest path pickle file used for proximity.",
-                    "default": "${projectDir}/assets/NO_FILE",
                     "hidden": true
                 },
                 "drug_to_target": {
                     "type": "string",
                     "fa_icon": "far fa-check-circle",
                     "description": "Local path to the drug to targets file used for proximity.",
-                    "default": "${projectDir}/assets/NO_FILE",
                     "hidden": true
                 }
             }
@@ -486,6 +484,9 @@
         },
         {
             "$ref": "#/definitions/drug_predictions"
+        },
+        {
+            "$ref": "#/definitions/drug_prioritization"
         },
         {
             "$ref": "#/definitions/evaluation"
