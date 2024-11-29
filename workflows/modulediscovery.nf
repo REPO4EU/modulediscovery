@@ -56,8 +56,9 @@ workflow MODULEDISCOVERY {
 
 
     take:
-    ch_seeds    // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
-    ch_network  // channel: [ val(meta[id,network_id]), path(network) ]
+    ch_seeds         // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    ch_network       // channel: [ val(meta[id,network_id]), path(network) ]
+    ch_shortest_paths // channel: [ val(meta[id,network_id]), path(shortest_paths) ]
 
     main:
 
@@ -166,7 +167,7 @@ workflow MODULEDISCOVERY {
 
     // Drug prioritization - Proximity
     if(params.run_proximity){
-        GT_PROXIMITY(ch_network, SAVEMODULES.out.nodes_tsv, proximity_sp, proximity_dt)
+        GT_PROXIMITY(ch_network, SAVEMODULES.out.nodes_tsv, ch_shortest_paths, proximity_dt)
         ch_versions = ch_versions.mix(GT_PROXIMITY.out.versions)
     }
 

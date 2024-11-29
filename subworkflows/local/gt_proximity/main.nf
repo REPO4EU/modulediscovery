@@ -6,18 +6,17 @@ workflow GT_PROXIMITY {
     take:                                   // Workflow inputs
     ch_network
     ch_modules
-    shortest_paths
+    ch_shortest_paths
     drug_to_target
 
     main:
 
     ch_versions = Channel.empty()
 
-    // Branch ch_shortest_paths based on whether the shortest paths have already been computed
+    // Join shortest path with network and branch based on whether the shortest paths have already been computed
+    // channel: [ val(meta[id,network_id]), path(network), path(sp) ]
     ch_shortest_paths = ch_network
-        .map{meta, network ->
-            [meta, network, file("${projectDir}/assets/NO_FILE", checkIfExists: true)]
-        }
+        .join(ch_shortest_paths, failOnMismatch: true, failOnDuplicate: true)
         .branch{
             no_sp: it[2].name == "NO_FILE"
             sp: true
@@ -36,7 +35,7 @@ workflow GT_PROXIMITY {
     // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module), path(network), path(sp)]
     ch_proximity_input = ch_modules
         .map{meta, module -> [meta.network_id, meta, module]}
-        .combine(ch_shortest_paths.map{meta, network, sp -> [meta.network_id, network, sp]}, by: 0).view{it}
+        .combine(ch_shortest_paths.map{meta, network, sp -> [meta.network_id, network, sp]}, by: 0)
         .multiMap{network_id, meta, module, network, sp ->
             module: [meta, module]
             network: network

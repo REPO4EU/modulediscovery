@@ -1,4 +1,4 @@
-seeds,network
-https://raw.githubusercontent.com/REPO4EU/modulediscovery_test_data/refs/heads/main/small/entrez_seeds_1.csv,https://raw.githubusercontent.com/REPO4EU/modulediscovery_test_data/refs/heads/main/small/entrez_ppi.csv
+seeds,network,shortest_paths
+https://raw.githubusercontent.com/REPO4EU/modulediscovery_test_data/refs/heads/main/small/entrez_seeds_1.csv,https://raw.githubusercontent.com/REPO4EU/modulediscovery_test_data/refs/heads/main/small/entrez_ppi.csv,/home/johannes/workspace/modulediscovery/modulediscovery/results/input/shortest_paths/entrez_ppi.shortest_paths.pkl
 https://raw.githubusercontent.com/REPO4EU/modulediscovery_test_data/refs/heads/main/small/entrez_seeds_2.csv,https://raw.githubusercontent.com/REPO4EU/modulediscovery_test_data/refs/heads/main/small/entrez_ppi_small.csv
-https://raw.githubusercontent.com/REPO4EU/modulediscovery_test_data/refs/heads/main/small/entrez_seeds_2.csv,https://raw.githubusercontent.com/REPO4EU/modulediscovery_test_data/refs/heads/main/small/entrez_ppi.csv
+https://raw.githubusercontent.com/REPO4EU/modulediscovery_test_data/refs/heads/main/small/entrez_seeds_2.csv,https://raw.githubusercontent.com/REPO4EU/modulediscovery_test_data/refs/heads/main/small/entrez_ppi.csv,/home/johannes/workspace/modulediscovery/modulediscovery/results/input/shortest_paths/entrez_ppi.shortest_paths.pkl

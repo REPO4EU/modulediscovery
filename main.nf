@@ -31,8 +31,9 @@ include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_modu
 workflow REPO4EU_MODULEDISCOVERY {
 
     take:
-    ch_seeds    // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
-    ch_network  // channel: [ val(meta[id,network_id]), path(network) ]
+    ch_seeds            // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    ch_network          // channel: [ val(meta[id,network_id]), path(network) ]
+    ch_shortest_paths   // channel: [ val(meta[id,network_id]), path(shortest_paths) ]
 
     main:
 
@@ -44,7 +45,8 @@ workflow REPO4EU_MODULEDISCOVERY {
 
     MODULEDISCOVERY (
         ch_seeds,
-        ch_network
+        ch_network,
+        ch_shortest_paths
     )
     ch_versions = ch_versions.mix(MODULEDISCOVERY.out.versions)
 
@@ -75,13 +77,14 @@ workflow {
         params.outdir,
         params.input,
         params.seeds,
-        params.network
+        params.network,
+        params.shortest_paths
     )
 
     //
     // WORKFLOW: Run main workflow
     //
-    REPO4EU_MODULEDISCOVERY (PIPELINE_INITIALISATION.out.seeds, PIPELINE_INITIALISATION.out.network)
+    REPO4EU_MODULEDISCOVERY (PIPELINE_INITIALISATION.out.seeds, PIPELINE_INITIALISATION.out.network, PIPELINE_INITIALISATION.out.shortest_paths)
 
     //
     // SUBWORKFLOW: Run completion tasks

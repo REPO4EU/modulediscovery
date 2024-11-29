@@ -20,6 +20,13 @@
                 "exists": true,
                 "pattern": "^\\S+\\.(csv|gt|graphml|xml|dot|gml)$",
                 "errorMessage": "The network file cannot contain spaces and must end with .[csv|gt|graphml|xml|dot|gml]"
+            },
+            "shortest_paths": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.(pickle|pkl|pck|pcl)$",
+                "errorMessage": "The shortest_paths file cannot contain spaces and must end with .(pickle|pkl|pck|pcl)"
             }
         }
     }
