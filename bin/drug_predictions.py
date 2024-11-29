@@ -189,15 +189,15 @@ def parse_args(argv=None):
     parser.add_argument(
         "--includeIndirectDrugs",
         help="Drugst.One parameter: Include indirect drugs in the prediction.",
-        type=bool,
-        default=False,
+        type=int,
+        default=0,
     )
 
     parser.add_argument(
         "--includeNonApprovedDrugs",
         help="Drugst.One parameter: Include non-approved drugs in the prediction.",
-        type=bool,
-        default=False,
+        type=int,
+        default=0,
     )
 
     parser.add_argument(
