@@ -189,7 +189,7 @@
                     "fa_icon": "fas fa-forward",
                     "description": "Flag for running proximity"
                 },
-                "shortest_path": {
+                "shortest_paths": {
                     "type": "string",
                     "fa_icon": "far fa-check-circle",
                     "description": "Local path to the shortest path pickle file used for proximity.",

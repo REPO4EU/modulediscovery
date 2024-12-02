@@ -138,8 +138,11 @@ workflow PIPELINE_INITIALISATION {
             log.info("Creating network channel based on the sample sheet and seeds channel based on the seeds parameter")
 
             ch_network = ch_input
-                .map{ it -> it[1]}
-                .map{ [ [ id: it.baseName, network_id: it.baseName ], it ] }
+                .map{ it -> [it[1], it[2]]}
+                .map{ network, sp ->
+                    network: [ [ id: network.baseName, network_id: network.baseName ], network, sp ]
+                }
+                .unique()
 
             ch_seeds = Channel
                 .fromPath(params.seeds.split(',').flatten(), checkIfExists: true)
@@ -163,6 +166,16 @@ workflow PIPELINE_INITIALISATION {
                     [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
                 }
 
+            // Add sp files, if provided (currently does not check if the number of the shortest paths matches the number of the networks and does not work with missing values)
+            if(shortest_paths_param_set){
+                ch_network = ch_network.merge(
+                    Channel
+                    .fromPath(params.shortest_paths.split(',').flatten())
+                )
+            } else{
+                ch_network = ch_network.map{meta, network -> [meta, network, file("${projectDir}/assets/NO_FILE", checkIfExists: true)]}
+            }
+
         }
 
 
@@ -180,6 +193,16 @@ workflow PIPELINE_INITIALISATION {
             .map{seeds, network_id ->
                 [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName + "." + network_id, network_id: network_id ] , seeds ]
             }
+
+        // Add sp files, if provided (currently does not check if the number of the shortest paths matches the number of the networks and does not work with missing values)
+        if(shortest_paths_param_set){
+            ch_network = ch_network.merge(
+                Channel
+                .fromPath(params.shortest_paths.split(',').flatten())
+            )
+        } else{
+            ch_network = ch_network.map{meta, network -> [meta, network, file("${projectDir}/assets/NO_FILE", checkIfExists: true)]}
+        }
 
     } else {
         error("You need to specify either a sample sheet (--input) or the seeds (--seeds) and network (--network) files")
