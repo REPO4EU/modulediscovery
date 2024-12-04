@@ -15,13 +15,23 @@ workflow GT_NETWORKPERMUTATION {
     main:
     ch_versions = Channel.empty()
 
+    // Branch ch_permuted_networks based on whether the permuted_networks have already been pre-computed
+    ch_permuted_networks = ch_network.map{meta, network -> [meta, network, []] }
+        .branch{
+            precomputed: it[2].size() > 0
+            not_precomputed: true
+        }
+
     // Permute the input network(s)
-    NETWORKPERMUTATION(ch_network, params.n_network_permutations)
+    ch_permutation_input = ch_permuted_networks.not_precomputed.map{meta, network, permuted_networks -> [meta, network]}
+    NETWORKPERMUTATION(ch_permutation_input, params.n_network_permutations)
     ch_versions = ch_versions.mix(NETWORKPERMUTATION.out.versions)
 
     // Create required shape for NETWORKEXPANSION
     // channel: [val(meta[id,seeds_id,network_id,permuted_network_id,n_permutations]), path(permuted_networks)]
     ch_permuted_networks = NETWORKPERMUTATION.out.permuted_networks
+        // Mix with precomputed permutations
+        .mix(ch_permuted_networks.precomputed.map{meta, network, permuted_networks -> [meta, permuted_networks]})
         // Add n_permutations
         .map{meta, permuted_networks ->
             def dup = meta.clone()
