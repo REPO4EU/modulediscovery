@@ -38,6 +38,7 @@ workflow PIPELINE_INITIALISATION {
     input             //  string: Path to sample sheet
     seeds             //  string: Path(s) to seed file(s)
     network           //  string: Path(s) to network file(s)
+    shortest_paths    //  string: Path to shortest paths file
 
     main:
 
@@ -75,11 +76,13 @@ workflow PIPELINE_INITIALISATION {
         nextflow_cli_args
     )
 
-    ch_seeds = Channel.empty()      // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
-    ch_network = Channel.empty()    // channel: [ val(meta[id,network_id]), path(network) ]
+    ch_seeds = Channel.empty()          // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    ch_network = Channel.empty()        // channel: [ val(meta[id,network_id]), path(network) ]
+    ch_shortest_paths = Channel.empty() // channel: [ val(meta[id,network_id]), path(shortest_paths) ]
 
     seed_param_set = (params.seeds != null)
     network_param_set = (params.network != null)
+    shortest_paths_param_set = (params.shortest_paths != null)
 
     if(params.input){
 
@@ -88,14 +91,23 @@ workflow PIPELINE_INITIALISATION {
         // channel: [ path(seeds), path(network) ]
         ch_input = Channel
             .fromSamplesheet("input")
-            .map{seeds, network ->
+            .map{seeds, network, shortest_paths ->
                 if((seeds.size()==0) ^ seed_param_set ){
-                    error("Seed genes have to specified through either the sampel sheet OR the --seeds paramater")
+                    error("Seed genes have to specified through either the sample sheet OR the --seeds parameter")
                 }
-                if((network.size()==0) ^ network_param_set ){
-                    error("Networks have to specified through either the sampel sheet OR the --network paramater")
+                if((network.size()==0) ^ network_param_set){
+                    error("Networks have to specified through either the sample sheet OR the --network parameter")
                 }
-                [seeds, network]
+                if(!(shortest_paths.size()==0) && shortest_paths_param_set ){
+                    error("Shortest paths have to specified through either the sample sheet OR the --shortest_path parameter")
+                }
+                if(!(network.size()==0) && shortest_paths_param_set ){
+                    error("If the network is set via the sample sheet, shortest_paths must also be set via the sample sheet")
+                }
+                if(!(shortest_paths.size()==0) && network_param_set ){
+                    error("If the shortest_paths is set via the sample sheet, the network must also be set via the sample sheet")
+                }
+                [seeds, network, shortest_paths]
             }
 
         if (seed_param_set && network_param_set) {
@@ -107,8 +119,10 @@ workflow PIPELINE_INITIALISATION {
             log.info("Creating network and seeds channels based on tuples in the sample sheet")
 
             ch_network = ch_input
-                .map{ it -> it[1]}
-                .map{ [ [ id: it.baseName, network_id: it.baseName ], it ] }
+                .map{ it -> [it[1], it[2]]}
+                .map{ network, sp ->
+                    network: [ [ id: network.baseName, network_id: network.baseName ], network, sp ]
+                }
                 .unique()
 
             ch_seeds = ch_input
@@ -124,8 +138,11 @@ workflow PIPELINE_INITIALISATION {
             log.info("Creating network channel based on the sample sheet and seeds channel based on the seeds parameter")
 
             ch_network = ch_input
-                .map{ it -> it[1]}
-                .map{ [ [ id: it.baseName, network_id: it.baseName ], it ] }
+                .map{ it -> [it[1], it[2]]}
+                .map{ network, sp ->
+                    network: [ [ id: network.baseName, network_id: network.baseName ], network, sp ]
+                }
+                .unique()
 
             ch_seeds = Channel
                 .fromPath(params.seeds.split(',').flatten(), checkIfExists: true)
@@ -149,6 +166,16 @@ workflow PIPELINE_INITIALISATION {
                     [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName, network_id: network_id ] , seeds ]
                 }
 
+            // Add sp files, if provided (currently does not check if the number of the shortest paths matches the number of the networks and does not work with missing values)
+            if(shortest_paths_param_set){
+                ch_network = ch_network.merge(
+                    Channel
+                    .fromPath(params.shortest_paths.split(',').flatten())
+                )
+            } else{
+                ch_network = ch_network.map{meta, network -> [meta, network, file("${projectDir}/assets/NO_FILE", checkIfExists: true)]}
+            }
+
         }
 
 
@@ -167,14 +194,43 @@ workflow PIPELINE_INITIALISATION {
                 [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName, network_id: network_id ] , seeds ]
             }
 
+        // Add sp files, if provided (currently does not check if the number of the shortest paths matches the number of the networks and does not work with missing values)
+        if(shortest_paths_param_set){
+            ch_network = ch_network.merge(
+                Channel
+                .fromPath(params.shortest_paths.split(',').flatten())
+            )
+        } else{
+            ch_network = ch_network.map{meta, network -> [meta, network, file("${projectDir}/assets/NO_FILE", checkIfExists: true)]}
+        }
+
     } else {
         error("You need to specify either a sample sheet (--input) or the seeds (--seeds) and network (--network) files")
     }
 
+    // check if IDs are unique
+    ch_network.map{ meta, network, sp -> [meta.id] }
+        .collect()
+        .subscribe { list ->
+            def unique = list.size() == list.toSet().size()
+            if (!unique) { error("IDs in ch_network are not unique.") }
+        }
+    ch_seeds.map{ meta, seeds -> [meta.id] }
+        .collect()
+        .subscribe { list ->
+            def unique = list.size() == list.toSet().size()
+            if (!unique) { error("IDs in ch_seeds are not unique.") }
+        }
+
+    // separate shortest paths
+    ch_shortest_paths = ch_network.map{meta, network, sp -> [meta, sp.size() > 0 ? sp : file("${projectDir}/assets/NO_FILE", checkIfExists: true)]}
+    ch_network = ch_network.map{meta, network, sp -> [meta, network]}
+
     emit:
     versions    = ch_versions
-    seeds       = ch_seeds      // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
-    network     = ch_network    // channel: [ val(meta[id,network_id]), path(network) ]
+    seeds       = ch_seeds             // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    network     = ch_network           // channel: [ val(meta[id,network_id]), path(network) ]
+    shortest_paths = ch_shortest_paths // channel: [ val(meta[id,network_id]), path(shortest_paths) ]
 }
 
 /*
