@@ -20,7 +20,7 @@ process DRUGPREDICTIONS {
 
     script:
     """
-    drug_predictions.py --idspace "${idspace}" -p "${meta.id}" -a "${algorithm}" --includeIndirectDrugs "${includeIndirectDrugs}" --includeNonApprovedDrugs "${includeNonApprovedDrugs}" --result_size "${result_size}" "${module}" -l DEBUG
+    drug_predictions.py --idspace "${idspace}" -p "${meta.id}" -a "${algorithm}" --includeIndirectDrugs ${includeIndirectDrugs} --includeNonApprovedDrugs ${includeNonApprovedDrugs} --result_size "${result_size}" "${module}" -l DEBUG
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
