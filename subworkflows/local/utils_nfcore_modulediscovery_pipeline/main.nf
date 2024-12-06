@@ -144,15 +144,15 @@ workflow PIPELINE_INITIALISATION {
             log.info("Creating network channel based on the sample sheet and seeds channel based on the seeds parameter")
 
             ch_network = ch_input
-                .map{ it -> [it[1], it[2]]}
+                .map{ it -> [it[1], it[2], it[3]]}
                 .map{ network, sp ->
-                    network: [ [ id: network.baseName, network_id: network.baseName ], network, sp ]
+                    network: [ [ id: network.baseName, network_id: network.baseName ], network, sp, permuted_networks ]
                 }
                 .unique()
 
             ch_seeds = Channel
                 .fromPath(params.seeds.split(',').flatten(), checkIfExists: true)
-                .combine(ch_network.map{meta, network -> meta.network_id})
+                .combine(ch_network.map{meta, network, sp, permuted_networks -> meta.network_id})
                 .map{seeds, network_id ->
                     [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName, network_id: network_id ] , seeds ]
                 }
@@ -182,6 +182,16 @@ workflow PIPELINE_INITIALISATION {
                 ch_network = ch_network.map{meta, network -> [meta, network, file("${projectDir}/assets/NO_FILE", checkIfExists: true)]}
             }
 
+            // Add permuted network folders, if provided (currently does not check if the number of the shortest paths matches the number of the networks and does not work with missing values)
+            if(permuted_networks_param_set){
+                ch_network = ch_network.merge(
+                    Channel
+                    .fromPath(params.permuted_networks.split(',').flatten())
+                )
+            } else{
+                ch_network = ch_network.map{meta, network, sp -> [meta, network, sp, []]}
+            }
+
         }
 
 
@@ -208,6 +218,16 @@ workflow PIPELINE_INITIALISATION {
             )
         } else{
             ch_network = ch_network.map{meta, network -> [meta, network, file("${projectDir}/assets/NO_FILE", checkIfExists: true)]}
+        }
+
+        // Add permuted network folders, if provided (currently does not check if the number of the shortest paths matches the number of the networks and does not work with missing values)
+        if(permuted_networks_param_set){
+            ch_network = ch_network.merge(
+                Channel
+                .fromPath(params.permuted_networks.split(',').flatten())
+            )
+        } else{
+            ch_network = ch_network.map{meta, network, sp -> [meta, network, sp, []]}
         }
 
     } else {
