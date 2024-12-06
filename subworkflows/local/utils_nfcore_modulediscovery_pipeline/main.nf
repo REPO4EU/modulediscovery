@@ -91,10 +91,10 @@ workflow PIPELINE_INITIALISATION {
 
         // Check sample sheet
 
-        // channel: [ path(seeds), path(network) ]
+        // channel: [ path(seeds), path(network), path(shortest_paths), path(permuted_networks) ]
         ch_input = Channel
             .fromSamplesheet("input")
-            .map{seeds, network, shortest_paths ->
+            .map{seeds, network, shortest_paths, permuted_networks ->
                 if((seeds.size()==0) ^ seed_param_set ){
                     error("Seed genes have to specified through either the sample sheet OR the --seeds parameter")
                 }
@@ -104,13 +104,16 @@ workflow PIPELINE_INITIALISATION {
                 if(!(shortest_paths.size()==0) && shortest_paths_param_set ){
                     error("Shortest paths have to specified through either the sample sheet OR the --shortest_path parameter")
                 }
-                if(!(network.size()==0) && shortest_paths_param_set ){
-                    error("If the network is set via the sample sheet, shortest_paths must also be set via the sample sheet")
+                if(!(permuted_networks.size()==0) && permuted_networks_param_set ){
+                    error("Precomputed network permutations have to specified through either the sample sheet OR the --permuted_networks parameter")
                 }
-                if(!(shortest_paths.size()==0) && network_param_set ){
-                    error("If the shortest_paths is set via the sample sheet, the network must also be set via the sample sheet")
+                if(!(network.size()==0) && (shortest_paths_param_set || permuted_networks_param_set) ){
+                    error("If the network is set via the sample sheet, shortest_paths or permuted_networks must also be set via the sample sheet")
                 }
-                [seeds, network, shortest_paths]
+                if((! shortest_paths.size()==0 || ! permuted_networks.size()==0) && network_param_set ){
+                    error("If the shortest_paths or permuted_networks are set via the sample sheet, the network must also be set via the sample sheet")
+                }
+                [seeds, network, shortest_paths, permuted_networks]
             }
 
         if (seed_param_set && network_param_set) {
@@ -122,9 +125,9 @@ workflow PIPELINE_INITIALISATION {
             log.info("Creating network and seeds channels based on tuples in the sample sheet")
 
             ch_network = ch_input
-                .map{ it -> [it[1], it[2]]}
-                .map{ network, sp ->
-                    network: [ [ id: network.baseName, network_id: network.baseName ], network, sp ]
+                .map{ it -> [it[1], it[2], it[3]]}
+                .map{ network, sp, permuted_networks ->
+                    network: [ [ id: network.baseName, network_id: network.baseName ], network, sp, permuted_networks ]
                 }
                 .unique()
 
@@ -212,7 +215,7 @@ workflow PIPELINE_INITIALISATION {
     }
 
     // check if IDs are unique
-    ch_network.map{ meta, network, sp -> [meta.id] }
+    ch_network.map{ meta, network, sp, permuted_networks -> [meta.id] }
         .collect()
         .subscribe { list ->
             def unique = list.size() == list.toSet().size()
@@ -225,15 +228,23 @@ workflow PIPELINE_INITIALISATION {
             if (!unique) { error("IDs in ch_seeds are not unique.") }
         }
 
-    // separate shortest paths
-    ch_shortest_paths = ch_network.map{meta, network, sp -> [meta, sp.size() > 0 ? sp : file("${projectDir}/assets/NO_FILE", checkIfExists: true)]}
-    ch_network = ch_network.map{meta, network, sp -> [meta, network]}
+    // separate network channel into network, shoretes_paths, and permuted_networks
+    ch_shortest_paths = ch_network.map{meta, network, sp, permuted_networks ->
+        [meta, sp.size() > 0 ? sp : file("${projectDir}/assets/NO_FILE", checkIfExists: true)]
+    }
+
+    ch_permuted_networks = ch_network.map{meta, network, sp, permuted_networks ->
+        [meta, permuted_networks.size() > 0 ? file(permuted_networks+"/*.gt") : []]
+    }
+
+    ch_network = ch_network.map{meta, network, sp, permuted_networks -> [meta, network]}
 
     emit:
     versions    = ch_versions
-    seeds       = ch_seeds             // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
-    network     = ch_network           // channel: [ val(meta[id,network_id]), path(network) ]
-    shortest_paths = ch_shortest_paths // channel: [ val(meta[id,network_id]), path(shortest_paths) ]
+    seeds       = ch_seeds                      // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    network     = ch_network                    // channel: [ val(meta[id,network_id]), path(network) ]
+    shortest_paths = ch_shortest_paths          // channel: [ val(meta[id,network_id]), path(shortest_paths) ]
+    permuted_networks = ch_permuted_networks    // channel: [ val(meta[id,network_id]), [path(permuted_network)] ]
 }
 
 /*

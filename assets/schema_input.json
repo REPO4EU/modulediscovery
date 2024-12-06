@@ -27,6 +27,12 @@
                 "exists": true,
                 "pattern": "^\\S+\\.(pickle|pkl|pck|pcl)$",
                 "errorMessage": "The shortest_paths file cannot contain spaces and must end with .(pickle|pkl|pck|pcl)"
+            },
+            "permuted_networks": {
+                "type": "string",
+                "format": "directory-path",
+                "exists": true,
+                "errorMessage": "The permuted_networks path must point to an existing directory and cannot contain spaces."
             }
         }
     }

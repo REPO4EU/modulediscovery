@@ -8,15 +8,17 @@ include { NETWORKPERMUTATIONEVALUATION } from '../../../modules/local/networkper
 
 workflow GT_NETWORKPERMUTATION {
     take:
-    ch_modules  // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module) ]
-    ch_seeds    // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
-    ch_network  // channel: [ val(meta[id,network_id]), path(network) ]
+    ch_modules              // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module) ]
+    ch_seeds                // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    ch_network              // channel: [ val(meta[id,network_id]), path(network) ]
+    ch_permuted_networks    // channel: [ val(meta[id,network_id]), [path(permuted_networks)] ]
 
     main:
     ch_versions = Channel.empty()
 
     // Branch ch_permuted_networks based on whether the permuted_networks have already been pre-computed
-    ch_permuted_networks = ch_network.map{meta, network -> [meta, network, []] }
+    ch_permuted_networks = ch_network
+        .join(ch_permuted_networks, by: 0, failOnDuplicate: true, failOnMismatch: true)
         .branch{
             precomputed: it[2].size() > 0
             not_precomputed: true

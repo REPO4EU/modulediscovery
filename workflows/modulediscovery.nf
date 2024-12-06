@@ -106,9 +106,10 @@ workflow MODULEDISCOVERY {
 
 
     take:
-    ch_seeds         // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
-    ch_network       // channel: [ val(meta[id,network_id]), path(network) ]
-    ch_shortest_paths // channel: [ val(meta[id,network_id]), path(shortest_paths) ]
+    ch_seeds                // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
+    ch_network              // channel: [ val(meta[id,network_id]), path(network) ]
+    ch_shortest_paths       // channel: [ val(meta[id,network_id]), path(shortest_paths) ]
+    ch_permuted_networks    // channel: [ val(meta[id,network_id]), [path(permuted_networks)] ]
 
     main:
 
@@ -302,7 +303,7 @@ workflow MODULEDISCOVERY {
 
         // Network permutation based evaluation
         if(!params.skip_network_permutation){
-            GT_NETWORKPERMUTATION(ch_modules, ch_seeds, ch_network_gt)
+            GT_NETWORKPERMUTATION(ch_modules, ch_seeds, ch_network_gt, ch_permuted_networks)
             ch_versions = ch_versions.mix(GT_NETWORKPERMUTATION.out.versions)
         }
 
