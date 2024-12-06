@@ -39,6 +39,7 @@ workflow PIPELINE_INITIALISATION {
     seeds             //  string: Path(s) to seed file(s)
     network           //  string: Path(s) to network file(s)
     shortest_paths    //  string: Path to shortest paths file
+    permuted_networks //  string: Path to folder(s) with permuted network files
 
     main:
 
@@ -79,10 +80,12 @@ workflow PIPELINE_INITIALISATION {
     ch_seeds = Channel.empty()          // channel: [ val(meta[id,seeds_id,network_id]), path(seeds) ]
     ch_network = Channel.empty()        // channel: [ val(meta[id,network_id]), path(network) ]
     ch_shortest_paths = Channel.empty() // channel: [ val(meta[id,network_id]), path(shortest_paths) ]
+    ch_permuted_networks = Channel.empty() // channel: [ val(meta[id,network_id]), [path(permuted_network)] ]
 
     seed_param_set = (params.seeds != null)
     network_param_set = (params.network != null)
     shortest_paths_param_set = (params.shortest_paths != null)
+    permuted_networks_param_set = (params.permuted_networks != null)
 
     if(params.input){
 

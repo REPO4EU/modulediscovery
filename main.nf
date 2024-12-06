@@ -78,7 +78,8 @@ workflow {
         params.input,
         params.seeds,
         params.network,
-        params.shortest_paths
+        params.shortest_paths,
+        params.permuted_networks
     )
 
     //

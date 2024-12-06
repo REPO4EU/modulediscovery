@@ -511,6 +511,9 @@
         "n_network_permutations": {
             "type": "integer",
             "default": 1000
+        },
+        "permuted_networks": {
+            "type": "string"
         }
     }
 }
