@@ -6,12 +6,8 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-import networkx as nx
-import math, random
 import graph_tool.all as gt
 import util
-import pyintergraph
-import copy
 
 
 logger = logging.getLogger()
@@ -31,10 +27,10 @@ def parse_args(argv=None):
         required=True,
     )
     parser.add_argument(
-        "-n",
-        "--n_network_permutations",
-        help="Number of permuted networks that should be generated.",
-        type=int,
+        "-o",
+        "--output",
+        help="Path to the output file.",
+        type=str,
         required=True,
     )
     parser.add_argument(
@@ -56,22 +52,18 @@ def main(argv=None):
         sys.exit(2)
     logger.debug(f"{args=}")
 
-    stem = Path(args.network).stem
-    extension = Path(args.network).suffix
-
     graph = util.load_graph(str(args.network))
 
-    for i in range(args.n_network_permutations):
-        gt_graph = gt.Graph(graph, prune=True)
-        n_failed = gt.random_rewire(
-            gt_graph, model="constrained-configuration", n_iter=100, edge_sweep=True
+    gt_graph = gt.Graph(graph, prune=True)
+    n_failed = gt.random_rewire(
+        gt_graph, model="constrained-configuration", n_iter=100, edge_sweep=True
+    )
+
+    gt_graph.save(args.output)
+    if n_failed > 0:
+        logger.warning(
+            f"Number of rejected edge moves (due to parallel edges or self-loops): {n_failed}"
         )
-        output_file = f"{stem}.perm_{i}{extension}"
-        gt_graph.save(output_file)
-        if n_failed > 0:
-            logger.warning(
-                f"Number of rejected edge moves (due to parallel edges or self-loops): {n_failed}"
-            )
 
 
 if __name__ == "__main__":

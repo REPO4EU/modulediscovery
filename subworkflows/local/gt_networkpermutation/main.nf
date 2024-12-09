@@ -25,30 +25,37 @@ workflow GT_NETWORKPERMUTATION {
         }
 
     // Permute the input network(s)
-    ch_permutation_input = ch_permuted_networks.not_precomputed.map{meta, network, permuted_networks -> [meta, network]}
-    NETWORKPERMUTATION(ch_permutation_input, params.n_network_permutations)
+    // channel: [val(meta[id,network_id,n_permutations]), path(permuted_networks), val(output_name)]
+    ch_permutation_input = ch_permuted_networks.not_precomputed
+        // add n_permutations to meta
+        .map{meta, network, permuted_networks -> [meta + [n_permutations: params.n_network_permutations], network]}
+        // expand by number of permutations
+        .combine(Channel.of(0..(params.n_network_permutations-1)))
+        // add output file names
+        .map{meta, network, permutation -> [meta, network, network.baseName + ".perm_" + permutation + "." + network.extension]}
+
+    // Run network permutations
+    NETWORKPERMUTATION(ch_permutation_input)
     ch_versions = ch_versions.mix(NETWORKPERMUTATION.out.versions)
 
     // Create required shape for NETWORKEXPANSION
-    // channel: [val(meta[id,seeds_id,network_id,permuted_network_id,n_permutations]), path(permuted_networks)]
-    ch_permuted_networks = NETWORKPERMUTATION.out.permuted_networks
-        // Mix with precomputed permutations
-        .mix(ch_permuted_networks.precomputed.map{meta, network, permuted_networks -> [meta, permuted_networks]})
-        // Add n_permutations
-        .map{meta, permuted_networks ->
-            def dup = meta.clone()
-            dup.n_permutations = permuted_networks.size()
-            [ dup, permuted_networks]
-        }
+    // channel: [val(meta[id,seeds_id,network_id,permuted_network_id,n_permutations]), path(permuted_network)]
+    ch_permuted_networks =
+        // Bring precomputed permuted networks in right shape
+        ch_permuted_networks.precomputed.map{ meta, network, permuted_networks -> [meta, permuted_networks] }
+        // Add n_permutations for later grouping
+        .map{ meta, permuted_networks -> [ meta + [n_permutations: permuted_networks.size()], permuted_networks] }
         // Convert to long format
         .transpose()
+        // Mix with precomputed permutations
+        .mix(NETWORKPERMUTATION.out.permuted_network)
         // Update id and permuted_network_id based on permuted network (original id is still stored as network_id) for the module parser
         .map{meta, permuted_network ->
             def dup = meta.clone()
             dup.id = permuted_network.baseName
             dup.permuted_network_id = dup.id
             [ dup, permuted_network]
-        }
+        }.view{it}
 
     // Run network expansion tools on permuted networks
     NETWORKEXPANSION(ch_seeds, ch_permuted_networks)

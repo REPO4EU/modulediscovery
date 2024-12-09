@@ -1,22 +1,21 @@
 
 process NETWORKPERMUTATION {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_single'
 
     input:
-    tuple val(meta), path(network)
-    val n_network_permutations
+    tuple val(meta), path(network), val(output_name)
 
     output:
-    tuple val(meta), path("${network.baseName}.*.${network.extension}") , emit: permuted_networks
-    path "versions.yml"                                                 , emit: versions
+    tuple val(meta), path("${output_name}"), emit: permuted_network
+    path "versions.yml"                    , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     """
-    randomize_network.py --network ${network} --n_network_permutations ${n_network_permutations}
+    randomize_network.py --network ${network} --output ${output_name}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
