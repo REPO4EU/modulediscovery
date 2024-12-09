@@ -116,8 +116,8 @@ workflow MODULEDISCOVERY {
     // Params
     id_space = Channel.value(params.id_space)
     validate_online = Channel.value(params.validate_online)
+
     if(params.run_proximity){
-        proximity_sp = file("${projectDir}/assets/NO_FILE", checkIfExists:true)
         proximity_dt = file(params.drug_to_target, checkIfExists:true)
     }
 
@@ -155,6 +155,12 @@ workflow MODULEDISCOVERY {
     ch_multiqc_files = ch_multiqc_files.mix(ch_seeds_multiqc)
 
 
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        NETWORK EXPANSION
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+
     // Network expansion tools
     NETWORKEXPANSION(ch_seeds, ch_network_gt)
     ch_modules = NETWORKEXPANSION.out.modules // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module)]
@@ -172,59 +178,36 @@ workflow MODULEDISCOVERY {
     ch_modules = NETWORKANNOTATION.out.module
     ch_versions = ch_versions.mix(NETWORKANNOTATION.out.versions)
 
+
     // Save modules
     SAVEMODULES(ch_modules)
     ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
-
-    // Drug predictions
-    if(!params.skip_drug_predictions){
-        def valid_algorithms = ['trustrank', 'closeness', 'degree']
-
-        // Split the algorithms and check if they are valid
-        ch_algorithms_drugs = Channel
-            .of(params.drugstone_algorithms.split(','))
-            .filter { algorithm ->
-                if (!valid_algorithms.contains(algorithm)) {
-                    throw new IllegalArgumentException("Invalid algorithm: $algorithm. Must be one of: ${valid_algorithms.join(', ')}")
-                }
-                return true
-            }
-
-        ch_drugstone_input = SAVEMODULES.out.nodes_tsv
-            .combine(ch_algorithms_drugs)
-            .multiMap { meta, module, algorithm ->
-                module: [meta, module]
-                algorithm: algorithm
-            }
-        includeIndirectDrugs = Channel.value(params.includeIndirectDrugs).map{it ? 1 : 0}
-        includeNonApprovedDrugs = Channel.value(params.includeNonApprovedDrugs).map{it ? 1 : 0}
-        DRUGPREDICTIONS(ch_drugstone_input.module, id_space, ch_drugstone_input.algorithm, includeIndirectDrugs, includeNonApprovedDrugs, params.result_size)
-        ch_versions = ch_versions.mix(DRUGPREDICTIONS.out.versions)
-    }
 
     // Visualize modules
     if(!params.skip_visualization){
         VISUALIZEMODULES(ch_modules, params.visualization_max_nodes)
         ch_versions = ch_versions.mix(VISUALIZEMODULES.out.versions)
     }
+
     // Drugstone export
     DRUGSTONEEXPORT(ch_modules, id_space)
     ch_versions = ch_versions.mix(DRUGSTONEEXPORT.out.versions)
     ch_multiqc_files = ch_multiqc_files.mix(DRUGSTONEEXPORT.out.link.map{ meta, path -> path }
             .collectFile(name: 'drugstone_link_mqc.tsv', keepHeader: true))
+
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
         GT_BIOPAX(ch_modules, id_space, validate_online)
         ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
     }
 
-    // Drug prioritization - Proximity
-    if(params.run_proximity){
-        GT_PROXIMITY(ch_network, SAVEMODULES.out.nodes_tsv, ch_shortest_paths, proximity_dt)
-        ch_versions = ch_versions.mix(GT_PROXIMITY.out.versions)
-    }
 
-    // Evaluation
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        MODULE EVALUATION
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+
     if(!params.skip_evaluation){
 
         GT2TSV_Modules(ch_modules)
@@ -308,6 +291,45 @@ workflow MODULEDISCOVERY {
         }
 
     }
+
+
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        DRUG PRIORITIZATION
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+
+    if(!params.skip_drug_predictions){
+        def valid_algorithms = ['trustrank', 'closeness', 'degree']
+
+        // Split the algorithms and check if they are valid
+        ch_algorithms_drugs = Channel
+            .of(params.drugstone_algorithms.split(','))
+            .filter { algorithm ->
+                if (!valid_algorithms.contains(algorithm)) {
+                    throw new IllegalArgumentException("Invalid algorithm: $algorithm. Must be one of: ${valid_algorithms.join(', ')}")
+                }
+                return true
+            }
+
+        ch_drugstone_input = SAVEMODULES.out.nodes_tsv
+            .combine(ch_algorithms_drugs)
+            .multiMap { meta, module, algorithm ->
+                module: [meta, module]
+                algorithm: algorithm
+            }
+        includeIndirectDrugs = Channel.value(params.includeIndirectDrugs).map{it ? 1 : 0}
+        includeNonApprovedDrugs = Channel.value(params.includeNonApprovedDrugs).map{it ? 1 : 0}
+        DRUGPREDICTIONS(ch_drugstone_input.module, id_space, ch_drugstone_input.algorithm, includeIndirectDrugs, includeNonApprovedDrugs, params.result_size)
+        ch_versions = ch_versions.mix(DRUGPREDICTIONS.out.versions)
+    }
+
+    // Drug prioritization - Proximity
+    if(params.run_proximity){
+        GT_PROXIMITY(ch_network, SAVEMODULES.out.nodes_tsv, ch_shortest_paths, proximity_dt)
+        ch_versions = ch_versions.mix(GT_PROXIMITY.out.versions)
+    }
+
 
     // Collate and save software versions
     softwareVersionsToYAML(ch_versions)
