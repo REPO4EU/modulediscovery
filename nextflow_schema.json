@@ -125,8 +125,8 @@
                 }
             }
         },
-        "visualization": {
-            "title": "Visualization",
+        "module_visualization": {
+            "title": "Module visualization",
             "type": "object",
             "description": "",
             "default": "",
@@ -145,8 +145,8 @@
                 }
             }
         },
-        "annotation": {
-            "title": "Annotation",
+        "module_annotation": {
+            "title": "Module annotation",
             "type": "object",
             "description": "Set parameters regarding the annotation.",
             "default": "",
@@ -177,69 +177,8 @@
             },
             "fa_icon": "far fa-edit"
         },
-        "drug_prioritization": {
-            "title": "Drug prioritization",
-            "type": "object",
-            "description": "Parameters for the drug prioritization methods.",
-            "default": "",
-            "fa_icon": "fas fa-chart-network",
-            "properties": {
-                "run_proximity": {
-                    "type": "boolean",
-                    "fa_icon": "fas fa-forward",
-                    "description": "Flag for running proximity"
-                },
-                "shortest_paths": {
-                    "type": "string",
-                    "fa_icon": "far fa-check-circle",
-                    "description": "Local path to the shortest path pickle file used for proximity.",
-                    "hidden": true
-                },
-                "drug_to_target": {
-                    "type": "string",
-                    "fa_icon": "far fa-check-circle",
-                    "description": "Local path to the drug to targets file used for proximity.",
-                    "hidden": true
-                }
-            }
-        },
-        "drug_predictions": {
-            "title": "Drug predictions",
-            "type": "object",
-            "description": "Parameters for the drug predictions.",
-            "default": "",
-            "properties": {
-                "skip_drug_predictions": {
-                    "type": "boolean",
-                    "description": "Flag for skipping drug predictions",
-                    "fa_icon": "fas fa-forward"
-                },
-                "includeIndirectDrugs": {
-                    "type": "boolean",
-                    "description": "Drugst.One parameter for including indirect drugs.",
-                    "fa_icon": "fas fa-capsules"
-                },
-                "includeNonApprovedDrugs": {
-                    "type": "boolean",
-                    "description": "Drugst.One parameter for including non approved drugs.",
-                    "fa_icon": "fas fa-capsules"
-                },
-                "result_size": {
-                    "type": "integer",
-                    "default": 50,
-                    "description": "Drugst.One parameter for defining  the maximum number of returned drugs.",
-                    "fa_icon": "fas fa-expand-arrows-alt"
-                },
-                "drugstone_algorithms": {
-                    "type": "string",
-                    "description": "Parameter for defining the Drugst.One algorithms to be used. Comma separated list. Options: 'trustrank', 'degree' and 'closeness'.",
-                    "default": "trustrank"
-                }
-            },
-            "fa_icon": "fas fa-capsules"
-        },
-        "evaluation": {
-            "title": "Evaluation",
+        "module_evaluation": {
+            "title": "Module evaluation",
             "type": "object",
             "description": "",
             "default": "",
@@ -264,6 +203,75 @@
                     "type": "boolean",
                     "fa_icon": "fas fa-forward",
                     "description": "Flag for skipping the seed permutation-based evaluation"
+                },
+                "skip_network_permutation": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Flag for skipping the network permutation-base evaluation"
+                },
+                "n_network_permutations": {
+                    "type": "integer",
+                    "default": 1000,
+                    "fa_icon": "fas fa-cogs",
+                    "description": "Number of times the network will be permuted for the network permutation-based evaluation"
+                },
+                "permuted_networks": {
+                    "type": "string",
+                    "fa_icon": "fas fa-folder-open",
+                    "description": "Path(s) to folder(s) with pre-computed permuted networks for the network permutation-based evaluation"
+                }
+            }
+        },
+        "drug_prioritization": {
+            "title": "Drug prioritization",
+            "type": "object",
+            "description": "Parameters for the drug prioritization methods.",
+            "default": "",
+            "fa_icon": "fas fa-capsules",
+            "properties": {
+                "run_proximity": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Flag for running proximity"
+                },
+                "shortest_paths": {
+                    "type": "string",
+                    "fa_icon": "fas fa-project-diagram",
+                    "description": "Path(s) to the shortest path pickle file(s) used for proximity.",
+                    "hidden": true
+                },
+                "drug_to_target": {
+                    "type": "string",
+                    "fa_icon": "fas fa-file-csv",
+                    "description": "Local path to the drug to targets file used for proximity.",
+                    "hidden": true
+                },
+                "skip_drug_predictions": {
+                    "type": "boolean",
+                    "description": "Flag for skipping drug predictions",
+                    "fa_icon": "fas fa-forward"
+                },
+                "includeIndirectDrugs": {
+                    "type": "boolean",
+                    "description": "Drugst.One parameter for including indirect drugs.",
+                    "fa_icon": "fas fa-capsules"
+                },
+                "includeNonApprovedDrugs": {
+                    "type": "boolean",
+                    "description": "Drugst.One parameter for including non approved drugs.",
+                    "fa_icon": "fas fa-capsules"
+                },
+                "result_size": {
+                    "type": "integer",
+                    "default": 50,
+                    "description": "Drugst.One parameter for defining  the maximum number of returned drugs.",
+                    "fa_icon": "fas fa-expand-arrows-alt"
+                },
+                "drugstone_algorithms": {
+                    "type": "string",
+                    "description": "Drugst.One parameter for algorithms to be used. Comma separated list. Options: 'trustrank', 'degree' and 'closeness'.",
+                    "default": "trustrank",
+                    "fa_icon": "fas fa-list-ol"
                 }
             }
         },
@@ -411,27 +419,17 @@
         {
             "$ref": "#/$defs/input_output_options"
         },
-
-        {
-            "$ref": "#/$defs/institutional_config_options"
-        },
         {
             "$ref": "#/$defs/network_expansion"
         },
         {
-            "$ref": "#/$defs/visualization"
+            "$ref": "#/$defs/module_visualization"
         },
         {
-            "$ref": "#/$defs/annotation"
+            "$ref": "#/$defs/module_annotation"
         },
         {
-            "$ref": "#/$defs/drug_predictions"
-        },
-        {
-            "$ref": "#/$defs/drug_prioritization"
-        },
-        {
-            "$ref": "#/$defs/evaluation"
+            "$ref": "#/$defs/module_evaluation"
         },
         {
             "$ref": "#/$defs/drug_prioritization"
@@ -442,17 +440,5 @@
         {
             "$ref": "#/$defs/generic_options"
         }
-    ],
-    "properties": {
-        "skip_network_permutation": {
-            "type": "boolean"
-        },
-        "n_network_permutations": {
-            "type": "integer",
-            "default": 1000
-        },
-        "permuted_networks": {
-            "type": "string"
-        }
-    }
+    ]
 }
