@@ -1,3 +1,4 @@
+bump_version: null
 lint:
   files_exist:
     - CODE_OF_CONDUCT.md
@@ -19,12 +20,18 @@ lint:
   nextflow_config:
     - manifest.name
     - manifest.homePage
-nf_core_version: 2.14.1
+nf_core_version: 3.0.2
+org_path: null
 repository_type: pipeline
 template:
   author: REPO4EU
   description: A pipeline for network-based disease module identification
+  force: false
+  is_nfcore: false
   name: modulediscovery
-  prefix: REPO4EU
-  skip:
+  org: REPO4EU
+  outdir: .
+  skip_features:
     - igenomes
+  version: 1.0dev
+update: null
