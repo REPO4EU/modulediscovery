@@ -5,7 +5,7 @@ channels:
 
 dependencies:
   - nf-core==3.0.2
-  - nextflow>=23.10
+  - nextflow>=24.04.2
   - prettier==3.1.0
   - black>=23.11
   - singularity>=3.8
