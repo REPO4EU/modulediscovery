@@ -26,7 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        profile: ["docker"]
         NXF_VER:
           - "24.04.2"
           - "latest-everything"
