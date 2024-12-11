@@ -10,7 +10,8 @@ process MODULEOVERLAP {
     path('shared_nodes_matrix_mqc.tsv')      , emit: shared_multiqc
 
     script:
+    def concatenated_ids = ids.join(" ")
     """
-    module_overlap.py --ids $ids --inputs $inputs
+    module_overlap.py --ids $concatenated_ids --inputs $inputs
     """
 }

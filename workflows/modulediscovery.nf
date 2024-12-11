@@ -226,7 +226,7 @@ workflow MODULEDISCOVERY {
                 nodes: nodes
             }
         MODULEOVERLAP(
-            ch_overlap_input.ids.collect().map{it.join(" ")},
+            ch_overlap_input.ids.collect(),
             ch_overlap_input.nodes.collect()
         )
         ch_multiqc_files = ch_multiqc_files.mix(MODULEOVERLAP.out)
