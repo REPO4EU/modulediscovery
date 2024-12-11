@@ -142,6 +142,11 @@
                     "default": 500,
                     "description": "If a module has more nodes it will not be visualized.",
                     "fa_icon": "fas fa-project-diagram"
+                },
+                "skip_drugstone_export": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Flag for skipping the export to the Drugst.One platform"
                 }
             }
         },
