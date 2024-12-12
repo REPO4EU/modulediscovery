@@ -14,6 +14,7 @@ process SEEDPERMUTATIONEVALUATION {
     tuple val(meta), path("${meta.id}.permutation_evaluation_summary.tsv")
     tuple val(meta), path("${meta.id}.permutation_evaluation_detailed.tsv")
     tuple val(meta), path("${meta.id}.permutation_multiqc_summary.tsv")     , emit: multiqc_summary
+    tuple val(meta), path("${meta.id}.permutation_multiqc_jaccard.txt")     , emit: multiqc_jaccard
     path "versions.yml"                                                     , emit: versions
 
     when:

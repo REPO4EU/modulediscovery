@@ -282,7 +282,9 @@ workflow MODULEDISCOVERY {
         if(!params.skip_seed_permutation){
             GT_SEEDPERMUTATION(ch_modules, ch_seeds, ch_network_gt)
             ch_versions = ch_versions.mix(GT_SEEDPERMUTATION.out.versions)
-            ch_multiqc_files = ch_multiqc_files.mix(GT_SEEDPERMUTATION.out.multiqc_files)
+            ch_multiqc_files = ch_multiqc_files
+                .mix(GT_SEEDPERMUTATION.out.multiqc_summary)
+                .mix(GT_SEEDPERMUTATION.out.multiqc_jaccard)
         }
 
         // Network permutation based evaluation

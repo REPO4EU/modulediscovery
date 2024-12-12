@@ -102,12 +102,22 @@ workflow GT_SEEDPERMUTATION {
         ch_evaluation.network
     )
     ch_versions = ch_versions.mix(SEEDPERMUTATIONEVALUATION.out.versions)
-    ch_multiqc_files =  SEEDPERMUTATIONEVALUATION.out.multiqc_summary
+    ch_multiqc_summary =  SEEDPERMUTATIONEVALUATION.out.multiqc_summary
         .map{ meta, path -> path }
         .collectFile(name: 'seed_permutation_mqc.tsv', keepHeader: true)
+    ch_multiqc_jaccard =
+        SEEDPERMUTATIONEVALUATION.out.multiqc_jaccard
+        .map{ meta, path -> path }
+        .collectFile(
+            item -> "  " + item.text, name: 'seed_permutation_jaccard_mqc.yaml',
+            sort: true,
+            seed: new File("$projectDir/assets/seed_permutation_jaccard_header.yaml").text
+        )
+
 
 
     emit:
-    versions = ch_versions              // channel: [ versions.yml ]        emit collected versions
-    multiqc_files = ch_multiqc_files    // channel: [ multiqc_summary ]     emit collected multiqc files
+    versions = ch_versions                  // channel: [ versions.yml ]        emit collected versions
+    multiqc_summary = ch_multiqc_summary    // channel: [ multiqc_summary ]     emit collected multiqc files
+    multiqc_jaccard = ch_multiqc_jaccard    // channel: [ multiqc_jaccard ]     emit collected multiqc files
 }

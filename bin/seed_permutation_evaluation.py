@@ -447,6 +447,10 @@ def main(argv=None):
             f"{args.prefix}\t{avg_score_Jaccard}\t{avg_scores}\t{avg_scores_normalized}\n"
         )
 
+    # write multiqc jaccard indices
+    with open(f"{args.prefix}.permutation_multiqc_jaccard.txt", "w") as f:
+        f.write(f"{args.prefix}: {scores_Jaccard}\n")
+
 
 if __name__ == "__main__":
     sys.exit(main())

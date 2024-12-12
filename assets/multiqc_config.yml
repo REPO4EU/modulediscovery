@@ -26,6 +26,7 @@ custom_content:
     - jaccard_similarity
     - shared_nodes
     - digest
+    - seed_permutation_jaccard
 
 table_columns_visible:
   topology:
