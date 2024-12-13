@@ -132,7 +132,15 @@ custom_data:
     plot_type: "table"
     pconfig:
       title: "Network"
-      format: "{:.0f}"
+    headers:
+      Nodes:
+        title: "Nodes"
+        description: "Number of nodes in the network"
+        format: "{:.0f}"
+      Edges:
+        title: "Edges"
+        description: "Number of edges in the network"
+        format: "{:.0f}"
   digest:
     section_name: "DIGEST"
     description: "Empirical -log10 p-values for functional coherence calculated with
@@ -140,10 +148,32 @@ custom_data:
     plot_type: "table"
     pconfig:
       title: "DIGEST p-values"
-      min: 0
-      max: 3
       scale: "YlGn"
-      format: "{:,.3f}"
+    headers:
+      GO.BP:
+        title: "GO.BP"
+        description: "GO Biological Process"
+        format: "{:.3f}"
+        min: 0
+        max: 3
+      GO.CC:
+        title: "GO.CC"
+        description: "GO Cellular Component"
+        format: "{:.3f}"
+        min: 0
+        max: 3
+      GO.MF:
+        title: "GO.MF"
+        description: "GO Molecular Function"
+        format: "{:.3f}"
+        min: 0
+        max: 3
+      KEGG:
+        title: "KEGG"
+        description: "KEGG pathways"
+        format: "{:.3f}"
+        min: 0
+        max: 3
   jaccard_similarity:
     parent_id: overlap
     parent_name: "Overlap"

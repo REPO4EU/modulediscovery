@@ -1,5 +1,5 @@
 id: "network_permutation_jaccard"
-section_name: "Network permutation robustness"
+section_name: "Robustness (network permutation)"
 description: "Jaccard index distributions between the original and permuted modules."
 plot_type: "boxplot"
 pconfig:
