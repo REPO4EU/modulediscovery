@@ -420,7 +420,7 @@ def main(argv=None):
         l_results_permuted[3],
     ]
 
-    file_name_full = f"{args.prefix}.permutation_evaluation_detailed.tsv"
+    file_name_full = f"{args.prefix}.seed_permutation_evaluation_detailed.tsv"
     write_output_tsv_file(np.transpose(data_full), data_headers, file_name_full)
 
     # create a table with the summarized results of the permutations
@@ -435,11 +435,11 @@ def main(argv=None):
         [l_mu[3], l_std[3], l_zscore[3]],
     ]
 
-    file_name_summary = f"{args.prefix}.permutation_evaluation_summary.tsv"
+    file_name_summary = f"{args.prefix}.seed_permutation_evaluation_summary.tsv"
     write_output_tsv_file(np.transpose(data_summary), data_headers, file_name_summary)
 
     # write multiqc summary
-    with open(f"{args.prefix}.permutation_multiqc_summary.tsv", "w") as f:
+    with open(f"{args.prefix}.seed_permutation_multiqc_summary.tsv", "w") as f:
         f.write(
             "id\tavg_jaccard_index\trediscovery_rate\tnormalized_rediscovery_rate\n"
         )
@@ -448,7 +448,7 @@ def main(argv=None):
         )
 
     # write multiqc jaccard indices
-    with open(f"{args.prefix}.permutation_multiqc_jaccard.txt", "w") as f:
+    with open(f"{args.prefix}.seed_permutation_multiqc_jaccard.txt", "w") as f:
         f.write(f"{args.prefix}: {scores_Jaccard}\n")
 
 

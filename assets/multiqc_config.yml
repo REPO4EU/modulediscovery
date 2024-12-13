@@ -27,6 +27,7 @@ custom_content:
     - shared_nodes
     - digest
     - seed_permutation_jaccard
+    - network_permutation_jaccard
 
 table_columns_visible:
   topology:
@@ -80,7 +81,7 @@ custom_data:
     plot_type: "generalstats"
     pconfig:
       - avg_jaccard_index:
-          title: "Robustness"
+          title: "Robustness (seeds permutation)"
           description: "Average Jaccard index between the original and permuted modules."
           format: "{:.2f}"
           scale: "RdYlGn"
@@ -97,6 +98,15 @@ custom_data:
           format: "{:.4f}"
           scale: "RdYlGn"
           placement: 2002
+  network_permutation:
+    plot_type: "generalstats"
+    pconfig:
+      - avg_jaccard_index:
+          title: "Robustness (network permutation)"
+          description: "Average Jaccard index between the original and permuted modules."
+          format: "{:.2f}"
+          scale: "RdYlGn-rev"
+          placement: 3000
   input_seeds:
     parent_id: input
     parent_name: "Input"

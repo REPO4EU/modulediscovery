@@ -291,6 +291,9 @@ workflow MODULEDISCOVERY {
         if(!params.skip_network_permutation){
             GT_NETWORKPERMUTATION(ch_modules, ch_seeds, ch_network_gt, ch_permuted_networks)
             ch_versions = ch_versions.mix(GT_NETWORKPERMUTATION.out.versions)
+            ch_multiqc_files = ch_multiqc_files
+                .mix(GT_NETWORKPERMUTATION.out.multiqc_summary)
+                .mix(GT_NETWORKPERMUTATION.out.multiqc_jaccard)
         }
 
     }
