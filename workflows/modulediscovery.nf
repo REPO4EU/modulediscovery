@@ -279,7 +279,7 @@ workflow MODULEDISCOVERY {
         }
 
         // Seed permutation based evaluation
-        if(!params.skip_seed_permutation){
+        if(params.run_seed_permutation){
             GT_SEEDPERMUTATION(ch_modules, ch_seeds, ch_network_gt)
             ch_versions = ch_versions.mix(GT_SEEDPERMUTATION.out.versions)
             ch_multiqc_files = ch_multiqc_files
@@ -288,7 +288,7 @@ workflow MODULEDISCOVERY {
         }
 
         // Network permutation based evaluation
-        if(!params.skip_network_permutation){
+        if(params.run_network_permutation){
             GT_NETWORKPERMUTATION(ch_modules, ch_seeds, ch_network_gt, ch_permuted_networks)
             ch_versions = ch_versions.mix(GT_NETWORKPERMUTATION.out.versions)
             ch_multiqc_files = ch_multiqc_files

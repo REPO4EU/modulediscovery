@@ -204,15 +204,15 @@
                     "description": "Flag for skipping DIGEST",
                     "fa_icon": "fas fa-forward"
                 },
-                "skip_seed_permutation": {
+                "run_seed_permutation": {
                     "type": "boolean",
-                    "fa_icon": "fas fa-forward",
-                    "description": "Flag for skipping the seed permutation-based evaluation"
+                    "fa_icon": "fas fa-caret-right",
+                    "description": "Flag for running the seed permutation-based evaluation"
                 },
-                "skip_network_permutation": {
+                "run_network_permutation": {
                     "type": "boolean",
-                    "fa_icon": "fas fa-forward",
-                    "description": "Flag for skipping the network permutation-base evaluation"
+                    "fa_icon": "fas fa-caret-right",
+                    "description": "Flag for running the network permutation-base evaluation"
                 },
                 "n_network_permutations": {
                     "type": "integer",
@@ -236,7 +236,7 @@
             "properties": {
                 "run_proximity": {
                     "type": "boolean",
-                    "fa_icon": "fas fa-forward",
+                    "fa_icon": "fas fa-caret-right",
                     "description": "Flag for running proximity"
                 },
                 "shortest_paths": {
