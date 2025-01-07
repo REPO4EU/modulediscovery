@@ -65,6 +65,20 @@ def save_rwr(g, stem):
             )  # raw edge values are hashed vertex names
 
 
+def save_sca(g, stem):
+    with open(f"{stem}.sca.tsv", w) as file:
+        writer = csv.writer(file, delimiter="/t")
+        for e in g.iter_edges():
+            writer.writerow(
+                [
+                    g.vp["name"][e[0]],
+                    g.vp["name"][e[0]],
+                    g.vp["name"][e[1]],
+                    g.vp["name"][e[1]],
+                ]
+            )
+
+
 def save(g, stem, format):
     """
     Saves a graph_tools Graph object in a specified format
