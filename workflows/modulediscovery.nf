@@ -12,6 +12,7 @@ include { GRAPHTOOLPARSER          } from '../modules/local/graphtoolparser/main
 include { NETWORKANNOTATION        } from '../modules/local/networkannotation/main'
 include { SAVEMODULES              } from '../modules/local/savemodules/main'
 include { VISUALIZEMODULES         } from '../modules/local/visualizemodules/main'
+include { VISUALIZEMODULESDRUGS    } from '../modules/local/visualizemodulesdrugs/main'
 include { GT2TSV as GT2TSV_Modules } from '../modules/local/gt2tsv/main'
 include { GT2TSV as GT2TSV_Network } from '../modules/local/gt2tsv/main'
 include { ADDHEADER                } from '../modules/local/addheader/main'
@@ -328,6 +329,11 @@ workflow MODULEDISCOVERY {
         includeNonApprovedDrugs = Channel.value(params.includeNonApprovedDrugs).map{it ? 1 : 0}
         DRUGPREDICTIONS(ch_drugstone_input.module, id_space, ch_drugstone_input.algorithm, includeIndirectDrugs, includeNonApprovedDrugs, params.result_size)
         ch_versions = ch_versions.mix(DRUGPREDICTIONS.out.versions)
+
+        if(!params.skip_visualization){
+            VISUALIZEMODULESDRUGS(ch_modules, DRUGPREDICTIONS.out.drug_predictions, params.visualization_max_nodes)
+            ch_versions = ch_versions.mix(VISUALIZEMODULESDRUGS.out.versions)
+        }
     }
 
     // Drug prioritization - Proximity
