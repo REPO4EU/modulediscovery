@@ -82,32 +82,7 @@ def main(argv=None):
 
     gene2symbol = {}
     if args.drugs:
-        # load the drug file
-        drugs = pd.read_csv(args.drugs, sep="\t")
-        gene2symbol = {}
-        gene2drugs = defaultdict(list)
-        drug_set = set(drugs["drug_name"].unique())
-
-        for _, row in drugs.iterrows():
-            if row["name"] not in gene2symbol:
-                gene2symbol[row["name"]] = row["symbol"]
-            if row["name"] not in gene2drugs:
-                gene2drugs[row["name"]] = []
-            if pd.notna(row["drug_name"]):
-                gene2drugs[row["name"]].append(row["drug_name"])
-        for name, drug_list in gene2drugs.items():
-            if name in node_mapping:
-                protein_vertex = node_mapping[name]
-            else:
-                logger.warn(f"Protein {name} not found in the module")
-                continue
-            for drug in drug_list:
-                if not drug in node_mapping:
-                    drug_vertex = g.add_vertex()
-                    g.vp["name"][drug_vertex] = drug
-                    node_mapping[drug] = drug_vertex
-                drug_vertex = node_mapping[drug]
-                g.add_edge(protein_vertex, drug_vertex)
+        gene2symbol, drug_set = add_drugs(args, g, node_mapping)
 
     # color the seed genes red
     g.vp["color"] = g.new_vertex_property("string")
@@ -188,6 +163,35 @@ def main(argv=None):
     nt.show_buttons(filter_=["physics", "interaction", "manipulation"])
     # save as html
     nt.show(f"{args.prefix}.html")
+
+
+def add_drugs(args, g, node_mapping):
+    drugs = pd.read_csv(args.drugs, sep="\t")
+    gene2symbol = {}
+    gene2drugs = defaultdict(list)
+    drug_set = set(drugs["drug_name"].unique())
+
+    for _, row in drugs.iterrows():
+        if row["name"] not in gene2symbol:
+            gene2symbol[row["name"]] = row["symbol"]
+        if row["name"] not in gene2drugs:
+            gene2drugs[row["name"]] = []
+        if pd.notna(row["drug_name"]):
+            gene2drugs[row["name"]].append(row["drug_name"])
+    for name, drug_list in gene2drugs.items():
+        if name in node_mapping:
+            protein_vertex = node_mapping[name]
+        else:
+            logger.warn(f"Protein {name} not found in the module")
+            continue
+        for drug in drug_list:
+            if not drug in node_mapping:
+                drug_vertex = g.add_vertex()
+                g.vp["name"][drug_vertex] = drug
+                node_mapping[drug] = drug_vertex
+            drug_vertex = node_mapping[drug]
+            g.add_edge(protein_vertex, drug_vertex)
+    return gene2symbol, drug_set
 
 
 if __name__ == "__main__":
