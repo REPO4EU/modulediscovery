@@ -1,18 +1,17 @@
 process VISUALIZEMODULESDRUGS {
-    tag "$meta.id"
+    tag "$meta_drugs.id"
     label 'process_single'
 
     input:
-    tuple val(meta), path(module)
-    tuple val(meta_drugs), val(algorithm), path(drug_predictions)
+    tuple val(meta), path(module), val(meta_drugs), val(algorithm), path(drug_predictions)
     val max_nodes
 
     output:
-    tuple val(meta_drugs), val(algorithm), path("${meta_drugs.id}.${algorithm}.pdf")      , emit: pdf  , optional: true
-    tuple val(meta_drugs), val(algorithm), path("${meta_drugs.id}.${algorithm}.png")      , emit: png  , optional: true
-    tuple val(meta_drugs), val(algorithm), path("${meta_drugs.id}.${algorithm}.svg")      , emit: svg  , optional: true
-    tuple val(meta_drugs), val(algorithm), path("${meta_drugs.id}.${algorithm}.html")     , emit: html , optional: true
-    path "versions.yml"                          , emit: versions
+    tuple val(meta_drugs), val(algorithm), path("${meta_drugs.id}.${algorithm}.pdf")  , emit: pdf  , optional: true
+    tuple val(meta_drugs), val(algorithm), path("${meta_drugs.id}.${algorithm}.png")  , emit: png  , optional: true
+    tuple val(meta_drugs), val(algorithm), path("${meta_drugs.id}.${algorithm}.svg")  , emit: svg  , optional: true
+    tuple val(meta_drugs), val(algorithm), path("${meta_drugs.id}.${algorithm}.html") , emit: html , optional: true
+    path "versions.yml" , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

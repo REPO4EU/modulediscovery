@@ -331,7 +331,23 @@ workflow MODULEDISCOVERY {
         ch_versions = ch_versions.mix(DRUGPREDICTIONS.out.versions)
 
         if(!params.skip_visualization){
-            VISUALIZEMODULESDRUGS(ch_modules, DRUGPREDICTIONS.out.drug_predictions, params.visualization_max_nodes)
+            ch_modules_keyed = ch_modules.map { meta, module ->
+                tuple(meta.id, [meta, module])
+            }
+            ch_drug_predictions_keyed = DRUGPREDICTIONS.out.drug_predictions.map { meta_drugs, algorithm, drug_predictions ->
+                tuple(meta_drugs.id, [meta_drugs, algorithm, drug_predictions])
+            }
+            ch_joined = ch_modules_keyed.join(ch_drug_predictions_keyed)
+            ch_visualize_input = ch_joined.map { key, moduleData, drugData ->
+                def meta = moduleData[0]
+                def module = moduleData[1]
+                def meta_drugs = drugData[0]
+                def algorithm = drugData[1]
+                def drug_predictions = drugData[2]
+                return [ meta, module, meta_drugs, algorithm, drug_predictions ]
+            }
+
+            VISUALIZEMODULESDRUGS(ch_visualize_input, params.visualization_max_nodes)
             ch_versions = ch_versions.mix(VISUALIZEMODULESDRUGS.out.versions)
         }
     }
