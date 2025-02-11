@@ -277,6 +277,11 @@
                     "description": "Drugst.One parameter for algorithms to be used. Comma separated list. Options: 'trustrank', 'degree' and 'closeness'.",
                     "default": "trustrank",
                     "fa_icon": "fas fa-list-ol"
+                },
+                "skip_visualization_drugs_drugstone": {
+                    "type": "boolean",
+                    "description": "Flag to skip the drug visualization for the drugstone drug predictions.",
+                    "fa_icon": "fas fa-forward"
                 }
             }
         },

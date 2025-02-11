@@ -330,23 +330,24 @@ workflow MODULEDISCOVERY {
         DRUGPREDICTIONS(ch_drugstone_input.module, id_space, ch_drugstone_input.algorithm, includeIndirectDrugs, includeNonApprovedDrugs, params.result_size)
         ch_versions = ch_versions.mix(DRUGPREDICTIONS.out.versions)
 
-        if(!params.skip_visualization){
+        if(!params.skip_visualization_drugs_drugstone){
             ch_modules_keyed = ch_modules.map { meta, module ->
-                tuple(meta.id, [meta, module])
+                [meta.id, meta, module]
             }
             ch_drug_predictions_keyed = DRUGPREDICTIONS.out.drug_predictions.map { meta_drugs, algorithm, drug_predictions ->
-                tuple(meta_drugs.id, [meta_drugs, algorithm, drug_predictions])
-            }
-            ch_joined = ch_modules_keyed.join(ch_drug_predictions_keyed)
-            ch_visualize_input = ch_joined.map { key, moduleData, drugData ->
-                def meta = moduleData[0]
-                def module = moduleData[1]
-                def meta_drugs = drugData[0]
-                def algorithm = drugData[1]
-                def drug_predictions = drugData[2]
-                return [ meta, module, meta_drugs, algorithm, drug_predictions ]
+                tuple(meta_drugs.id, algorithm, [meta_drugs, drug_predictions])
+                [meta_drugs.id, algorithm, meta_drugs, drug_predictions]
             }
 
+            ch_joined = ch_drug_predictions_keyed.combine(ch_modules_keyed, by: 0)
+            ch_visualize_input = ch_joined.map { data ->
+                def meta = data[4]
+                def module = data[5]
+                def meta_drugs = data[2]
+                def algorithm = data[1]
+                def drug_predictions = data[3]
+                return [ meta, module, meta_drugs, algorithm, drug_predictions ]
+            }
             VISUALIZEMODULESDRUGS(ch_visualize_input, params.visualization_max_nodes)
             ch_versions = ch_versions.mix(VISUALIZEMODULESDRUGS.out.versions)
         }
