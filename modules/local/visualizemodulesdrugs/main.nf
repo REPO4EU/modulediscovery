@@ -4,14 +4,14 @@ process VISUALIZEMODULESDRUGS {
 
     input:
     tuple val(meta), path(module)
-    tuple val(meta_drugs), path(drug_predictions)
+    tuple val(meta_drugs), val(algorithm), path(drug_predictions)
     val max_nodes
 
     output:
-    tuple val(meta_drugs), path("${meta_drugs}.pdf")      , emit: pdf  , optional: true
-    tuple val(meta_drugs), path("${meta_drugs}.png")      , emit: png  , optional: true
-    tuple val(meta_drugs), path("${meta_drugs}.svg")      , emit: svg  , optional: true
-    tuple val(meta_drugs), path("${meta_drugs}.html")     , emit: html , optional: true
+    tuple val(meta_drugs), val(algorithm), path("${meta_drugs}.${algorithm}.pdf")      , emit: pdf  , optional: true
+    tuple val(meta_drugs), val(algorithm), path("${meta_drugs}.${algorithm}.png")      , emit: png  , optional: true
+    tuple val(meta_drugs), val(algorithm), path("${meta_drugs}.${algorithm}.svg")      , emit: svg  , optional: true
+    tuple val(meta_drugs), val(algorithm), path("${meta_drugs}.${algorithm}.html")     , emit: html , optional: true
     path "versions.yml"                          , emit: versions
 
     when:
@@ -19,7 +19,7 @@ process VISUALIZEMODULESDRUGS {
 
     script:
     """
-    visualize_modules.py -m "${module}" -p "${meta_drugs}" -n ${max_nodes} -d ${drug_predictions} -l DEBUG
+    visualize_modules.py -m "${module}" -p "${meta_drugs}.${algorithm}" -n ${max_nodes} -d ${drug_predictions} -l DEBUG
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
