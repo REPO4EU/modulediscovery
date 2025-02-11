@@ -8,10 +8,10 @@ process VISUALIZEMODULESDRUGS {
     val max_nodes
 
     output:
-    tuple val(meta_drugs), path("${meta_drugs.id}.pdf")      , emit: pdf  , optional: true
-    tuple val(meta_drugs), path("${meta_drugs.id}.png")      , emit: png  , optional: true
-    tuple val(meta_drugs), path("${meta_drugs.id}.svg")      , emit: svg  , optional: true
-    tuple val(meta_drugs), path("${meta_drugs.id}.html")     , emit: html , optional: true
+    tuple val(meta_drugs), path("${meta_drugs.id}.${meta_drugs.algorithm}.pdf")      , emit: pdf  , optional: true
+    tuple val(meta_drugs), path("${meta_drugs.id}.${meta_drugs.algorithm}.png")      , emit: png  , optional: true
+    tuple val(meta_drugs), path("${meta_drugs.id}.${meta_drugs.algorithm}.svg")      , emit: svg  , optional: true
+    tuple val(meta_drugs), path("${meta_drugs.id}.${meta_drugs.algorithm}.html")     , emit: html , optional: true
     path "versions.yml"                          , emit: versions
 
     when:

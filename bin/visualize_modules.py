@@ -108,6 +108,7 @@ def main(argv=None):
                     node_mapping[drug] = drug_vertex
                 drug_vertex = node_mapping[drug]
                 g.add_edge(protein_vertex, drug_vertex)
+
     # color the seed genes red
     g.vp["color"] = g.new_vertex_property("string")
     g.vp["label_node"] = g.new_vertex_property("string")
