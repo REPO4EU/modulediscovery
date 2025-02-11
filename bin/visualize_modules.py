@@ -164,7 +164,7 @@ def main(argv=None):
         g.vp["y"][v] = pos[v][1] * 30
 
     # convert to networkx and save as html with pyvis
-    nx_graph = pyintergraph.gt2nx(g, labelname="name")
+    nx_graph = pyintergraph.gt2nx(g, labelname="label_node")
 
     nt = Network()
     nt.from_nx(nx_graph)
@@ -173,11 +173,11 @@ def main(argv=None):
 
     # add titles
     for node in nt.nodes:
-        row = vp_df.loc[node["label"]]
+        row = vp_df.loc[node["label_node"]]
         node[
             "title"
         ] = f"""
-            {node['label']}\n
+            {node['label_node']}\n
             {'\n'.join(f'{col}: {val}' for col, val in row.items())}
         """
 
