@@ -173,11 +173,11 @@ def main(argv=None):
 
     # add titles
     for node in nt.nodes:
-        row = vp_df.loc[node["label_node"]]
+        row = vp_df.loc[node["name"]]
         node[
             "title"
         ] = f"""
-            {node['label_node']}\n
+            {node['name']}\n
             {'\n'.join(f'{col}: {val}' for col, val in row.items())}
         """
 
