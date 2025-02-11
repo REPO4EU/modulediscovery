@@ -11,8 +11,8 @@ process DRUGPREDICTIONS {
     val result_size
 
     output:
-    tuple val(meta + [algorithm: algorithm]), path("${meta.id}.${algorithm}.drug_predictions.tsv") , emit: drug_predictions
-    tuple val(meta + [algorithm: algorithm]), path("${meta.id}.${algorithm}.csv"), emit: drugstone_download
+    tuple { meta + [algorithm: algorithm] }, path("${meta.id}.${algorithm}.drug_predictions.tsv") , emit: drug_predictions
+    tuple { meta + [algorithm: algorithm] }, path("${meta.id}.${algorithm}.csv"), emit: drugstone_download
     path "versions.yml"                          , emit: versions
 
     when:
