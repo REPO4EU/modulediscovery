@@ -338,13 +338,19 @@ workflow MODULEDISCOVERY {
                 tuple(meta_drugs.id, [meta_drugs, algorithm, drug_predictions])
             }
             ch_joined = ch_modules_keyed.join(ch_drug_predictions_keyed)
-            ch_visualize_input = ch_joined.map { key, moduleData, drugData ->
-                def meta = moduleData[0]
-                def module = moduleData[1]
-                def meta_drugs = drugData[0]
-                def algorithm = drugData[1]
-                def drug_predictions = drugData[2]
-                return [ meta, module, meta_drugs, algorithm, drug_predictions ]
+            ch_visualize_input = ch_joined.flatMap { key, moduleData, drugData ->
+                def outputs = []
+                moduleData.each { md ->
+                    drugData.each { dd ->
+                        def meta    = md[0]
+                        def module  = md[1]
+                        def meta_drugs    = dd[0]
+                        def algorithm     = dd[1]
+                        def drug_predictions = dd[2]
+                        outputs << [ meta, module, meta_drugs, algorithm, drug_predictions ]
+                    }
+                }
+                return outputs
             }
 
             VISUALIZEMODULESDRUGS(ch_visualize_input, params.visualization_max_nodes)
