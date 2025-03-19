@@ -116,6 +116,19 @@ workflow PIPELINE_INITIALISATION {
                 [seeds, network, shortest_paths, permuted_networks]
             }
 
+        // prepare network channel, if parameter is not set
+        if (!network_param_set){
+            ch_network = ch_input
+                .map{ it -> [it[1], it[2], it[3]]}
+                .map{ network, sp, permuted_networks ->
+                    [ mapPreparedNetwork(network, params.id_space), sp, permuted_networks ]
+                }
+                .map{ network, sp, permuted_networks ->
+                    [ [ id: network.baseName, network_id: network.baseName ], network, sp, permuted_networks ]
+                }
+                .unique()
+        }
+
         if (seed_param_set && network_param_set) {
 
             error("You need to specify either a sample sheet (--input) OR the seeds (--seeds) and network (--network) files")
@@ -124,31 +137,17 @@ workflow PIPELINE_INITIALISATION {
 
             log.info("Creating network and seeds channels based on tuples in the sample sheet")
 
-            ch_network = ch_input
-                .map{ it -> [it[1], it[2], it[3]]}
-                .map{ network, sp, permuted_networks ->
-                    network: [ [ id: network.baseName, network_id: network.baseName ], network, sp, permuted_networks ]
-                }
-                .unique()
-
             ch_seeds = ch_input
                 .map{ it ->
                     seeds = it[0]
                     network = it[1]
-                    network_id = network.baseName
+                    network_id = mapPreparedNetwork(network, params.id_space).baseName
                     [ [ id: seeds.baseName + "." + network_id, seeds_id: seeds.baseName, network_id: network_id ] , seeds ]
                 }
 
         } else if (seed_param_set && !network_param_set) {
 
             log.info("Creating network channel based on the sample sheet and seeds channel based on the seeds parameter")
-
-            ch_network = ch_input
-                .map{ it -> [it[1], it[2], it[3]]}
-                .map{ network, sp, permuted_networks ->
-                    network: [ [ id: network.baseName, network_id: network.baseName ], network, sp, permuted_networks ]
-                }
-                .unique()
 
             ch_seeds = Channel
                 .fromPath(params.seeds.split(',').flatten(), checkIfExists: true)

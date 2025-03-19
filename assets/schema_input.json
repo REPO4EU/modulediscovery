@@ -15,11 +15,7 @@
                 "errorMessage": "Seed file path cannot contain spaces"
             },
             "network": {
-                "type": "string",
-                "format": "file-path",
-                "exists": true,
-                "pattern": "^\\S+\\.(csv|gt|graphml|xml|dot|gml)$",
-                "errorMessage": "The network file cannot contain spaces and must end with .[csv|gt|graphml|xml|dot|gml]"
+                "type": "string"
             },
             "shortest_paths": {
                 "type": "string",
