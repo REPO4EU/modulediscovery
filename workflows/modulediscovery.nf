@@ -125,17 +125,11 @@ workflow MODULEDISCOVERY {
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
 
-    // Brach channel, so, GRAPHTOOLPARSER runs only for supported network formats, which are not already .gt files
-    ch_network_type = ch_network.branch {
-        gt: it[1].extension == "gt"
-        parse: true
-    }
-
-    // Run network parser for non .gt networks, supported by graph-tool
-    GRAPHTOOLPARSER(ch_network_type.parse, 'gt')
+    // Run network parser for  networks, supported by graph-tool
+    GRAPHTOOLPARSER(ch_network, 'gt')
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
     ch_multiqc_files = ch_multiqc_files.mix(GRAPHTOOLPARSER.out.multiqc)
-    ch_network_gt = GRAPHTOOLPARSER.out.network.mix(ch_network_type.gt)
+    ch_network_gt = GRAPHTOOLPARSER.out.network
 
 
     // Check input

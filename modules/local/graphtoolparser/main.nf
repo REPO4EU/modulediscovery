@@ -3,7 +3,7 @@ process GRAPHTOOLPARSER {
     label 'process_single'
 
     input:
-    tuple val(meta), path(network)
+    tuple val(meta), (path(network), stageAs: 'input/*')
     val format
 
     output:
