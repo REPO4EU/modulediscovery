@@ -183,6 +183,7 @@ custom_data:
     pconfig:
       title: "Module Jaccard similarity"
       zlab: "Jaccard similarity"
+      square: False
   shared_nodes:
     parent_id: overlap
     parent_name: "Overlap"
@@ -192,3 +193,4 @@ custom_data:
     pconfig:
       title: "Number of shared nodes"
       zlab: "Number of shared nodes"
+      square: False
