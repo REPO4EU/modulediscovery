@@ -1,6 +1,6 @@
 process SHORTEST_PATHS {
     tag "$meta.id"
-    label 'process_single'
+    label 'process_low'
 
     input:
     tuple val(meta), path (network)
