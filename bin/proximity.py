@@ -19,6 +19,8 @@ import numpy
 import configparser
 import networkx as nx
 import pandas as pd
+import graph_tool.all as gt
+import pyintergraph
 
 
 def run_proximity(
@@ -257,7 +259,8 @@ def parse_input_file(f, source_column, target_column, prefix):
 
 
 def parse_network(network_file, id_mapping_file=None):
-    network = nx.read_edgelist(network_file, delimiter=",")
+    g = gt.load_graph(network_file)
+    network = pyintergraph.gt2nx(g, labelname="name")
     component_nodes = max(nx.connected_components(network), key=len)
     network = nx.subgraph(network, component_nodes)
 

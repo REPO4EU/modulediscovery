@@ -36,6 +36,7 @@ workflow PIPELINE_INITIALISATION {
     network           //  string: Path(s) to network file(s)
     shortest_paths    //  string: Path to shortest paths file
     permuted_networks //  string: Path to folder(s) with permuted network files
+    id_space          //  string: ID space to use for prepared networks
 
     main:
 
@@ -76,6 +77,12 @@ workflow PIPELINE_INITIALISATION {
     network_param_set = (params.network != null)
     shortest_paths_param_set = (params.shortest_paths != null)
     permuted_networks_param_set = (params.permuted_networks != null)
+
+    if(network_param_set){
+        ch_network = Channel.fromList(params.network.split(',').flatten())
+            .map(network -> mapPreparedNetwork(network, params.id_space))
+            .map{ it -> [ [ id: it.baseName, network_id: it.baseName ], it ] }
+    }
 
     if(params.input){
 
@@ -137,7 +144,7 @@ workflow PIPELINE_INITIALISATION {
 
             ch_network = ch_input
                 .map{ it -> [it[1], it[2], it[3]]}
-                .map{ network, sp ->
+                .map{ network, sp, permuted_networks ->
                     network: [ [ id: network.baseName, network_id: network.baseName ], network, sp, permuted_networks ]
                 }
                 .unique()
@@ -191,9 +198,9 @@ workflow PIPELINE_INITIALISATION {
 
         log.info("Creating network and seeds channels based on the combination of all seed and network files provided")
 
-        ch_network = Channel
-            .fromPath(params.network.split(',').flatten(), checkIfExists: true)
-            .map{ it -> [ [ id: it.baseName, network_id: it.baseName ], it ] }
+        // ch_network = Channel
+        //     .fromPath(params.network.split(',').flatten(), checkIfExists: true)
+        //     .map{ it -> [ [ id: it.baseName, network_id: it.baseName ], it ] }
 
         ch_seeds = Channel
             .fromPath(params.seeds.split(',').flatten(), checkIfExists: true)
@@ -311,6 +318,37 @@ workflow PIPELINE_COMPLETION {
     FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+
+prepared_networks_url = "https://zenodo.org/records/15049754/files/"
+network_map = [
+    string_min900: "string.human_links_v12_0_min900",
+    string_min700: "string.human_links_v12_0_min700",
+    string_physical_min900: "string.human_physical_links_v12_0_min900",
+    string_physical_min700: "string.human_physical_links_v12_0_min700",
+    biogrid: "biogrid.4_4_242_homo_sapiens",
+    hippie_high_confidence: "hippie.v2_3_high_confidence",
+    hippie_medium_confidence:"hippie.v2_3_medium_confidence",
+    iid: "iid.human",
+    nedrex: "nedrex.reviewed_proteins_exp",
+    nedrex_high_confidence: "nedrex.reviewed_proteins_exp_high_confidence",
+]
+id_space_map = [
+    entrez: "Entrez",
+    ensembl: "Ensembl",
+    symbol: "Symbol",
+    uniprot: "UniProtKB-AC",
+]
+
+//
+// Check if the network is a prepared network or a file
+//
+def mapPreparedNetwork(network, id_space) {
+    if (network_map.containsKey(network)) {
+        return file("${prepared_networks_url}${network_map[network]}.${id_space_map[id_space]}.gt", checkIfExists: true)
+    } else {
+        return file(network, checkIfExists: true)
+    }
+}
 
 //
 // Validate channels from input samplesheet
