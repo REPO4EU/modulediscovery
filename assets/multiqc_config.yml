@@ -133,13 +133,33 @@ custom_data:
     pconfig:
       title: "Network"
     headers:
-      Nodes:
+      nodes:
         title: "Nodes"
         description: "Number of nodes in the network"
         format: "{:.0f}"
-      Edges:
+      edges:
         title: "Edges"
         description: "Number of edges in the network"
+        format: "{:.0f}"
+      diameter:
+        title: "Diameter"
+        description: "Pseudo diameter of the network"
+        format: "{:.0f}"
+      components:
+        title: "Components"
+        description: "Number of connected components"
+        format: "{:.0f}"
+      largest_component:
+        title: "Largest component"
+        description: "Number of nodes in the largest connected component"
+        format: "{:.0f}"
+      self_loops:
+        title: "Self loops"
+        description: "Number of edges that connect a node to itself"
+        format: "{:.0f}"
+      duplicate_edges:
+        title: "Duplicate edges"
+        description: "Number of duplicate edges, e.g. (A, B) and (B, A)"
         format: "{:.0f}"
   digest:
     section_name: "DIGEST"
