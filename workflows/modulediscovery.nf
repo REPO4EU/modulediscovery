@@ -147,6 +147,17 @@ workflow MODULEDISCOVERY {
         .collectFile(name: 'input_seeds_mqc.tsv', keepHeader: true)
     ch_multiqc_files = ch_multiqc_files.mix(ch_seeds_multiqc)
 
+    // Add seeds modules to module channel
+    // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module)]
+    ch_modules = INPUTCHECK.out.seeds_module
+        .map{meta, path ->
+            def dup = meta.clone()
+            dup.amim = "no_tool"
+            dup.id = meta.id + "." + dup.amim
+            dup.module_id = dup.id
+            [ dup, path ]
+        }
+
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -156,7 +167,7 @@ workflow MODULEDISCOVERY {
 
     // Network expansion tools
     NETWORKEXPANSION(ch_seeds, ch_network_gt)
-    ch_modules = NETWORKEXPANSION.out.modules // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module)]
+    ch_modules = ch_modules.mix(NETWORKEXPANSION.out.modules) // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module)]
     ch_versions = ch_versions.mix(NETWORKEXPANSION.out.versions)
 
 
@@ -207,11 +218,9 @@ workflow MODULEDISCOVERY {
 
         GT2TSV_Modules(ch_modules)
         GT2TSV_Network(ch_network_gt)
-        ADDHEADER(ch_seeds, "gene_id")
 
         // channel: [ val(meta), path(nodes) ]
         ch_nodes = GT2TSV_Modules.out
-        ch_nodes = ch_nodes.mix(ADDHEADER.out)
 
         // Module overlap
         ch_overlap_input = ch_nodes
@@ -274,7 +283,11 @@ workflow MODULEDISCOVERY {
 
         // Seed permutation based evaluation
         if(params.run_seed_permutation){
-            GT_SEEDPERMUTATION(ch_modules, ch_seeds, ch_network_gt)
+            GT_SEEDPERMUTATION(
+                ch_modules.filter{ meta, path -> meta.amim != "no_tool" }, // Filter out no_tool modules
+                ch_seeds,
+                ch_network_gt
+            )
             ch_versions = ch_versions.mix(GT_SEEDPERMUTATION.out.versions)
             ch_multiqc_files = ch_multiqc_files
                 .mix(GT_SEEDPERMUTATION.out.multiqc_summary)
@@ -283,7 +296,12 @@ workflow MODULEDISCOVERY {
 
         // Network permutation based evaluation
         if(params.run_network_permutation){
-            GT_NETWORKPERMUTATION(ch_modules, ch_seeds, ch_network_gt, ch_permuted_networks)
+            GT_NETWORKPERMUTATION(
+                ch_modules.filter{ meta, path -> meta.amim != "no_tool" }, // Filter out no_tool modules
+                ch_seeds,
+                ch_network_gt,
+                ch_permuted_networks
+            )
             ch_versions = ch_versions.mix(GT_NETWORKPERMUTATION.out.versions)
             ch_multiqc_files = ch_multiqc_files
                 .mix(GT_NETWORKPERMUTATION.out.multiqc_summary)

@@ -97,6 +97,15 @@ def main(argv=None):
         file.write("Seed file\tSeeds\tNot in network\n")
         file.write(f"{args.prefix}\t{len(seeds_keep)}\t{len(seeds_remove)}\n")
 
+    # Write seeds as module
+    seed_set = set(seeds_keep)
+    g.vp["is_seed"] = g.new_vertex_property("bool")
+    gt.map_property_values(g.vp.name, g.vp["is_seed"], lambda name: name in seed_set)
+    g.set_vertex_filter(g.vp["is_seed"])
+    g.purge_vertices()
+    g.clear_filters()
+    g.save(f"{args.prefix}.no_tool.gt")
+
 
 if __name__ == "__main__":
     sys.exit(main())

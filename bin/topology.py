@@ -44,7 +44,7 @@ def main(argv=None):
 
         num_seeds = len(seeds)
 
-        max_dist_to_seed = float("-inf")
+        max_dist_to_seed = 0
         for added_node in added_nodes:
             shortest_paths = gt.shortest_distance(g, source=added_node, target=seeds)
             min_path_length = min(shortest_paths)
