@@ -203,8 +203,13 @@ workflow MODULEDISCOVERY {
 
     // Annotation and BIOPAX conversion
     if(!params.skip_annotation){
-        GT_BIOPAX(ch_modules, id_space, validate_online)
-        ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
+        if( params.id_space != "symbol" & params.id_space != "ensembl" ){
+            GT_BIOPAX(ch_modules, id_space, validate_online)
+            ch_versions = ch_versions.mix(GT_BIOPAX.out.versions)
+        } else {
+            log.warn("Skipping annotation and BioPAX conversion (currently only uniprot or entrez IDs)")
+        }
+
     }
 
 

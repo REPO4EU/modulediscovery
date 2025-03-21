@@ -35,6 +35,13 @@
                     "fa_icon": "fas fa-file-csv",
                     "help_text": "Multiple files have to be \",\" separated."
                 },
+                "id_space": {
+                    "type": "string",
+                    "enum": ["entrez", "symbol", "ensembl", "uniprot"],
+                    "default": "entrez",
+                    "description": "Type of gene/protein ids",
+                    "fa_icon": "fas fa-fingerprint"
+                },
                 "outdir": {
                     "type": "string",
                     "format": "directory-path",
@@ -159,13 +166,6 @@
                     "type": "boolean",
                     "description": "Flag for skipping the annotation part of the process.",
                     "fa_icon": "fas fa-forward"
-                },
-                "id_space": {
-                    "type": "string",
-                    "enum": ["entrez", "uniprot"],
-                    "default": "entrez",
-                    "description": "Either give graph with enter ids or uniprot ids.",
-                    "fa_icon": "fas fa-fingerprint"
                 },
                 "validate_online": {
                     "type": "boolean",
