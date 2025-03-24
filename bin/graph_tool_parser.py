@@ -94,6 +94,8 @@ def save(g, stem, format):
         save_robust(g=g, stem=stem)
     elif format == "rwr":
         save_rwr(g=g, stem=stem)
+    elif format == "sca":
+        save_sca(g=g, stem=stem)
     else:
         logger.critical(f"Unknown output format: {format}")
         sys.exit(1)
@@ -137,7 +139,7 @@ def parse_args(argv=None):
         "-f",
         "--format",
         help="Output format (default gt). If format it gt, a summary file for multiqc will be generated as well.",
-        choices=("gt", "diamond", "domino", "robust", "rwr"),
+        choices=("gt", "diamond", "domino", "robust", "rwr", "sca"),
         default="gt",
     )
     parser.add_argument(
