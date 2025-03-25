@@ -98,18 +98,21 @@ def main(argv=None):
     g.vp["label_node"] = g.new_vertex_property("string")
     g.vp["shape"] = g.new_vertex_property("string")
     g.vp["pen_width"] = g.new_vertex_property("double")
+    g.vp["text_color"] = g.new_vertex_property("string")
     for v in g.vertices():
         if g.vp["name"][v] in gene2symbol:
             g.vp["label_node"][v] = gene2symbol[g.vp["name"][v]]
         else:
             g.vp["label_node"][v] = g.vp["name"][v]
         if args.drugs and g.vp["name"][v] in drug_set:
-            g.vp["color"][v] = "green"  # green for drugs
+            g.vp["color"][v] = "#90EE90"  # green for drugs
             g.vp["shape"][v] = "triangle"
             g.vp["pen_width"][v] = 2
+            g.vp["text_color"][v] = "black"
         else:
             g.vp["shape"][v] = "circle"
             g.vp["pen_width"][v] = 0.5
+            g.vp["text_color"][v] = "white"
             if g.vertex_properties["is_seed"][v]:
                 g.vp["color"][v] = "red"  # red for seed genes
             else:
@@ -127,6 +130,7 @@ def main(argv=None):
             g,
             pos,
             vertex_fill_color=g.vp["color"],
+            vertex_text_color=g.vp["text_color"],
             output_size=size,
             vertex_text=g.vp["label_node"],
             vorder=g.vp["is_seed"],
