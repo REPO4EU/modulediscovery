@@ -97,7 +97,6 @@ def main(argv=None):
     g.vp["color"] = g.new_vertex_property("string")
     g.vp["label_node"] = g.new_vertex_property("string")
     g.vp["shape"] = g.new_vertex_property("string")
-    g.vp["pen_width"] = g.new_vertex_property("double")
     g.vp["text_color"] = g.new_vertex_property("string")
     for v in g.vertices():
         if g.vp["name"][v] in gene2symbol:
@@ -107,11 +106,9 @@ def main(argv=None):
         if args.drugs and g.vp["name"][v] in drug_set:
             g.vp["color"][v] = "#90EE90"  # green for drugs
             g.vp["shape"][v] = "triangle"
-            g.vp["pen_width"][v] = 2
             g.vp["text_color"][v] = "black"
         else:
             g.vp["shape"][v] = "circle"
-            g.vp["pen_width"][v] = 0.5
             g.vp["text_color"][v] = "white"
             if g.vertex_properties["is_seed"][v]:
                 g.vp["color"][v] = "red"  # red for seed genes
@@ -136,10 +133,11 @@ def main(argv=None):
             vorder=g.vp["is_seed"],
             vertex_shape=g.vp["shape"],
             vertex_font_size=font_size,
-            edge_pen_width=1,
+            edge_pen_width=0.5,
             output=f"{args.prefix}.{format}",
             vertex_size=1,
-            vertex_pen_width=g.vp["pen_width"],
+            vertex_pen_width=0.5,
+            edge_color="#A9A9A9",
         )
 
     # add x and y properties for consistent html layout
