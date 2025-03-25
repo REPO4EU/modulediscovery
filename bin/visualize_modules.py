@@ -20,6 +20,15 @@ from pyvis.network import Network
 logger = logging.getLogger()
 
 
+def compute_font_size(n, fmt):
+    if fmt == "png":
+        C = 36
+    else:
+        C = 18
+    font_size = round(C * (25 / n) ** 0.8)
+    return max(1, font_size)
+
+
 def parse_args(argv=None):
     """Define and immediately parse command line arguments."""
     parser = argparse.ArgumentParser(
@@ -87,6 +96,8 @@ def main(argv=None):
     # color the seed genes red
     g.vp["color"] = g.new_vertex_property("string")
     g.vp["label_node"] = g.new_vertex_property("string")
+    g.vp["shape"] = g.new_vertex_property("string")
+    g.vp["pen_width"] = g.new_vertex_property("double")
     for v in g.vertices():
         if g.vp["name"][v] in gene2symbol:
             g.vp["label_node"][v] = gene2symbol[g.vp["name"][v]]
@@ -94,7 +105,11 @@ def main(argv=None):
             g.vp["label_node"][v] = g.vp["name"][v]
         if args.drugs and g.vp["name"][v] in drug_set:
             g.vp["color"][v] = "green"  # green for drugs
+            g.vp["shape"][v] = "triangle"
+            g.vp["pen_width"][v] = 2
         else:
+            g.vp["shape"][v] = "circle"
+            g.vp["pen_width"][v] = 0.5
             if g.vertex_properties["is_seed"][v]:
                 g.vp["color"][v] = "red"  # red for seed genes
             else:
@@ -104,20 +119,10 @@ def main(argv=None):
     pos = gt.sfdp_layout(g)
 
     # save as pdf, png, svg
+    n = g.num_vertices()
     for format in ["pdf", "png", "svg"]:
         size = (3000, 3000) if format == "png" else (1000, 1000)
-        if g.num_vertices() > 300:
-            font_size = 8 if format == "png" else 2
-        elif g.num_vertices() > 200:
-            font_size = 12 if format == "png" else 4
-        elif g.num_vertices() > 100:
-            font_size = 16 if format == "png" else 6
-        elif g.num_vertices() > 50:
-            font_size = 18 if format == "png" else 8
-        elif g.num_vertices() > 25:
-            font_size = 24 if format == "png" else 12
-        else:
-            font_size = 36 if format == "png" else 18
+        font_size = compute_font_size(n, format)
         gt.graph_draw(
             g,
             pos,
@@ -125,9 +130,12 @@ def main(argv=None):
             output_size=size,
             vertex_text=g.vp["label_node"],
             vorder=g.vp["is_seed"],
+            vertex_shape=g.vp["shape"],
             vertex_font_size=font_size,
-            edge_pen_width=2,
+            edge_pen_width=1,
             output=f"{args.prefix}.{format}",
+            vertex_size=1,
+            vertex_pen_width=g.vp["pen_width"],
         )
 
     # add x and y properties for consistent html layout
