@@ -3,12 +3,10 @@ process MODULEPARSER {
     label 'process_single'
 
     input:
-    path network
-    val tool
-    tuple val(meta), path(module), path(seeds)
+    tuple val(meta), path(module), path(seeds), path(network)
 
     output:
-    tuple val(meta), path("${meta.id}.gt")  , emit: network
+    tuple val(meta), path("${meta.id}.gt")  , emit: module
     path "versions.yml"                     , emit: versions
 
     when:
@@ -16,7 +14,7 @@ process MODULEPARSER {
 
     script:
     """
-    module_parser.py $network -t $tool -l DEBUG -m $module -s $seeds -o ${meta.id}.gt
+    module_parser.py $network -t ${meta.amim} -l DEBUG -m $module -s $seeds -o ${meta.id}.gt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -19,6 +19,8 @@ import numpy
 import configparser
 import networkx as nx
 import pandas as pd
+import graph_tool.all as gt
+import pyintergraph
 
 
 def run_proximity(
@@ -241,19 +243,24 @@ def init_outFile(output_file, phenotype_to_info):
     return f
 
 
-def parse_input_file(f, source_column, target_column):
+def parse_input_file(f, source_column, target_column, prefix):
     source_to_targets = {}
-    data = pd.read_csv(f, sep="\t").set_index(source_column)  # sep was "\t"
+    if source_column:
+        data = pd.read_csv(f, sep="\t").set_index(source_column)  # sep was "\t"
 
-    for i, g in data.groupby(source_column):
-        tmp = {i: [str(x) for x in g[target_column]]}
-        source_to_targets |= tmp
+        for i, g in data.groupby(source_column):
+            tmp = {i: [str(x) for x in g[target_column]]}
+            source_to_targets |= tmp
+    else:
+        data = pd.read_csv(f, sep="\t")
+        source_to_targets = {prefix: [str(x) for x in data[target_column]]}
 
     return source_to_targets
 
 
 def parse_network(network_file, id_mapping_file=None):
-    network = nx.read_edgelist(network_file, delimiter=",")
+    g = gt.load_graph(network_file)
+    network = pyintergraph.gt2nx(g, labelname="name")
     component_nodes = max(nx.connected_components(network), key=len)
     network = nx.subgraph(network, component_nodes)
 
@@ -305,10 +312,10 @@ def parseConfigFile(config_file):
     config = config["PROXIMITY"]
 
     config = {x: config[x] for x in config}
-    # if config["shortest_path_file"] == "None":
-    #     config["shortest_path_file"] = None
     if config["id_mapping_file"] == "None":
         config["id_mapping_file"] = None
+    if config["phenotype_column"] == "None":
+        config["phenotype_column"] = None
     if config["degree_aware"] == "True":
         config["degree_aware"] = True
     else:
@@ -321,11 +328,14 @@ def main():
     config_file = sys.argv[1]
     config = parseConfigFile(config_file)
     drug_to_target = parse_input_file(
-        config["drug_to_target"], config["drug_column"], config["target_column"]
+        config["drug_to_target"], config["drug_column"], config["target_column"], None
     )
 
     phenotype_to_genes = parse_input_file(
-        config["phenotype_to_gene"], config["phenotype_column"], config["gene_column"]
+        config["phenotype_to_gene"],
+        config["phenotype_column"],
+        config["gene_column"],
+        config["prefix"],
     )
 
     network = parse_network(config["network_file"], config["id_mapping_file"])

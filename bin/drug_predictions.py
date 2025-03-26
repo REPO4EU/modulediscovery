@@ -159,7 +159,7 @@ def parse_args(argv=None):
         "--idspace",
         help="ID space of the given network.",
         type=str,
-        choices=["entrez", "uniprot", "symbol", "ensembl"],
+        choices=["entrez", "uniprot", "symbol", "ensg"],
         default="entrez",
     )
 

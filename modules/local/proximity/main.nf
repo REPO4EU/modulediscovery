@@ -1,15 +1,15 @@
 process PROXIMITY {
+    tag "$meta.id"
     label 'process_single'
 
     input:
     path network
     path shortest_paths
     path drug_to_target
-    path phen_to_gene
+    tuple val(meta), path (module)
 
     output:
-    path("*.tsv"), emit: proxout
-    path("proximity_config.txt"), emit: proxconfig
+    path("${meta.id}.proximity.tsv"), emit: proxout
     path "versions.yml", emit: versions
 
     script:
@@ -20,13 +20,14 @@ process PROXIMITY {
     drug_to_target = ${drug_to_target}
     drug_column = drugbankId
     target_column = targetDomainId
-    phenotype_to_gene = ${phen_to_gene}
-    phenotype_column = phenotype
-    gene_column = gene
+    phenotype_to_gene = ${module}
+    phenotype_column = None
+    prefix = ${meta.id}
+    gene_column = name
     network_file = ${network}
     shortest_paths = ${shortest_paths}
     id_mapping_file = None
-    output_file = proximity.tsv
+    output_file = ${meta.id}.proximity.tsv
     EOT
 
     # Run proximity.

@@ -3,11 +3,11 @@ process INPUTCHECK {
     label 'process_single'
 
     input:
-    tuple val(meta), (path(seeds), stageAs: 'check/*')
-    path network, stageAs: 'check/*'
+    tuple val(meta ), (path(seeds), stageAs: 'check/*'), (path(network), stageAs: 'check/*')
 
     output:
     tuple val(meta), path("${meta.id}.tsv")        , emit: seeds, optional: true
+    tuple val(meta), path("${meta.id}.no_tool.gt") , emit: seeds_module, optional: true
     tuple val(meta), path("${meta.id}.removed.tsv"), emit: removed_seeds, optional: true
     tuple val(meta), path("${meta.id}.multiqc.tsv"), emit: multiqc
     path "versions.yml"                            , emit: versions

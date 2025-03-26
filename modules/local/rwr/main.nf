@@ -4,11 +4,10 @@ process RWR {
     label 'process_low'
 
     input:
-    tuple val(meta), path(seeds)            // Path to seeds file
-    path network                            // Path to a network file
-    val scaling                             // RWR specific parameter "scaling"
-    val symmetrical                         // RWR spefific parameter "symmetrical"
-    val r                                   // RWR specific parameter "r"
+    tuple val(meta), path(seeds), path (network)    // Input files
+    val scaling                                     // RWR specific parameter "scaling"
+    val symmetrical                                 // RWR spefific parameter "symmetrical"
+    val r                                           // RWR specific parameter "r"
 
     output:
     tuple val(meta), path("*.txt") , emit: module

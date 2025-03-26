@@ -19,9 +19,45 @@ def save_gt(g, stem):
 
 
 def save_multiqc(g, stem):
+
+    pseudo_diameter, pseudo_diameter_ends = gt.pseudo_diameter(g)
+    component_labels, component_sizes = gt.label_components(g)
+    num_components = len(component_sizes)
+    largest_component = max(component_sizes)
+
+    self_loops = sum(1 for e in g.edges() if e.source() == e.target())
+    seen_edges = set()
+    duplicate_edges = []
+
+    # Identify duplicate edges
+    for e in g.edges():
+        edge_tuple = tuple(sorted([e.source(), e.target()]))
+        if edge_tuple in seen_edges:
+            duplicate_edges.append(e)  # Mark for removal
+        else:
+            seen_edges.add(edge_tuple)
+
     with open("input_network_mqc.tsv", "w") as file:
-        file.write("Network\tNodes\tEdges\n")
-        file.write(f"{stem}\t{g.num_vertices()}\t{g.num_edges()}\n")
+        file.write(
+            "Network\t"
+            "nodes\t"
+            "edges\t"
+            "components\t"
+            "largest_component\t"
+            "diameter\t"
+            "self_loops\t"
+            "duplicate_edges\n"
+        )
+        file.write(
+            f"{stem}\t"
+            f"{g.num_vertices()}\t"
+            f"{g.num_edges()}\t"
+            f"{num_components}\t"
+            f"{largest_component}\t"
+            f"{pseudo_diameter}\t"
+            f"{self_loops}\t"
+            f"{len(duplicate_edges)}\n"
+        )
 
 
 def save_diamond(g, stem):

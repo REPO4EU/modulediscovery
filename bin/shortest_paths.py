@@ -5,6 +5,8 @@ import os
 import pickle
 import sys
 import networkx as nx
+import graph_tool.all as gt
+import pyintergraph
 
 
 def get_shortest_paths(graph, dump_file):
@@ -18,7 +20,8 @@ def get_shortest_paths(graph, dump_file):
 
 
 def parse_network(network_file):  # , id_mapping_file=None
-    network = nx.read_edgelist(network_file, delimiter=",")
+    g = gt.load_graph(network_file)
+    network = pyintergraph.gt2nx(g, labelname="name")
     component_nodes = max(nx.connected_components(network), key=len)
     network = nx.subgraph(network, component_nodes)
     # if id_mapping_file is not None:
