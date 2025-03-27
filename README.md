@@ -12,17 +12,27 @@
 
 ## Introduction
 
-**REPO4EU/modulediscovery** is a bioinformatics pipeline that ...
+**REPO4EU/modulediscovery**is a bioinformatics pipeline for network medicine, designed for identifying active or disease modules. Developed and maintained by the [RePo4EU](https://repo4.eu/) consortium, it aims to characterize the molecular mechanisms of diseases by analyzing the local neighborhood of disease-associated genes or proteins (seeds) within the interactome. This approach can help identify potential drug targets for drug repurposing.
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
+![REPO4EU/modulediscovery metro map](docs/images/REPO4EU_modulediscovery_metro_map.png)
 
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
+- Module inference:
+  - [`DOMINO`](https://github.com/Shamir-Lab/DOMINO)
+  - [`DIAMOnD`](https://github.com/dinaghiassian/DIAMOnD)
+  - [`ROBUST`](https://github.com/bionetslab/robust)
+  - [`ROBUST bias aware`](https://github.com/bionetslab/robust_bias_aware)
+  - `first neighbors`
+  - `random walk with restart`
+- Visualization of the module networks ([`graph-tool`](https://graph-tool.skewed.de/), [`pyvis`](https://github.com/WestHealth/pyvis))
+- Export to the network medicine web visualization tool [`Drugst.One`](https://drugst.one/)
+- Annotation with biological data (targeting drugs, side effects, associated disorders, cellular localization) queried from [`NeDRexDB`](https://nedrex.net/) and conversion to [`BioPAX`](https://www.biopax.org/) format.
+- Evaluation
+  - Over-representation analysis ([`g:Profiler`](https://cran.r-project.org/web/packages/gprofiler2/index.html))
+  - Functional coherence analysis ([`DIGEST`](https://pypi.org/project/biodigest/))
+  - Network topology analysis ([`graph-tool`](https://graph-tool.skewed.de/))
+  - Seed set permutation-based evaluation (enabled by `--run_seed_permutation`)
+  - Network permutation-based evaluation (enabled by `--run_network_permutation`)
+  - Drug prioritization using the API of [`Drugst.One`](https://drugst.one/)
 
 ## Usage
 
