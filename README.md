@@ -12,7 +12,7 @@
 
 ## Introduction
 
-**REPO4EU/modulediscovery**is a bioinformatics pipeline for network medicine, designed for identifying active or disease modules. Developed and maintained by the [RePo4EU](https://repo4.eu/) consortium, it aims to characterize the molecular mechanisms of diseases by analyzing the local neighborhood of disease-associated genes or proteins (seeds) within the interactome. This approach can help identify potential drug targets for drug repurposing.
+**REPO4EU/modulediscovery** is a bioinformatics pipeline for network medicine hypothesis generation, designed for identifying active/disease modules. Developed and maintained by the [RePo4EU](https://repo4.eu/) consortium, it aims to characterize the molecular mechanisms of diseases by analyzing the local neighborhood of disease-associated genes or proteins (seeds) within the interactome. This approach can help identify potential drug targets for drug repurposing.
 
 ![REPO4EU/modulediscovery metro map](docs/images/REPO4EU_modulediscovery_metro_map.png)
 
@@ -32,7 +32,8 @@
   - Network topology analysis ([`graph-tool`](https://graph-tool.skewed.de/))
   - Seed set permutation-based evaluation (enabled by `--run_seed_permutation`)
   - Network permutation-based evaluation (enabled by `--run_network_permutation`)
-  - Drug prioritization using the API of [`Drugst.One`](https://drugst.one/)
+- Drug prioritization using the API of [`Drugst.One`](https://drugst.one/)
+- Result and evaluation summary ([`MultiQC`](https://seqera.io/multiqc/))
 
 ## Usage
 
