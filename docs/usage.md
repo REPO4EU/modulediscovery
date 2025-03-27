@@ -6,6 +6,71 @@
 
 <!-- TODO nf-core: Add documentation about anything specific to running your pipeline. For general topics, please point to (and add to) the main nf-core website. -->
 
+#### Input options
+
+You can also use the `--seeds` and `--network` parameters to define multiple files as comma-separated lists:
+
+```bash
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
+   -profile <docker/singularity> \
+   --seeds <SEED_FILE_1,SEED_FILE_2,...> \
+   --network <NETWORK_FILE_1,NETWORK_FILE_2,...> \
+   --outdir <OUTDIR>
+```
+
+If multiple files are provided for both options, the pipeline will run for every possible combination of seeds and network files.
+
+In case you are only interested in specific combinations, seeds-network pairs can be specified via a CSV samplesheet:
+
+`samplesheet.csv`:
+
+```csv
+seeds,network
+seed_file_1.csv,network_1.csv
+seed_file_2.csv,network_2.csv
+seed_file_2.csv,network_1.csv
+```
+
+Each row defines a seeds-network pair.
+
+You can run the pipeline with a samplesheet using the `--input` parameter instead of `--seeds` and `--network`:
+
+```bash
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
+   -profile <docker/singularity> \
+   --input samplesheet.csv \
+   --outdir <OUTDIR>
+```
+
+#### Skipping steps
+
+Most pipeline steps can be skipped using `--skip_<PIPELINE_STEP>`. E.g., if you are only interested in module discovery, you can skip the annotation and evaluation steps using:
+
+```bash
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
+   -profile <docker/singularity> \
+   --input samplesheet.csv \
+   --outdir <OUTDIR> \
+   --skip_annotation \
+   --skip_evaluation
+```
+
+You can then later continue the pipeline (including evaluation and annotation) using the `-resume` option:
+
+```bash
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
+   -profile <docker/singularity> \
+   --input samplesheet.csv \
+   --outdir <OUTDIR> \
+   -resume
+```
+
+To see the full list of skipping options, please run:
+
+```bash
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
+```
+
 ## Samplesheet input
 
 You will need to create a samplesheet with information about the samples you would like to analyse before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row as shown in the examples below.
