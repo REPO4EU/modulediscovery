@@ -174,11 +174,15 @@ nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
 
 ## Credits
 
-REPO4EU/modulediscovery was originally written by REPO4EU.
+REPO4EU/modulediscovery was originally written by the [RePo4EU](https://repo4.eu/) consortium.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
-<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
+- [Johannes Kersting](https://github.com/JohannesKersting) (TUM)
+- [Lisa Spindler](https://github.com/lspindler2509) (TUM)
+- [Quirin Manz](https://github.com/quirinmanz) (TUM)
+- [Quim Aguirre](https://github.com/quimaguirre) (STALICLA)
+- [Chloé Bucheron](https://github.com/ChloeBubu) (University Vienna)
 
 ## Contributions and Support
 
