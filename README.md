@@ -16,7 +16,7 @@
 
 ![REPO4EU/modulediscovery metro map](docs/images/REPO4EU_modulediscovery_metro_map.png)
 
-- Module inference:
+- Module inference (all enabled by default):
   - [`DOMINO`](https://github.com/Shamir-Lab/DOMINO)
   - [`DIAMOnD`](https://github.com/dinaghiassian/DIAMOnD)
   - [`ROBUST`](https://github.com/bionetslab/robust)
