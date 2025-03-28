@@ -13,8 +13,8 @@ The typical command for running the pipeline is as follows:
 ```bash
 nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
    -profile docker \
-   --seeds seeds.txt \
-   --network ppi.csv \
+   --seeds ./seeds.txt \
+   --network ./ppi.csv \
    --id_space entrez \
    --outdir ./results
 ```
@@ -54,6 +54,25 @@ outdir: './results/'
 You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-co.re/launch).
 
 ### Available networks
+
+Instead of providing your own network file, you can choose from a variety of already prepared human PPI networks by specifying a key word instead of a file path. The available networks are:
+
+Usage example:
+
+```bash
+nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
+   -profile docker \
+   --seeds ./seeds.txt \
+   --network string_min900 \
+   --id_space uniprot \
+   --outdir ./results
+```
+
+This will automatically download and apply the `string_min900` network.
+The prepared networks are hosted via [Zenodo](https://zenodo.org/records/15049754).
+All networks are available for all supported ID spaces.
+The correct ID space is automatically determined based on the `--id_space` parameter.
+For details on the network preparation procedure (including ID mapping, links to original sources, and network sizes) see the corresponding [git repo](https://github.com/REPO4EU/network_preparation).
 
 ### Multiple seed files or networks
 
@@ -119,8 +138,6 @@ To see the full list of skipping options, please run:
 ```bash
 nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
 ```
-
-### Permutation-based evaluation
 
 ### Updating the pipeline
 
