@@ -12,24 +12,35 @@
 
 ## Introduction
 
-**REPO4EU/modulediscovery** is a bioinformatics pipeline that ...
+**REPO4EU/modulediscovery** is a bioinformatics pipeline for network medicine hypothesis generation, designed for identifying active/disease modules. Developed and maintained by the [RePo4EU](https://repo4.eu/) consortium, it aims to characterize the molecular mechanisms of diseases by analyzing the local neighborhood of disease-associated genes or proteins (seeds) within the interactome. This approach can help identify potential drug targets for drug repurposing.
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
+![REPO4EU/modulediscovery metro map](docs/images/REPO4EU_modulediscovery_metro_map.png)
 
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
+- Module inference (all enabled by default):
+  - [`DOMINO`](https://github.com/Shamir-Lab/DOMINO)
+  - [`DIAMOnD`](https://github.com/dinaghiassian/DIAMOnD)
+  - [`ROBUST`](https://github.com/bionetslab/robust)
+  - [`ROBUST bias aware`](https://github.com/bionetslab/robust_bias_aware)
+  - `first neighbors`
+  - `random walk with restart`
+- Visualization of the module networks ([`graph-tool`](https://graph-tool.skewed.de/), [`pyvis`](https://github.com/WestHealth/pyvis))
+- Export to the network medicine web visualization tool [`Drugst.One`](https://drugst.one/)
+- Annotation with biological data (targeting drugs, side effects, associated disorders, cellular localization) queried from [`NeDRexDB`](https://nedrex.net/) and conversion to [`BioPAX`](https://www.biopax.org/) format.
+- Evaluation
+  - Over-representation analysis ([`g:Profiler`](https://cran.r-project.org/web/packages/gprofiler2/index.html))
+  - Functional coherence analysis ([`DIGEST`](https://pypi.org/project/biodigest/))
+  - Network topology analysis ([`graph-tool`](https://graph-tool.skewed.de/))
+  - Seed set permutation-based evaluation (enabled by `--run_seed_permutation`)
+  - Network permutation-based evaluation (enabled by `--run_network_permutation`)
+- Drug prioritization using the API of [`Drugst.One`](https://drugst.one/)
+- Result and evaluation summary ([`MultiQC`](https://seqera.io/multiqc/))
 
 ## Usage
 
-### Setup
-
 > [!NOTE]
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
+
+### Setup
 
 Clone the repository:
 
@@ -69,109 +80,28 @@ nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
 
 This will run the pipeline based on the provided `<SEED_FILE>` and `<NETWORK_FILE>`. Results will be saved to the specified `<OUTDIR>`. Use `-profile` to set whether docker or singularity should be used for software deployment.
 
-You can display help text for all parameter options with:
-
-```bash
-nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
-```
-
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
 
-#### Input options
-
-You can also use the `--seeds` and `--network` parameters to define multiple files as comma-separated lists:
-
-```bash
-nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
-   -profile <docker/singularity> \
-   --seeds <SEED_FILE_1,SEED_FILE_2,...> \
-   --network <NETWORK_FILE_1,NETWORK_FILE_2,...> \
-   --outdir <OUTDIR>
-```
-
-If multiple files are provided for both options, the pipeline will run for every possible combination of seeds and network files.
-
-In case you are only interested in specific combinations, seeds-network pairs can be specified via a CSV samplesheet:
-
-`samplesheet.csv`:
-
-```csv
-seeds,network
-seed_file_1.csv,network_1.csv
-seed_file_2.csv,network_2.csv
-seed_file_2.csv,network_1.csv
-```
-
-Each row defines a seeds-network pair.
-
-You can run the pipeline with a samplesheet using the `--input` parameter instead of `--seeds` and `--network`:
-
-```bash
-nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
-   -profile <docker/singularity> \
-   --input samplesheet.csv \
-   --outdir <OUTDIR>
-```
-
-#### Skipping steps
-
-Most pipeline steps can be skipped using `--skip_<PIPELINE_STEP>`. E.g., if you are only interested in module discovery, you can skip the annotation and evaluation steps using:
-
-```bash
-nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
-   -profile <docker/singularity> \
-   --input samplesheet.csv \
-   --outdir <OUTDIR> \
-   --skip_annotation \
-   --skip_evaluation
-```
-
-You can then later continue the pipeline (including evaluation and annotation) using the `-resume` option:
-
-```bash
-nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
-   -profile <docker/singularity> \
-   --input samplesheet.csv \
-   --outdir <OUTDIR> \
-   -resume
-```
-
-To see the full list of skipping options, please run:
-
-```bash
-nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
-```
-
-## Including a new active module detection tool
-
-1. Create a new branch for your tool.
-2. Add a function to the bin/graph_tool_parser.py script for preparing the tool-specific network input format. The script is built around the [graph-tool](https://graph-tool.skewed.de/) Python package. An example is the safe_diamond() function, which saves a simple edge list in CSV format. Add the function as an option in the save() function and a command line option for `--format` in parse_args(). The output file name has to include the option specified with `--format` since nextflow uses this pattern to check whether the output file was successfully generated. The script expects a .gt file as input. Run the pipeline with the "test" profile to generate a .gt example file in `<OUTDIR>/graphtoolparser`, which you can use to test the parsing function by executing the parsing script directly via the command line.
-3. Create a module for the tool. (Example with comments: `modules/local/diamond/main.nf` and `modules/local/domino/`)
-4. Create a subworkflow wrapping the tool together with the input parser. (Example with comments: `subworkflows/local/gt_diamond/main.nf` and `subworkflows/local/gt_domino/main.nf`)
-5. Include the subworkflow in the `workflows/modulediscovery.nf` file. Again, DIAMOnD and DOMINO are included as examples.
-6. Test checks locally:
-   1. Run tests via, e.g., `nextflow run main.nf -profile singularity,test --outdir results`.
-   2. Run `nf-core lint`.
-   3. Check your code style. This will automatically happen before you commit, if you use pre-commit, which can be set up with: `pre-commit install`. After each commit, it will automatically check your code style and fix it where possible. If changes were made, you have to commit again.
-7. Create a pull request against the dev branch.
-
-### Further information
-
-- [FAQ sheet](https://docs.google.com/document/d/1WgBIFrrcxFKN0I-zJbuS7PUCmyCLPTWx6xAHg1zi4FA/edit?usp=sharing)
-- [Workflow schema](https://docs.google.com/drawings/d/1X7U79dAZaeRdGdIsXoEKw74MNqjxCHq3RuNASBYCiB4/edit?usp=sharing)
+For more details and further functionality, please refer to the [usage documentation](docs/usage.md) and run the pipeline with the `--help` flag.
 
 ## Credits
 
-REPO4EU/modulediscovery was originally written by REPO4EU.
+REPO4EU/modulediscovery was originally written by the [RePo4EU](https://repo4.eu/) consortium.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
-<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
+- [Johannes Kersting](https://github.com/JohannesKersting) (TUM)
+- [Lisa Spindler](https://github.com/lspindler2509) (TUM)
+- [Quirin Manz](https://github.com/quirinmanz) (TUM)
+- [Quim Aguirre](https://github.com/quimaguirre) (STALICLA)
+- [Chloé Bucheron](https://github.com/ChloeBubu) (University Vienna)
 
 ## Contributions and Support
 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
+
+If you want to include an additional module identification approach, please see [this guide](docs/contributing.md).
 
 ## Citations
 
