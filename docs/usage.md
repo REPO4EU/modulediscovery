@@ -57,6 +57,21 @@ You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-c
 
 Instead of providing your own network file, you can choose from a variety of already prepared human PPI networks by specifying a key word instead of a file path. The available networks are:
 
+| Key word                   | Version    | Nodes\* | Edges\*   | Description                                                                                                                                                                                                                                                 |
+| -------------------------- | ---------- | ------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `string_min900`            | v12.0      | 11,971  | 93,559    | Human PPI network obtained from [STRING](https://string-db.org/), including highest-confidence physical and functional interactions with a score greater than 0.9.                                                                                          |
+| `string_min700`            | v12.0      | 15,788  | 224,045   | Human PPI network obtained from [STRING](https://string-db.org/), including high-confidence physical and functional interactions with a score greater than 0.7.                                                                                             |
+| `string_physical_min900`   | v12.0      | 7,722   | 34,141    | Human PPI network obtained from [STRING](https://string-db.org/), including highest-confidence physical interactions with a score greater than 0.9.                                                                                                         |
+| `string_physical_min700`   | v12.0      | 10,465  | 78,878    | Human PPI network obtained from [STRING](https://string-db.org/), including highest-confidence physical interactions with a score greater than 0.7.                                                                                                         |
+| `biogrid`                  | 4.4.242    | 18,101  | 865,553   | Human PPI network obtained from [BioGRID](https://thebiogrid.org/).                                                                                                                                                                                         |
+| `hippie_high_confidence`   | v2.3       | 13,246  | 112,202   | Human PPI network obtained from [HIPPIE](https://cbdm-01.zdv.uni-mainz.de/~mschaefer/hippie/index.php), including only high-confidence interactions with a [score greater than 0.73](https://cbdm-01.zdv.uni-mainz.de/~mschaefer/hippie/information.php).   |
+| `hippie_medium_confidence` | v2.3       | 16,613  | 637,499   | Human PPI network obtained from [HIPPIE](https://cbdm-01.zdv.uni-mainz.de/~mschaefer/hippie/index.php), including only medium-confidence interactions with a [score greater than 0.63](https://cbdm-01.zdv.uni-mainz.de/~mschaefer/hippie/information.php). |
+| `iid`                      | 18.03.2025 | 19,598  | 1,202,716 | Human PPI network obtained from [IID](https://thebiogrid.org/).                                                                                                                                                                                             |
+| `nedrex`                   | 18.03.2025 | 18,718  | 935,139   | Human PPI network queried from [NeDRexDB](https://nedrex.net/), including only experimentally validated interactions.                                                                                                                                       |
+| `nedrex_high_confidence`   | 18.03.2025 | 12,827  | 95,944    | Human PPI network queried from [NeDRexDB](https://nedrex.net/), including only experimentally validated high-confidence interactions with a score greater than 13.5.                                                                                        |
+
+`*The numbers of nodes and edges refer to the UniProt ID versions.`
+
 Usage example:
 
 ```bash
