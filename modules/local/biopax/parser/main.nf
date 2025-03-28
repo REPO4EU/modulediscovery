@@ -1,12 +1,11 @@
 process BIOPAX_PARSER {
+    tag "$meta.id"
     label 'process_single'
 
-//     conda "conda-forge::graph-tool=2.58"
-    container "docker.io/quirinmanz/gt2biopax:0.1.0"
-
     input:
-    path network
+    tuple val(meta), path(network)
     val idspace
+    val add_variants
 
     output:
     path "*.owl" , emit: biopax
@@ -17,7 +16,7 @@ process BIOPAX_PARSER {
 
     script:
     """
-    gt2biopax.py $network -i $idspace -l DEBUG
+    gt2biopax.py $network -i $idspace -l DEBUG ${add_variants ? '-v' : ''}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

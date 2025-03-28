@@ -1,24 +1,20 @@
 process MODULEPARSER {
+    tag "$meta.id"
     label 'process_single'
 
-    conda "conda-forge::graph-tool=2.58"
-    container "docker.io/tiagopeixoto/graph-tool:release-2.58"
-
     input:
-    path network
-    val format
-    path module
+    tuple val(meta), path(module), path(seeds), path(network)
 
     output:
-    path "${format}.gt" , emit: network
-    path "versions.yml", emit: versions
+    tuple val(meta), path("${meta.id}.gt")  , emit: module
+    path "versions.yml"                     , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     """
-    graph_tool_parser.py $network -f $format -l DEBUG -m $module
+    module_parser.py $network -t ${meta.amim} -l DEBUG -m $module -s $seeds -o ${meta.id}.gt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

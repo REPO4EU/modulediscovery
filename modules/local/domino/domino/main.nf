@@ -1,5 +1,6 @@
 
 process DOMINO_DOMINO {     // Process name, should be all upper case. Only the part before "_" will be used to define the output folder
+    tag "$meta.id"
     label 'process_low'     // Used to allocate resources, "process_low" uses 2 threads and 12GB memory, for more labels see conf/base.config
     conda "bioconda::domino=1.0.0"  // Define software deployment via conda, "container" is more important right now
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -7,14 +8,11 @@ process DOMINO_DOMINO {     // Process name, should be all upper case. Only the 
         'quay.io/biocontainers/domino:1.0.0--pyhdfd78af_0' }"   // The preferred way to two define a container, if a biocontainer is available
 
     input:
-    path seeds
-    path network
-    path slices
+    tuple val(meta), path(seeds), path (network), path(slices)
 
-
-    output:                                                         // Define the expected outputs, the "emit:" keyword defines, how the output can be accessed by other processes
-    path "${seeds.baseName}/modules.out",       emit: modules       // DOMINO will place a modules.out file in a folder, named as the seed gene file
-    path "versions.yml",                        emit: versions      // The software versions, in this case it is only the python version
+    output:                                                                       // Define the expected outputs, the "emit:" keyword defines, how the output can be accessed by other processes
+    tuple val(meta), path("${seeds.baseName}/modules.out")  , emit: modules       // DOMINO will place a modules.out file in a folder, named as the seed gene file
+    path "versions.yml"                                     , emit: versions      // The software versions, in this case it is only the python version
 
 
     when:
