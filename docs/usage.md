@@ -21,6 +21,12 @@ nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
 
 This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
 
+`--seeds` has to point to a text file with seed genes or proteins, without a header and one line per entry.
+
+`--network` has to point to file containing a background network. This can be a CSV edge list (without header), or a .gt, .graphml, or .dot file. Alternatively, you can choose one of the available background networks (see below).
+
+`--id_space` has to indicate the ID space your genes or proteins are using. For genes Entrez IDs, Ensembl IDs, and HGNC Symbols are supported. For proteins UniProt-AC IDs are supported.
+
 Note that the pipeline will create the following files in your working directory:
 
 ```bash
