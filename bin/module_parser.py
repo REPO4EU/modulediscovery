@@ -84,7 +84,18 @@ def filter_rwr(g, module, filter_column):
 
 
 def filter_sca(g, module, filter_column):
-    g.vp[filter_column] = g.new_vertex_property("bool")
+    g.vp["seed"] = g.new_vertex_property("bool")
+    g.vp["connector"] = g.new_vertex_property("bool")
+    with open(module, "r") as file:
+        for line in file.readlines():
+            line = line.strip().split("\t")
+            v = gt.find_vertex(g, g.vp.name, line[0])[0]
+            g.vp[filter_column][v] = True
+            if line[1] == "seed":
+                g.vp["seed"][v] = True
+            else:
+                g.vp["connector"][v] = True
+    return g
 
 
 def filter_g(g, tool, module, seeds):

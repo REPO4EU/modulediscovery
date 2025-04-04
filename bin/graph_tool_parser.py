@@ -66,8 +66,8 @@ def save_rwr(g, stem):
 
 
 def save_sca(g, stem):
-    with open(f"{stem}.sca.tsv", w) as file:
-        writer = csv.writer(file, delimiter="/t")
+    with open(f"{stem}.sca.tsv", "w") as file:
+        writer = csv.writer(file, delimiter="\t")
         for e in g.iter_edges():
             writer.writerow(
                 [
