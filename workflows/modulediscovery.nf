@@ -29,6 +29,7 @@ include { GT_ROBUST          } from '../subworkflows/local/gt_robust'
 include { GT_ROBUSTBIASAWARE } from '../subworkflows/local/gt_robust_bias_aware'
 include { GT_FIRSTNEIGHBOR   } from '../subworkflows/local/gt_firstneighbor'
 include { GT_RWR             } from '../subworkflows/local/gt_rwr'
+include { GT_SCA             } from '../subworkflows/local/gt_sca'
 
 include { GT_BIOPAX          } from '../subworkflows/local/gt_biopax/main'
 
@@ -141,6 +142,11 @@ workflow MODULEDISCOVERY {
         ch_modules = ch_modules.mix(GT_RWR.out.module)
     }
 
+    if(!params.skip_sca){
+        GT_SCA(ch_seeds, ch_network_gt)
+        ch_versions = ch_versions.mix(GT_SCA.out.versions)
+        ch_modules = ch_modules.mix(GT_SCA.out.module)
+    }
     // Annotate with network properties
     NETWORKANNOTATION(ch_modules, ch_network_gt)
     ch_modules = NETWORKANNOTATION.out.module
