@@ -1,36 +1,35 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/REPO4EU/modulediscovery/master/assets/schema_input.json",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/REPO4EU/modulediscovery/main/assets/schema_input.json",
     "title": "REPO4EU/modulediscovery pipeline - params.input schema",
     "description": "Schema for the file provided with params.input",
     "type": "array",
     "items": {
         "type": "object",
         "properties": {
-            "sample": {
+            "seeds": {
                 "type": "string",
+                "format": "file-path",
+                "exists": true,
                 "pattern": "^\\S+$",
-                "errorMessage": "Sample name must be provided and cannot contain spaces"
+                "errorMessage": "Seed file path cannot contain spaces"
             },
-            "fastq_1": {
+            "network": {
+                "type": "string"
+            },
+            "shortest_paths": {
                 "type": "string",
-                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 1 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+\\.(pickle|pkl|pck|pcl)$",
+                "errorMessage": "The shortest_paths file cannot contain spaces and must end with .(pickle|pkl|pck|pcl)"
             },
-            "fastq_2": {
-                "errorMessage": "FastQ file for reads 2 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'",
-                "anyOf": [
-                    {
-                        "type": "string",
-                        "pattern": "^\\S+\\.f(ast)?q\\.gz$"
-                    },
-                    {
-                        "type": "string",
-                        "maxLength": 0
-                    }
-                ]
+            "permuted_networks": {
+                "type": "string",
+                "format": "directory-path",
+                "exists": true,
+                "errorMessage": "The permuted_networks path must point to an existing directory and cannot contain spaces."
             }
-        },
-        "required": ["sample", "fastq_1"]
+        }
     }
 }

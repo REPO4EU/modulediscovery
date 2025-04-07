@@ -2,9 +2,10 @@ channels:
   - conda-forge
   - bioconda
   - nodefaults
+
 dependencies:
-  - nf-core>=2.10
-  - nextflow>=23.10
+  - nf-core==3.2.0
+  - nextflow>=24.10.5
+  - prettier==3.1.0
+  - black>=23.11
   - singularity>=3.8
-  - prettier>=3.1
-  - black>=23.10

@@ -18,11 +18,55 @@ def save_gt(g, stem):
     g.save(f"{stem}.gt")
 
 
+def save_multiqc(g, stem):
+
+    pseudo_diameter, pseudo_diameter_ends = gt.pseudo_diameter(g)
+    component_labels, component_sizes = gt.label_components(g)
+    num_components = len(component_sizes)
+    largest_component = max(component_sizes)
+
+    self_loops = sum(1 for e in g.edges() if e.source() == e.target())
+    seen_edges = set()
+    duplicate_edges = []
+
+    # Identify duplicate edges
+    for e in g.edges():
+        edge_tuple = tuple(sorted([e.source(), e.target()]))
+        if edge_tuple in seen_edges:
+            duplicate_edges.append(e)  # Mark for removal
+        else:
+            seen_edges.add(edge_tuple)
+
+    with open("input_network_mqc.tsv", "w") as file:
+        file.write(
+            "Network\t"
+            "nodes\t"
+            "edges\t"
+            "components\t"
+            "largest_component\t"
+            "diameter\t"
+            "self_loops\t"
+            "duplicate_edges\n"
+        )
+        file.write(
+            f"{stem}\t"
+            f"{g.num_vertices()}\t"
+            f"{g.num_edges()}\t"
+            f"{num_components}\t"
+            f"{largest_component}\t"
+            f"{pseudo_diameter}\t"
+            f"{self_loops}\t"
+            f"{len(duplicate_edges)}\n"
+        )
+
+
 def save_diamond(g, stem):
     with open(f"{stem}.diamond.csv", "w") as file:
         writer = csv.writer(file, lineterminator="\n")
         for e in g.iter_edges():
-            writer.writerow([g.vp["name"][e[0]], g.vp["name"][e[1]]])  # raw edge values are hashed vertex names
+            writer.writerow(
+                [g.vp["name"][e[0]], g.vp["name"][e[1]]]
+            )  # raw edge values are hashed vertex names
 
 
 def save_domino(g, stem):
@@ -43,7 +87,18 @@ def save_robust(g, stem):
     with open(f"{stem}.robust.tsv", "w") as file:
         writer = csv.writer(file, lineterminator="\n", delimiter="\t")
         for e in g.iter_edges():
-            writer.writerow([g.vp["name"][e[0]], g.vp["name"][e[1]]])  # raw edge values are hashed vertex names
+            writer.writerow(
+                [g.vp["name"][e[0]], g.vp["name"][e[1]]]
+            )  # raw edge values are hashed vertex names
+
+
+def save_rwr(g, stem):
+    with open(f"{stem}.rwr.csv", "w") as file:
+        writer = csv.writer(file, lineterminator="\n")
+        for e in g.iter_edges():
+            writer.writerow(
+                [g.vp["name"][e[0]], g.vp["name"][e[1]]]
+            )  # raw edge values are hashed vertex names
 
 
 def save(g, stem, format):
@@ -52,75 +107,18 @@ def save(g, stem, format):
     """
     if format == "gt":
         save_gt(g=g, stem=stem)
+        save_multiqc(g=g, stem=stem)
     elif format == "diamond":
         save_diamond(g=g, stem=stem)
     elif format == "domino":
         save_domino(g=g, stem=stem)
     elif format == "robust":
         save_robust(g=g, stem=stem)
+    elif format == "rwr":
+        save_rwr(g=g, stem=stem)
     else:
         logger.critical(f"Unknown output format: {format}")
         sys.exit(1)
-
-
-def filter_diamond(g, module, filter_column):
-    # Diamond uses a tab separated file format
-    g.vp["diamond_rank"] = g.new_vertex_property("int")
-    g.vp["diamond_p_hyper"] = g.new_vertex_property("double")
-    with open(module, "r") as file:
-        reader = csv.DictReader(file, lineterminator="\n", delimiter="\t")
-        for row in reader:
-            v = gt.find_vertex(g, g.vp.name, row["DIAMOnD_node"])[0]
-            g.vp["diamond_rank"][v] = row["#rank"]
-            g.vp["diamond_p_hyper"][v] = row["p_hyper"]
-            g.vp[filter_column][v] = True
-    return g
-
-
-def filter_domino(g, module, filter_column):
-    module_ids = []
-    with open(module, "r") as file:
-        for line in file:
-            module_ids += [id.strip("entrez.") for id in line.strip("[]\n").split(", ")]
-    gt.map_property_values(g.vp.name, g.vp[filter_column], lambda name: name in module_ids)
-    return g
-
-
-def filter_robust(g, module, filter_column):
-    import numpy as np
-
-    g = gt.load_graph(str(module))
-    g.vp.name = g.vp._graphml_vertex_id.copy()
-    del g.vp["_graphml_vertex_id"]
-    del g.ep["_graphml_edge_id"]
-    g.vp[filter_column] = g.new_vertex_property("bool")
-    g.vp[filter_column].a = gt.PropertyArray(np.ones(len(g), dtype=np.uint8), g.vp[filter_column])
-    return g
-
-
-def filter_g(g, format, module):
-    """
-    Filters a graph_tools Graph object based on a module file in a given format
-    """
-    filter_column = "keep"
-    g.vp[filter_column] = g.new_vertex_property("bool")
-    if format == "gt":
-        logger.warning("Module file given, but format is 'gt'. Network was not filtered based on module...")
-        return g
-    elif format == "diamond":
-        g = filter_diamond(g, module, filter_column)
-    elif format == "domino":
-        g = filter_domino(g, module, filter_column)
-    elif format == "robust":
-        g = filter_robust(g, module, filter_column)
-    else:
-        logger.critical(f"Unknown output format: {format}")
-        sys.exit(1)
-    g.set_vertex_filter(g.vp[filter_column])
-    g.purge_vertices()
-    g.clear_filters()
-    del g.vp[filter_column]
-    return g
 
 
 def load(file_in, extension):
@@ -133,7 +131,7 @@ def load(file_in, extension):
         return gt.load_graph_from_csv(str(file_in))
 
 
-def parse_format(file_in, format, module=None):
+def parse_format(file_in, format):
     stem = Path(file_in).stem
     extension = Path(file_in).suffix
     logger.debug(f"{stem=}")
@@ -141,10 +139,7 @@ def parse_format(file_in, format, module=None):
 
     g = load(file_in=file_in, extension=extension)
     logger.debug(f"{g=}")
-    if module:
-        g = filter_g(g, format, module)
-        stem = format
-        format = "gt"
+
     save(g=g, stem=stem, format=format)
 
 
@@ -163,16 +158,9 @@ def parse_args(argv=None):
     parser.add_argument(
         "-f",
         "--format",
-        help="Output format (default gt).",
-        choices=("gt", "diamond", "domino", "robust"),
+        help="Output format (default gt). If format it gt, a summary file for multiqc will be generated as well.",
+        choices=("gt", "diamond", "domino", "robust", "rwr"),
         default="gt",
-    )
-    parser.add_argument(
-        "-m",
-        "--module",
-        help="Path to the module output. If this is given, the output will be gt. The -f flag is still used to determine the module format. Network must be in .gt format.",
-        type=Path,
-        required=False,
     )
     parser.add_argument(
         "-l",
@@ -192,7 +180,7 @@ def main(argv=None):
         logger.error(f"The given input file {args.file_in} was not found!")
         sys.exit(2)
     logger.debug(f"{args=}")
-    parse_format(args.file_in, args.format, args.module)
+    parse_format(args.file_in, args.format)
 
 
 if __name__ == "__main__":

@@ -1,31 +1,46 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/REPO4EU/modulediscovery/master/nextflow_schema.json",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/REPO4EU/modulediscovery/main/nextflow_schema.json",
     "title": "REPO4EU/modulediscovery pipeline parameters",
     "description": "A pipeline for network-based disease module identification",
     "type": "object",
-    "definitions": {
+    "$defs": {
         "input_output_options": {
             "title": "Input/output options",
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["input", "network", "outdir"],
+            "required": ["outdir"],
             "properties": {
                 "input": {
                     "type": "string",
+                    "description": "Path to a CSV sample sheet defining seed file-network combinations",
+                    "help_text": "The file must have a header and can have two columns: \"seeds\" and \"network\". If either \"seeds\" or \"network\" are missing, the --seeds and --network parameters are expected as replacement. ",
+                    "fa_icon": "fas fa-file-csv",
+                    "pattern": "^\\S+\\.csv$",
                     "format": "file-path",
-                    "exists": true,
                     "mimetype": "text/csv",
-                    "description": "Path to a file with seed genes with one line per gene.",
-                    "fa_icon": "fas fa-file-csv"
+                    "schema": "/assets/schema_input.json"
+                },
+                "seeds": {
+                    "type": "string",
+                    "fa_icon": "fas fa-file-csv",
+                    "description": "Path(s) to one or multiple file(s) with seed genes",
+                    "help_text": "Multiple files have to be \",\" separated. Each file must have one line per seed gene. This parameter cannot be set, if there is a \"seeds\" column, in the sample sheet provided via --input."
                 },
                 "network": {
                     "type": "string",
-                    "description": "Path to a PPI network in gt, csv, graphml, xml, dot, or gml format.",
+                    "description": "Path(s) to one or multiple PPI network(s) in gt, csv, graphml, xml, dot, or gml format.",
                     "format": "file-path",
                     "fa_icon": "fas fa-file-csv",
-                    "pattern": "^\\S+.[csv|gt|graphml|xml|dot|gml]$"
+                    "help_text": "Multiple files have to be \",\" separated."
+                },
+                "id_space": {
+                    "type": "string",
+                    "enum": ["entrez", "symbol", "ensembl", "uniprot"],
+                    "default": "entrez",
+                    "description": "Type of gene/protein ids",
+                    "fa_icon": "fas fa-fingerprint"
                 },
                 "outdir": {
                     "type": "string",
@@ -54,33 +69,213 @@
             "default": "",
             "fa_icon": "fas fa-project-diagram",
             "properties": {
+                "skip_firstneighbor": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Flag for skipping first neighbor"
+                },
+                "skip_domino": {
+                    "type": "boolean",
+                    "description": "Flag for skipping DOMINO",
+                    "fa_icon": "fas fa-forward"
+                },
+                "skip_robust": {
+                    "type": "boolean",
+                    "description": "Flag for skipping Robust",
+                    "fa_icon": "fas fa-forward"
+                },
+                "skip_robust_bias_aware": {
+                    "type": "boolean",
+                    "description": "Flag for skipping Robust-bias-aware",
+                    "fa_icon": "fas fa-forward"
+                },
+                "skip_diamond": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Flag for skipping DIAMOnD"
+                },
                 "diamond_n": {
                     "type": "integer",
                     "default": 200,
-                    "description": "Desired number of DIAMOnD genes."
+                    "description": "Desired number of DIAMOnD genes.",
+                    "fa_icon": "far fa-gem"
                 },
                 "diamond_alpha": {
                     "type": "integer",
                     "default": 1,
-                    "description": "Weight of the seeds."
+                    "description": "Weight of the seeds.",
+                    "fa_icon": "far fa-gem"
+                },
+                "skip_rwr": {
+                    "type": "boolean",
+                    "description": "Flag for skipping random walk with restart",
+                    "fa_icon": "fas fa-forward"
+                },
+                "rwr_scaling": {
+                    "type": "boolean",
+                    "description": "Add a scaling depending on the node's degree.",
+                    "fa_icon": "fas fa-walking"
+                },
+                "rwr_symmetrical": {
+                    "type": "boolean",
+                    "description": "Compute the symmetric instead of column-wise normalized Markov matrix.",
+                    "fa_icon": "fas fa-walking"
+                },
+                "rwr_r": {
+                    "type": "number",
+                    "description": "Damping factor/restart probability.",
+                    "default": 0.8,
+                    "minimum": 0,
+                    "maximum": 1,
+                    "fa_icon": "fas fa-walking"
                 }
             }
         },
-        "annotation": {
-            "title": "Annotation",
+        "module_visualization": {
+            "title": "Module visualization",
             "type": "object",
-            "description": "Set parameter regarding the annotation.",
+            "description": "",
+            "default": "",
+            "fa_icon": "fas fa-palette",
+            "properties": {
+                "skip_visualization": {
+                    "type": "boolean",
+                    "description": "Skip module visualization",
+                    "fa_icon": "fas fa-forward"
+                },
+                "visualization_max_nodes": {
+                    "type": "integer",
+                    "default": 500,
+                    "description": "If a module has more nodes it will not be visualized.",
+                    "fa_icon": "fas fa-project-diagram"
+                },
+                "skip_drugstone_export": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Flag for skipping the export to the Drugst.One platform"
+                }
+            }
+        },
+        "module_annotation": {
+            "title": "Module annotation",
+            "type": "object",
+            "description": "Set parameters regarding the annotation.",
             "default": "",
             "properties": {
-                "id_space": {
-                    "type": "string",
-                    "enum": ["entrez", "uniprot"],
-                    "default": "entrez",
-                    "description": "Either give graph with enter ids or uniprot ids."
-                },
                 "skip_annotation": {
                     "type": "boolean",
-                    "description": "Flag for skipping the annotation part of the process."
+                    "description": "Flag for skipping the annotation part of the process.",
+                    "fa_icon": "fas fa-forward"
+                },
+                "validate_online": {
+                    "type": "boolean",
+                    "help_text": "Flag for running the BioPAX validator client, i.e. validating at the baderlab server. If \"false\" will load OBO files locally, which can take some time but is recommended for files > 100Mb.",
+                    "description": "Flag for validating online at baderlab.org.",
+                    "fa_icon": "fas fa-globe"
+                },
+                "add_variants": {
+                    "type": "boolean",
+                    "description": "Flag for adding variants to the biopax annotation file.",
+                    "fa_icon": "fas fa-dna"
+                }
+            },
+            "fa_icon": "far fa-edit"
+        },
+        "module_evaluation": {
+            "title": "Module evaluation",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "fa_icon": "fas fa-search",
+            "properties": {
+                "skip_evaluation": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "description": "Flag skipping the entire evaluation workflow"
+                },
+                "skip_gprofiler": {
+                    "type": "boolean",
+                    "description": "Flag for skipping g:Profiler",
+                    "fa_icon": "fas fa-forward"
+                },
+                "skip_digest": {
+                    "type": "boolean",
+                    "description": "Flag for skipping DIGEST",
+                    "fa_icon": "fas fa-forward"
+                },
+                "run_seed_permutation": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-caret-right",
+                    "description": "Flag for running the seed permutation-based evaluation"
+                },
+                "run_network_permutation": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-caret-right",
+                    "description": "Flag for running the network permutation-base evaluation"
+                },
+                "n_network_permutations": {
+                    "type": "integer",
+                    "default": 1000,
+                    "fa_icon": "fas fa-cogs",
+                    "description": "Number of times the network will be permuted for the network permutation-based evaluation"
+                },
+                "permuted_networks": {
+                    "type": "string",
+                    "fa_icon": "fas fa-folder-open",
+                    "description": "Path(s) to folder(s) with pre-computed permuted networks for the network permutation-based evaluation"
+                }
+            }
+        },
+        "drug_prioritization": {
+            "title": "Drug prioritization",
+            "type": "object",
+            "description": "Parameters for the drug prioritization methods.",
+            "default": "",
+            "fa_icon": "fas fa-capsules",
+            "properties": {
+                "run_proximity": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-caret-right",
+                    "description": "Flag for running proximity"
+                },
+                "shortest_paths": {
+                    "type": "string",
+                    "fa_icon": "fas fa-project-diagram",
+                    "description": "Path(s) to the shortest path pickle file(s) used for proximity.",
+                    "hidden": true
+                },
+                "drug_to_target": {
+                    "type": "string",
+                    "fa_icon": "fas fa-file-csv",
+                    "description": "Local path to the drug to targets file used for proximity.",
+                    "hidden": true
+                },
+                "skip_drug_predictions": {
+                    "type": "boolean",
+                    "description": "Flag for skipping drug predictions",
+                    "fa_icon": "fas fa-forward"
+                },
+                "includeIndirectDrugs": {
+                    "type": "boolean",
+                    "description": "Drugst.One parameter for including indirect drugs.",
+                    "fa_icon": "fas fa-capsules"
+                },
+                "includeNonApprovedDrugs": {
+                    "type": "boolean",
+                    "description": "Drugst.One parameter for including non approved drugs.",
+                    "fa_icon": "fas fa-capsules"
+                },
+                "result_size": {
+                    "type": "integer",
+                    "default": 50,
+                    "description": "Drugst.One parameter for defining  the maximum number of returned drugs.",
+                    "fa_icon": "fas fa-expand-arrows-alt"
+                },
+                "drugstone_algorithms": {
+                    "type": "string",
+                    "description": "Drugst.One parameter for algorithms to be used. Comma separated list. Options: 'trustrank', 'degree' and 'closeness'.",
+                    "default": "trustrank",
+                    "fa_icon": "fas fa-list-ol"
                 }
             }
         },
@@ -132,41 +327,6 @@
                 }
             }
         },
-        "max_job_request_options": {
-            "title": "Max job request options",
-            "type": "object",
-            "fa_icon": "fab fa-acquisitions-incorporated",
-            "description": "Set the top limit for requested resources for any single job.",
-            "help_text": "If you are running on a smaller system, a pipeline step requesting more resources than are available may cause the Nextflow to stop the run with an error. These options allow you to cap the maximum resources requested by any single job so that the pipeline will run on your system.\n\nNote that you can not _increase_ the resources requested by any job using these options. For that you will need your own configuration file. See [the nf-core website](https://nf-co.re/usage/configuration) for details.",
-            "properties": {
-                "max_cpus": {
-                    "type": "integer",
-                    "description": "Maximum number of CPUs that can be requested for any single job.",
-                    "default": 16,
-                    "fa_icon": "fas fa-microchip",
-                    "hidden": true,
-                    "help_text": "Use to set an upper-limit for the CPU requirement for each process. Should be an integer e.g. `--max_cpus 1`"
-                },
-                "max_memory": {
-                    "type": "string",
-                    "description": "Maximum amount of memory that can be requested for any single job.",
-                    "default": "128.GB",
-                    "fa_icon": "fas fa-memory",
-                    "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
-                    "hidden": true,
-                    "help_text": "Use to set an upper-limit for the memory requirement for each process. Should be a string in the format integer-unit e.g. `--max_memory '8.GB'`"
-                },
-                "max_time": {
-                    "type": "string",
-                    "description": "Maximum amount of time that can be requested for any single job.",
-                    "default": "240.h",
-                    "fa_icon": "far fa-clock",
-                    "pattern": "^(\\d+\\.?\\s*(s|m|h|d|day)\\s*)+$",
-                    "hidden": true,
-                    "help_text": "Use to set an upper-limit for the time requirement for each process. Should be a string in the format integer-unit e.g. `--max_time '2.h'`"
-                }
-            }
-        },
         "generic_options": {
             "title": "Generic options",
             "type": "object",
@@ -174,12 +334,6 @@
             "description": "Less common options for the pipeline, typically set in a config file.",
             "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
             "properties": {
-                "help": {
-                    "type": "boolean",
-                    "description": "Display help text.",
-                    "fa_icon": "fas fa-question-circle",
-                    "hidden": true
-                },
                 "version": {
                     "type": "boolean",
                     "description": "Display version and exit.",
@@ -255,48 +409,46 @@
                     "fa_icon": "fas fa-check-square",
                     "hidden": true
                 },
-                "validationShowHiddenParams": {
-                    "type": "boolean",
-                    "fa_icon": "far fa-eye-slash",
-                    "description": "Show all params when using `--help`",
-                    "hidden": true,
-                    "help_text": "By default, parameters set as _hidden_ in the schema are not shown on the command line when a user runs with `--help`. Specifying this option will tell the pipeline to show all parameters."
-                },
-                "validationFailUnrecognisedParams": {
-                    "type": "boolean",
+                "pipelines_testdata_base_path": {
+                    "type": "string",
                     "fa_icon": "far fa-check-circle",
-                    "description": "Validation of parameters fails when an unrecognised parameter is found.",
-                    "hidden": true,
-                    "help_text": "By default, when an unrecognised parameter is found, it returns a warinig."
+                    "description": "Base URL or local path to location of pipeline test dataset files",
+                    "default": "https://raw.githubusercontent.com/nf-core/test-datasets/",
+                    "hidden": true
                 },
-                "validationLenientMode": {
-                    "type": "boolean",
-                    "fa_icon": "far fa-check-circle",
-                    "description": "Validation of parameters in lenient more.",
-                    "hidden": true,
-                    "help_text": "Allows string values that are parseable as numbers or booleans. For further information see [JSONSchema docs](https://github.com/everit-org/json-schema#lenient-mode)."
+                "trace_report_suffix": {
+                    "type": "string",
+                    "fa_icon": "far calendar",
+                    "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
+                    "hidden": true
                 }
             }
         }
     },
     "allOf": [
         {
-            "$ref": "#/definitions/input_output_options"
+            "$ref": "#/$defs/input_output_options"
         },
         {
-            "$ref": "#/definitions/network_expansion"
+            "$ref": "#/$defs/network_expansion"
         },
         {
-            "$ref": "#/definitions/annotation"
+            "$ref": "#/$defs/module_visualization"
         },
         {
-            "$ref": "#/definitions/institutional_config_options"
+            "$ref": "#/$defs/module_annotation"
         },
         {
-            "$ref": "#/definitions/max_job_request_options"
+            "$ref": "#/$defs/module_evaluation"
         },
         {
-            "$ref": "#/definitions/generic_options"
+            "$ref": "#/$defs/drug_prioritization"
+        },
+        {
+            "$ref": "#/$defs/institutional_config_options"
+        },
+        {
+            "$ref": "#/$defs/generic_options"
         }
     ]
 }
