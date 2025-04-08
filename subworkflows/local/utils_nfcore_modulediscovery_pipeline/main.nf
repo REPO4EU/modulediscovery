@@ -344,6 +344,36 @@ def mapPreparedNetwork(network, id_space) {
 }
 
 //
+// Read a tsv file and return its content as a list of groovy maps
+//
+def List<Map<String, String>> readTsvAsListOfMaps(file) {
+    def lines = file.readLines()
+
+    if (lines.size() < 2) {
+        throw new IllegalArgumentException("TSV must have at least one header and one data row")
+    }
+
+    def headers = lines[0].split("\t")
+    def result = []
+
+    lines.tail().each { line ->
+        def values = line.split("\t")
+        if (values.size() != headers.size()) {
+            throw new IllegalArgumentException("Mismatch between header and data line: $line")
+        }
+
+        def rowMap = [:]
+        headers.eachWithIndex { header, idx ->
+            rowMap[header] = values[idx]
+        }
+        result << rowMap
+    }
+
+    return result
+}
+
+
+//
 // Validate channels from input samplesheet
 //
 def validateInputSamplesheet(input) {

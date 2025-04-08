@@ -29,6 +29,8 @@ include { GT_SEEDPERMUTATION    } from '../subworkflows/local/gt_seedpermutation
 include { GT_NETWORKPERMUTATION } from '../subworkflows/local/gt_networkpermutation/main'
 include { GT_PROXIMITY          } from '../subworkflows/local/gt_proximity/main'
 
+include { readTsvAsListOfMaps   } from '../subworkflows/local/utils_nfcore_modulediscovery_pipeline/main'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -170,6 +172,26 @@ workflow MODULEDISCOVERY {
     ch_versions = ch_versions.mix(NETWORKEXPANSION.out.versions)
 
 
+    // Topology evaluation
+    TOPOLOGY(ch_modules)
+    ch_versions = ch_versions.mix(TOPOLOGY.out.versions)
+    ch_topology_multiqc = TOPOLOGY.out.topology
+        .map{ meta, path -> path }
+        .collectFile(name: 'topology_mqc.tsv', keepHeader: true)
+    ch_multiqc_files = ch_multiqc_files.mix(ch_topology_multiqc)
+
+    // Add topology information to module metadata
+    // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), val(topology[nodes,edges]) ]
+    ch_topology = TOPOLOGY.out.topology
+        .map{meta, path -> [meta, readTsvAsListOfMaps(path)]}.transpose() // Parse topology information from tsv file
+        .map{meta, topology -> [meta, topology.subMap("nodes", "edges")]} // Select only nodes and edges
+
+    // channel: [ val(meta[id,module_id,amim,seeds_id,network_id,nodes,edges]), path(module) ]
+    ch_modules = ch_modules
+        .join(ch_topology, by: 0, failOnDuplicate: true, failOnMismatch: true) // Join topology information to module metadata
+        .map{meta, module, topology -> [meta + topology, module]}
+
+
     // Annotate with network properties
     // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module), path(network) ]
     ch_module_network = ch_modules
@@ -237,14 +259,6 @@ workflow MODULEDISCOVERY {
             ch_overlap_input.nodes.collect()
         )
         ch_multiqc_files = ch_multiqc_files.mix(MODULEOVERLAP.out)
-
-        // Topology evaluation
-        TOPOLOGY(ch_modules)
-        ch_versions = ch_versions.mix(TOPOLOGY.out.versions)
-        ch_toplogy_multiqc = TOPOLOGY.out.multiqc
-            .map{ meta, path -> path }
-            .collectFile(name: 'topology_mqc.tsv', keepHeader: true)
-        ch_multiqc_files = ch_multiqc_files.mix(ch_toplogy_multiqc)
 
         // Overrepresentation analysis
         if(!params.skip_gprofiler){

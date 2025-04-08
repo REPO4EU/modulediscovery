@@ -76,11 +76,14 @@ workflow GT_NETWORKPERMUTATION {
         }
 
     // Join permuted modules with original modules
-    ch_evaluation = ch_modules
+    ch_evaluation = ch_modules.map{meta, module -> [meta.module_id, meta, module]}
         // Join with permuted modules
-        .join(ch_permuted_modules, by: 0, failOnDuplicate: true, failOnMismatch: true)
+        .join(
+            ch_permuted_modules.map{meta, permuted_modules -> [meta.module_id, permuted_modules]},
+            by: 0, failOnDuplicate: true, failOnMismatch: true
+        )
         // Prepare channel for evaluation
-        .multiMap{meta, module, permuted_modules ->
+        .multiMap{module_id, meta, module, permuted_modules ->
             module: [meta, module]
             permuted_modules: permuted_modules
         }
