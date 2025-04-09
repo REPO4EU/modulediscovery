@@ -115,7 +115,8 @@ custom_data:
     plot_type: "bargraph"
     pconfig:
       title: "Seeds"
-      format: "{:.0f}"
+      x_decimals: 0
+      y_decimals: 0
   drugstone_link:
     id: "drugstone_link"
     section_name: "Drugstone Links"
