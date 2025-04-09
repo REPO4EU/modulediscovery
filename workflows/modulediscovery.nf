@@ -222,7 +222,13 @@ workflow MODULEDISCOVERY {
 
     // Visualize modules
     if(!params.skip_visualization){
-        VISUALIZEMODULES(ch_modules_not_empty, params.visualization_max_nodes)
+        ch_visualization_input = ch_modules_not_empty
+            .branch {meta, module ->
+                fail: meta.nodes > params.visualization_max_nodes
+                pass: true
+            }
+        ch_visualization_input.fail | view {meta, module -> log.warn("$meta.id has more nodes than specified with --visualization_max_nodes (${meta.nodes} > ${params.visualization_max_nodes}). Skipping visualization.") }
+        VISUALIZEMODULES(ch_visualization_input.pass)
         ch_versions = ch_versions.mix(VISUALIZEMODULES.out.versions)
     }
 

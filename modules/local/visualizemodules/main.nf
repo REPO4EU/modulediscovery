@@ -4,7 +4,6 @@ process VISUALIZEMODULES {
 
     input:
     tuple val(meta), path(module)
-    val max_nodes
 
     output:
     tuple val(meta), path("${meta.id}.pdf")      , emit: pdf  , optional: true
@@ -18,7 +17,7 @@ process VISUALIZEMODULES {
 
     script:
     """
-    visualize_modules.py -m "${module}" -p "${meta.id}" -n ${max_nodes} -l DEBUG
+    visualize_modules.py -m "${module}" -p "${meta.id}" -l DEBUG
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
