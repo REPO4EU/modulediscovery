@@ -314,6 +314,25 @@ def topological_measures(reference_candidates, G, lists_candidates):
     return l_results, l_results_permuted, l_mu, l_std, l_zscore
 
 
+def get_removed_seeds(original_seeds, perturbed_seeds):
+    """
+    Compute the list of removed seeds for each permutation.
+    Return:
+        removed_seeds: list of lists of removed seeds for each permutation
+    """
+    removed_seeds = []
+    for l in perturbed_seeds:
+        perturbed_seed_set = set(l)
+        removed_seeds.append(
+            [
+                original_seed
+                for original_seed in original_seeds
+                if original_seed not in perturbed_seed_set
+            ]
+        )
+    return removed_seeds
+
+
 # =============================================================================
 
 
@@ -409,8 +428,13 @@ def main(argv=None):
         reference_candidates, G, lists_candidates
     )
 
+    # REMOVED SEEDS
+    removed_seeds = get_removed_seeds(original_seeds, perturbed_seeds)
+    removed_seeds = [",".join(x) for x in removed_seeds]
+
     # CREATE TABLES WITH RESULTS
     data_headers = [
+        "Removed seeds",
         "Retrieval frequency",
         "Normalized retrieval frequency",
         "Jaccard index",
@@ -422,6 +446,7 @@ def main(argv=None):
 
     # create a table with the detailed results of all permutations
     data_full = [
+        removed_seeds,
         scores,
         scores_normalized,
         scores_Jaccard,
