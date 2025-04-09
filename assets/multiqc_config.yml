@@ -20,6 +20,7 @@ custom_content:
   order:
     - warn_empty_modules
     - warn_visualization_max_nodes
+    - warn_drugstone_max_nodes
     - input
     - input_seeds
     - input_network
@@ -126,6 +127,15 @@ custom_data:
       id: "warn_visualization_max_nodes_table"
       title: "Too many nodes vor visualization."
       namespace: "Too many nodes vor visualization."
+  warn_drugstone_max_nodes:
+    section_name: "WARNING: Modules too large for Drugst.One"
+    description: "List of modules with too many nodes for Drugst.One export and drug prioritization.
+      The maximum number of nodes can be adjusted with the '--drugstone_max_nodes' parameter."
+    plot_type: "table"
+    pconfig:
+      id: "warn_drugstone_max_nodes_table"
+      title: "Too many nodes vor Drugst.One."
+      namespace: "Too many nodes vor Drugst.One."
   input_seeds:
     parent_id: input
     parent_name: "Input"

@@ -287,7 +287,23 @@ workflow MODULEDISCOVERY {
                 fail: meta.nodes > params.drugstone_max_nodes
                 pass: true
             }
-        ch_drugstone_export_input.fail | view {meta, module -> log.warn("$meta.id has more nodes than specified with --drugstone_max_nodes (${meta.nodes} > ${params.drugstone_max_nodes}). Skipping Drugst.One export.") }
+
+        // Warning for too many nodes
+        ch_drugstone_export_input
+            .fail
+            .view {meta, module -> log.warn("$meta.id has more nodes than specified with --drugstone_max_nodes (${meta.nodes} > ${params.drugstone_max_nodes}). Skipping Drugst.One export.") }
+            .map {meta, module -> "$meta.id\t$meta.nodes" }
+            .collect()
+            .map { tsv_data ->
+                def header = ["Module\tNodes"]
+                multiqcTsvFromList(tsv_data, header)
+            }
+            .collectFile(
+                storeDir: "${params.outdir}/mqc_summaries",
+                name: "warn_drugstone_max_nodes_mqc.tsv",
+            ).set { ch_drugstone_multiqc }
+        ch_multiqc_files = ch_multiqc_files.mix(ch_drugstone_multiqc)
+
         DRUGSTONEEXPORT(ch_drugstone_export_input.pass, id_space)
         ch_versions = ch_versions.mix(DRUGSTONEEXPORT.out.versions)
         ch_drugstone_export_multiqc = DRUGSTONEEXPORT.out.link
