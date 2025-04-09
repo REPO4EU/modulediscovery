@@ -259,7 +259,23 @@ workflow MODULEDISCOVERY {
                 fail: meta.nodes > params.visualization_max_nodes
                 pass: true
             }
-        ch_visualization_input.fail | view {meta, module -> log.warn("$meta.id has more nodes than specified with --visualization_max_nodes (${meta.nodes} > ${params.visualization_max_nodes}). Skipping visualization.") }
+
+        // Warning for too many nodes
+        ch_visualization_input
+            .fail
+            .view {meta, module -> log.warn("$meta.id has more nodes than specified with --visualization_max_nodes (${meta.nodes} > ${params.visualization_max_nodes}). Skipping visualization.") }
+            .map {meta, module -> "$meta.id\t$meta.nodes" }
+            .collect()
+            .map { tsv_data ->
+                def header = ["Module\tNodes"]
+                multiqcTsvFromList(tsv_data, header)
+            }
+            .collectFile(
+                storeDir: "${params.outdir}/mqc_summaries",
+                name: "warn_visualization_max_nodes_mqc.tsv",
+            ).set { ch_visualization_multiqc }
+        ch_multiqc_files = ch_multiqc_files.mix(ch_visualization_multiqc)
+
         VISUALIZEMODULES(ch_visualization_input.pass)
         ch_versions = ch_versions.mix(VISUALIZEMODULES.out.versions)
     }

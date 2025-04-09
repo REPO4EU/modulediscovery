@@ -19,6 +19,7 @@ run_modules:
 custom_content:
   order:
     - warn_empty_modules
+    - warn_visualization_max_nodes
     - input
     - input_seeds
     - input_network
@@ -116,6 +117,15 @@ custom_data:
       id: "warn_empty_modules_table"
       title: "Empty modules"
       namespace: "Empty modules"
+  warn_visualization_max_nodes:
+    section_name: "WARNING: Modules not visualized"
+    description: "List of modules with too many nodes for visualization.
+      The maximum number of nodes can be adjusted with the '--visualization_max_nodes' parameter."
+    plot_type: "table"
+    pconfig:
+      id: "warn_visualization_max_nodes_table"
+      title: "Too many nodes vor visualization."
+      namespace: "Too many nodes vor visualization."
   input_seeds:
     parent_id: input
     parent_name: "Input"
