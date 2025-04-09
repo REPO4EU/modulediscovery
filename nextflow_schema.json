@@ -153,6 +153,12 @@
                     "type": "boolean",
                     "fa_icon": "fas fa-forward",
                     "description": "Flag for skipping the export to the Drugst.One platform"
+                },
+                "drugstone_max_nodes": {
+                    "type": "integer",
+                    "default": 500,
+                    "fa_icon": "fas fa-project-diagram",
+                    "description": "If a module has more nodes it will not be exported to the Drugst.One platform. Includes drug prioritization."
                 }
             }
         },

@@ -234,7 +234,13 @@ workflow MODULEDISCOVERY {
 
     // Drugstone export
     if(!params.skip_drugstone_export){
-        DRUGSTONEEXPORT(ch_modules_not_empty, id_space)
+        ch_drugstone_export_input = ch_modules_not_empty
+            .branch {meta, module ->
+                fail: meta.nodes > params.drugstone_max_nodes
+                pass: true
+            }
+        ch_drugstone_export_input.fail | view {meta, module -> log.warn("$meta.id has more nodes than specified with --drugstone_max_nodes (${meta.nodes} > ${params.drugstone_max_nodes}). Skipping Drugst.One export.") }
+        DRUGSTONEEXPORT(ch_drugstone_export_input.pass, id_space)
         ch_versions = ch_versions.mix(DRUGSTONEEXPORT.out.versions)
         ch_multiqc_files = ch_multiqc_files
             .mix(DRUGSTONEEXPORT.out.link.map{ meta, path -> path }.collectFile(name: 'drugstone_link_mqc.tsv', keepHeader: true))
@@ -368,6 +374,13 @@ workflow MODULEDISCOVERY {
 
         ch_drugstone_input = SAVEMODULES.out.nodes_tsv
             .filter{meta, module -> meta.nodes > 0} // Filter out empty modules
+            .branch {meta, module ->
+                fail: meta.nodes > params.drugstone_max_nodes
+                pass: true
+            }
+        ch_drugstone_input.fail | view {meta, module -> log.warn("$meta.id has more nodes than specified with --drugstone_max_nodes (${meta.nodes} > ${params.drugstone_max_nodes}). Skipping Drugst.One drug prioritization.") }
+
+        ch_drugstone_input = ch_drugstone_input.pass
             .combine(ch_algorithms_drugs)
             .multiMap { meta, module, algorithm ->
                 module: [meta, module]
