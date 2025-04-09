@@ -232,7 +232,21 @@ workflow MODULEDISCOVERY {
             not_empty: meta.nodes > 0
         }
     ch_modules_not_empty = ch_modules_empty_not_empty.not_empty
-    ch_modules_empty_not_empty.empty | view {meta, module -> log.warn("$meta.id produced an empty output.") }
+
+    // Warning for empty modules
+    ch_modules_empty_not_empty
+        .empty
+        .view {meta, module -> log.warn("$meta.id produced an empty output.") }
+        .map {meta, module -> "$meta.id"}
+        .collect()
+        .map { tsv_data ->
+            def header = ["Module"]
+            multiqcTsvFromList(tsv_data, header)
+        }
+        .collectFile(
+            storeDir: "${params.outdir}/mqc_summaries",
+            name: "warn_empty_modules.tsv",
+        )
 
 
     // Visualize modules

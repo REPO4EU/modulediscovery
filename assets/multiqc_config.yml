@@ -18,6 +18,7 @@ run_modules:
 
 custom_content:
   order:
+    - warn_empty_modules
     - input
     - input_seeds
     - input_network
@@ -107,6 +108,14 @@ custom_data:
           format: "{:.2f}"
           scale: "RdYlGn-rev"
           placement: 3000
+  warn_empty_modules:
+    section_name: "WARNING: Empty modules"
+    description: "List of modules with no nodes, which were ignored in the analysis."
+    plot_type: "table"
+    pconfig:
+      id: "warn_empty_modules_table"
+      title: "Empty modules"
+      namespace: "Empty modules"
   input_seeds:
     parent_id: input
     parent_name: "Input"

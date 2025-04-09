@@ -372,6 +372,18 @@ def List<Map<String, String>> readTsvAsListOfMaps(file) {
     return result
 }
 
+//
+// Create MultiQC tsv custom content from a list of values
+//
+def multiqcTsvFromList(tsv_data, header) {
+    def tsv_string = ""
+    if (tsv_data.size() > 0) {
+        tsv_string += "${header.join('\t')}\n"
+        tsv_string += tsv_data.join('\n')
+    }
+    return tsv_string
+}
+
 
 //
 // Validate channels from input samplesheet
