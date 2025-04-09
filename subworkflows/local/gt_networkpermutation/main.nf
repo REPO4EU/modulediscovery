@@ -95,12 +95,18 @@ workflow GT_NETWORKPERMUTATION {
     ch_versions = ch_versions.mix(NETWORKPERMUTATIONEVALUATION.out.versions)
     ch_multiqc_summary =  NETWORKPERMUTATIONEVALUATION.out.multiqc_summary
         .map{ meta, path -> path }
-        .collectFile(name: 'network_permutation_mqc.tsv', keepHeader: true)
+        .collectFile(
+            storeDir: "${params.outdir}/mqc_summaries",
+            name: 'network_permutation_mqc.tsv',
+            keepHeader: true
+        )
     ch_multiqc_jaccard =
         NETWORKPERMUTATIONEVALUATION.out.multiqc_jaccard
         .map{ meta, path -> path }
         .collectFile(
-            item -> "  " + item.text, name: 'network_permutation_jaccard_mqc.yaml',
+            item -> "  " + item.text,
+            storeDir: "${params.outdir}/mqc_summaries",
+            name: 'network_permutation_jaccard_mqc.yaml',
             sort: true,
             seed: new File("$projectDir/assets/network_permutation_jaccard_header.yaml").text
         )

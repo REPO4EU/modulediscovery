@@ -129,7 +129,14 @@ workflow MODULEDISCOVERY {
     // Run network parser for  networks, supported by graph-tool
     GRAPHTOOLPARSER(ch_network, 'gt')
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
-    ch_multiqc_files = ch_multiqc_files.mix(GRAPHTOOLPARSER.out.multiqc)
+    ch_network_multiqc = GRAPHTOOLPARSER.out.multiqc
+        .map{ meta, path -> path }
+        .collectFile(
+            storeDir: "${params.outdir}/mqc_summaries",
+            name: 'input_network_mqc.tsv',
+            keepHeader: true
+        )
+    ch_multiqc_files = ch_multiqc_files.mix(ch_network_multiqc)
     ch_network_gt = GRAPHTOOLPARSER.out.network
 
 
@@ -145,7 +152,11 @@ workflow MODULEDISCOVERY {
     INPUTCHECK.out.removed_seeds | view {meta, path -> log.warn("Removed seeds from $meta.id. Check multiqc report.") }
     ch_seeds_multiqc = INPUTCHECK.out.multiqc
         .map{ meta, path -> path }
-        .collectFile(name: 'input_seeds_mqc.tsv', keepHeader: true)
+        .collectFile(
+            storeDir: "${params.outdir}/mqc_summaries",
+            name: 'input_seeds_mqc.tsv',
+            keepHeader: true
+        )
     ch_multiqc_files = ch_multiqc_files.mix(ch_seeds_multiqc)
 
     // Add seeds modules to module channel
@@ -177,7 +188,11 @@ workflow MODULEDISCOVERY {
     ch_versions = ch_versions.mix(TOPOLOGY.out.versions)
     ch_topology_multiqc = TOPOLOGY.out.topology
         .map{ meta, path -> path }
-        .collectFile(name: 'topology_mqc.tsv', keepHeader: true)
+        .collectFile(
+            storeDir: "${params.outdir}/mqc_summaries",
+            name: 'topology_mqc.tsv',
+            keepHeader: true
+        )
     ch_multiqc_files = ch_multiqc_files.mix(ch_topology_multiqc)
 
     // Add topology information to module metadata
@@ -242,8 +257,14 @@ workflow MODULEDISCOVERY {
         ch_drugstone_export_input.fail | view {meta, module -> log.warn("$meta.id has more nodes than specified with --drugstone_max_nodes (${meta.nodes} > ${params.drugstone_max_nodes}). Skipping Drugst.One export.") }
         DRUGSTONEEXPORT(ch_drugstone_export_input.pass, id_space)
         ch_versions = ch_versions.mix(DRUGSTONEEXPORT.out.versions)
-        ch_multiqc_files = ch_multiqc_files
-            .mix(DRUGSTONEEXPORT.out.link.map{ meta, path -> path }.collectFile(name: 'drugstone_link_mqc.tsv', keepHeader: true))
+        ch_drugstone_export_multiqc = DRUGSTONEEXPORT.out.link
+            .map{ meta, path -> path }
+            .collectFile(
+                storeDir: "${params.outdir}/mqc_summaries",
+                name: 'drugstone_link_mqc.tsv',
+                keepHeader: true
+            )
+        ch_multiqc_files = ch_multiqc_files.mix(ch_drugstone_export_multiqc)
     }
 
     // Annotation and BIOPAX conversion
@@ -319,7 +340,10 @@ workflow MODULEDISCOVERY {
             ch_multiqc_files = ch_multiqc_files.mix(
                 DIGEST.out.multiqc
                 .map{ meta, path -> path }
-                .collectFile(name: 'digest_mqc.tsv', keepHeader: true)
+                .collectFile(
+                    storeDir: "${params.outdir}/mqc_summaries",
+                    name: 'digest_mqc.tsv',
+                    keepHeader: true)
             )
         }
 
