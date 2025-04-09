@@ -83,6 +83,21 @@ def filter_rwr(g, module, filter_column):
     return g
 
 
+def filter_sca(g, module, filter_column):
+    g.vp["seed"] = g.new_vertex_property("bool")
+    g.vp["connector"] = g.new_vertex_property("bool")
+    with open(module, "r") as file:
+        for line in file.readlines():
+            line = line.strip().split("\t")
+            v = gt.find_vertex(g, g.vp.name, line[0])[0]
+            g.vp[filter_column][v] = True
+            if line[1] == "seed":
+                g.vp["seed"][v] = True
+            else:
+                g.vp["connector"][v] = True
+    return g
+
+
 def filter_g(g, tool, module, seeds):
     """
     Filters a graph_tools Graph object based on a module of a given tool.
@@ -97,6 +112,8 @@ def filter_g(g, tool, module, seeds):
         g = filter_robust(g, module, filter_column)
     elif tool == "rwr":
         g = filter_rwr(g, module, filter_column)
+    elif tool == "sca":
+        g = filter_sca(g, module, filter_column)
     else:
         logger.critical(f"Unknown tool: {tool}")
         sys.exit(1)
@@ -168,7 +185,7 @@ def parse_args(argv=None):
         "-t",
         "--tool",
         help="The tool, that generated the module.",
-        choices=("diamond", "domino", "robust", "robust_bias_aware", "rwr"),
+        choices=("diamond", "domino", "robust", "robust_bias_aware", "rwr", "sca"),
     )
     parser.add_argument(
         "-m",
