@@ -1,16 +1,15 @@
 process GRAPHTOOLPARSER {
+    tag "$meta.id"
     label 'process_single'
 
-    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
-
     input:
-    path network
+    tuple val(meta), (path(network), stageAs: 'input/*')
     val format
 
     output:
-    path "*${format}*"          , emit: network
-    path "input_network_mqc.tsv", emit: multiqc, optional: true
-    path "versions.yml"         , emit: versions
+    tuple val(meta), path("*${format}*") , emit: network
+    path "input_network_mqc.tsv"        , emit: multiqc, optional: true
+    path "versions.yml"                 , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

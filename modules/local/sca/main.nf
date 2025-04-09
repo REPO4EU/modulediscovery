@@ -1,19 +1,18 @@
 process SCA{
     tag "$meta.id"
     label 'process_single'
-    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
 
     input:
-    tuple val(meta), path(seeds)
-    path network
+    tuple val(meta), path(seeds), path (network)
 
     output:
     tuple val(meta), path("predicted_genelist.txt")   , emit: module
-    path "versions.yml"                                                 , emit: versions
+    path "versions.yml"                               , emit: versions
 
 
     when:
     task.ext.when == null || task.ext.when
+
     script:
     """
     SCA2024.py $network $seeds

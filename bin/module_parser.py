@@ -108,7 +108,7 @@ def filter_g(g, tool, module, seeds):
         g = filter_diamond(g, module, filter_column, seeds)
     elif tool == "domino":
         g = filter_domino(g, module, filter_column)
-    elif tool == "robust":
+    elif tool == "robust" or tool == "robust_bias_aware":
         g = filter_robust(g, module, filter_column)
     elif tool == "rwr":
         g = filter_rwr(g, module, filter_column)
@@ -185,7 +185,7 @@ def parse_args(argv=None):
         "-t",
         "--tool",
         help="The tool, that generated the module.",
-        choices=("diamond", "domino", "robust", "rwr", "sca"),
+        choices=("diamond", "domino", "robust", "robust_bias_aware", "rwr", "sca"),
     )
     parser.add_argument(
         "-m",

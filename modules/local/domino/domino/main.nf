@@ -8,12 +8,9 @@ process DOMINO_DOMINO {     // Process name, should be all upper case. Only the 
         'quay.io/biocontainers/domino:1.0.0--pyhdfd78af_0' }"   // The preferred way to two define a container, if a biocontainer is available
 
     input:
-    tuple val(meta), path(seeds)
-    path network
-    path slices
+    tuple val(meta), path(seeds), path (network), path(slices)
 
-
-    output:                                                         // Define the expected outputs, the "emit:" keyword defines, how the output can be accessed by other processes
+    output:                                                                       // Define the expected outputs, the "emit:" keyword defines, how the output can be accessed by other processes
     tuple val(meta), path("${seeds.baseName}/modules.out")  , emit: modules       // DOMINO will place a modules.out file in a folder, named as the seed gene file
     path "versions.yml"                                     , emit: versions      // The software versions, in this case it is only the python version
 

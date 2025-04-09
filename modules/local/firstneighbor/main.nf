@@ -2,14 +2,11 @@ process FIRSTNEIGHBOR {
     tag "$meta.id"
     label 'process_single'
 
-    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
-
     input:
-    tuple val(meta), path(seeds)
-    path network
+    tuple val(meta), path(seeds), path (network)
 
     output:
-    tuple val(meta), path("${seeds.baseName}.firstneighbor.gt"), emit: module
+    tuple val(meta), path("${meta.id}.firstneighbor.gt"), emit: module
     path "versions.yml"                                 , emit: versions
 
     when:
@@ -17,7 +14,7 @@ process FIRSTNEIGHBOR {
 
     script:
     """
-    firstneighbor_tool.py -n $network -s $seeds -o "${seeds.baseName}.firstneighbor.gt"
+    firstneighbor_tool.py -n $network -s $seeds -o "${meta.id}.firstneighbor.gt"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

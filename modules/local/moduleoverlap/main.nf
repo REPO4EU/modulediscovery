@@ -1,7 +1,5 @@
 process MODULEOVERLAP {
     label 'process_single'
-    container 'docker.io/kerstingjohannes/modulediscovery:1.0.0'
-    debug true
 
     input:
     val(ids)
@@ -12,7 +10,8 @@ process MODULEOVERLAP {
     path('shared_nodes_matrix_mqc.tsv')      , emit: shared_multiqc
 
     script:
+    def concatenated_ids = ids.join(" ")
     """
-    module_overlap.py --ids $ids --inputs $inputs
+    module_overlap.py --ids $concatenated_ids --inputs $inputs
     """
 }
