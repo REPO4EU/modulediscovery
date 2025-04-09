@@ -215,7 +215,7 @@
                 },
                 "n_network_permutations": {
                     "type": "integer",
-                    "default": 1000,
+                    "default": 100,
                     "fa_icon": "fas fa-cogs",
                     "description": "Number of times the network will be permuted for the network permutation-based evaluation"
                 },
