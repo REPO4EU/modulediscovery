@@ -48,12 +48,14 @@ def jaccard_index(lists_candidates, reference_candidates):
     scores_Jaccard = []
     for list in lists_candidates:
         overlap = len(set(list) & set(reference_candidates))
-        scores_Jaccard.append(
-            overlap / (len(list) + len(reference_candidates) - overlap)
-        )
+        union = len(set(list) | set(reference_candidates))
+        if union == 0:
+            scores_Jaccard.append(float("nan"))
+        else:
+            scores_Jaccard.append(overlap / union)
 
-    avg_score_Jaccard = round(np.mean(scores_Jaccard), 4)
-    std_score_Jaccard = round(np.std(scores_Jaccard), 4)
+    avg_score_Jaccard = round(np.nanmean(scores_Jaccard), 4)
+    std_score_Jaccard = round(np.nanstd(scores_Jaccard), 4)
     scores_Jaccard_round = [round(k, 4) for k in scores_Jaccard]
 
     return scores_Jaccard_round, avg_score_Jaccard, std_score_Jaccard

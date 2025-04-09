@@ -158,12 +158,14 @@ def jaccard_index(lists_candidates, reference_candidates):
     scores_Jaccard = []
     for list in lists_candidates:
         overlap = len(set(list) & set(reference_candidates))
-        scores_Jaccard.append(
-            overlap / (len(list) + len(reference_candidates) - overlap)
-        )
+        union = len(set(list) | set(reference_candidates))
+        if union == 0:
+            scores_Jaccard.append(float("nan"))
+        else:
+            scores_Jaccard.append(overlap / union)
 
-    avg_score_Jaccard = round(np.mean(scores_Jaccard), 4)
-    std_score_Jaccard = round(np.std(scores_Jaccard), 4)
+    avg_score_Jaccard = round(np.nanmean(scores_Jaccard), 4)
+    std_score_Jaccard = round(np.nanstd(scores_Jaccard), 4)
     scores_Jaccard_round = [round(k, 4) for k in scores_Jaccard]
 
     return scores_Jaccard_round, avg_score_Jaccard, std_score_Jaccard
@@ -194,27 +196,36 @@ def topological_measures(reference_candidates, G, lists_candidates):
     n_candidates = len(reference_candidates)
     nodes_ppi_wo_candidate = [n for n in nodes_ppi if n not in reference_candidates]
 
-    # size of the largest connected component (LCC)
-    lcc_size = len(max(nx.connected_components(candidate_network), key=len))
+    if n_candidates != 0:
+        # size of the largest connected component (LCC)
+        lcc_size = len(max(nx.connected_components(candidate_network), key=len))
+
+        # number of connected genes (takes also into account the case of multiple connected components)
+        interconnected_genes = n_candidates - len(list(nx.isolates(candidate_network)))
+
+        # normalized number of interedges
+        interedges = candidate_network.number_of_edges()
+
+        n_possible_connections = (
+            sum([G.degree(s) for s in reference_candidates]) - interedges
+        )
+        edgibility = interedges / n_possible_connections
+
+        # modularity (computed as the candidates VS the whole network)
+        modularity = nx.community.modularity(
+            G, [reference_candidates, nodes_ppi_wo_candidate]
+        )
+
+    else:
+        logger.warning("Empty list of reference candidates")
+        lcc_size = 0
+        interconnected_genes = 0
+        edgibility = 0
+        modularity = 0
+
     l_random_lcc = []
-
-    # number of connected genes (takes also into account the case of multiple connected components)
-    interconnected_genes = n_candidates - len(list(nx.isolates(candidate_network)))
     l_interconnected_genes = []
-
-    # normalized number of interedges
-    interedges = candidate_network.number_of_edges()
-
-    n_possible_connections = (
-        sum([G.degree(s) for s in reference_candidates]) - interedges
-    )
-    edgibility = interedges / n_possible_connections
     l_random_edgibility = []
-
-    # modularity (computed as the candidates VS the whole network)
-    modularity = nx.community.modularity(
-        G, [reference_candidates, nodes_ppi_wo_candidate]
-    )
     l_random_modularity = []
 
     for l in lists_candidates:

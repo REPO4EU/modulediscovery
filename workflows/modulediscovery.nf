@@ -184,6 +184,7 @@ workflow MODULEDISCOVERY {
     // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), val(topology[nodes,edges]) ]
     ch_topology = TOPOLOGY.out.topology
         .map{meta, path -> [meta, readTsvAsListOfMaps(path)]}.transpose() // Parse topology information from tsv file
+        .map{meta, topology -> [meta, topology + ["nodes": topology["nodes"].toInteger(), "edges": topology["edges"].toInteger()]]} // Parse to integer
         .map{meta, topology -> [meta, topology.subMap("nodes", "edges")]} // Select only nodes and edges
 
     // channel: [ val(meta[id,module_id,amim,seeds_id,network_id,nodes,edges]), path(module) ]
@@ -208,15 +209,26 @@ workflow MODULEDISCOVERY {
     SAVEMODULES(ch_modules)
     ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
 
+
+    // Separate empty modules
+    ch_modules_empty_not_empty = ch_modules
+        .branch{ meta, module ->
+            empty: meta.nodes == 0
+            not_empty: meta.nodes > 0
+        }
+    ch_modules_not_empty = ch_modules_empty_not_empty.not_empty
+    ch_modules_empty_not_empty.empty | view {meta, module -> log.warn("$meta.id produced an empty output.") }
+
+
     // Visualize modules
     if(!params.skip_visualization){
-        VISUALIZEMODULES(ch_modules, params.visualization_max_nodes)
+        VISUALIZEMODULES(ch_modules_not_empty, params.visualization_max_nodes)
         ch_versions = ch_versions.mix(VISUALIZEMODULES.out.versions)
     }
 
     // Drugstone export
     if(!params.skip_drugstone_export){
-        DRUGSTONEEXPORT(ch_modules, id_space)
+        DRUGSTONEEXPORT(ch_modules_not_empty, id_space)
         ch_versions = ch_versions.mix(DRUGSTONEEXPORT.out.versions)
         ch_multiqc_files = ch_multiqc_files
             .mix(DRUGSTONEEXPORT.out.link.map{ meta, path -> path }.collectFile(name: 'drugstone_link_mqc.tsv', keepHeader: true))
@@ -242,7 +254,7 @@ workflow MODULEDISCOVERY {
 
     if(!params.skip_evaluation){
 
-        GT2TSV_Modules(ch_modules)
+        GT2TSV_Modules(ch_modules_not_empty)
         GT2TSV_Network(ch_network_gt)
 
         // channel: [ val(meta), path(nodes) ]
@@ -349,6 +361,7 @@ workflow MODULEDISCOVERY {
             }
 
         ch_drugstone_input = SAVEMODULES.out.nodes_tsv
+            .filter{meta, module -> meta.nodes > 0} // Filter out empty modules
             .combine(ch_algorithms_drugs)
             .multiMap { meta, module, algorithm ->
                 module: [meta, module]
@@ -362,7 +375,11 @@ workflow MODULEDISCOVERY {
 
     // Drug prioritization - Proximity
     if(params.run_proximity){
-        GT_PROXIMITY(ch_network_gt, SAVEMODULES.out.nodes_tsv, ch_shortest_paths, proximity_dt)
+        GT_PROXIMITY(
+            ch_network_gt,
+            SAVEMODULES.out.nodes_tsv.filter{meta, module -> meta.nodes > 0}, // Filter out empty modules
+            ch_shortest_paths,
+            proximity_dt)
         ch_versions = ch_versions.mix(GT_PROXIMITY.out.versions)
     }
 
