@@ -46,6 +46,7 @@ include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_modulediscovery_pipeline'
+include { multiqcTsvFromList     } from '../subworkflows/local/utils_nfcore_modulediscovery_pipeline'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -236,17 +237,19 @@ workflow MODULEDISCOVERY {
     // Warning for empty modules
     ch_modules_empty_not_empty
         .empty
-        .view {meta, module -> log.warn("$meta.id produced an empty output.") }
-        .map {meta, module -> "$meta.id"}
+        .view {meta, module -> log.warn("$meta.id produced an empty output module.") }
+        .map {meta, module -> "$meta.id\t$meta.nodes" }
         .collect()
         .map { tsv_data ->
-            def header = ["Module"]
+            def header = ["Module\tNodes"]
             multiqcTsvFromList(tsv_data, header)
         }
         .collectFile(
             storeDir: "${params.outdir}/mqc_summaries",
-            name: "warn_empty_modules.tsv",
-        )
+            name: "warn_empty_modules_mqc.tsv",
+        ).set { ch_modules_empty_multiqc }
+    ch_multiqc_files = ch_multiqc_files.mix(ch_modules_empty_multiqc)
+
 
 
     // Visualize modules

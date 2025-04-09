@@ -110,7 +110,7 @@ custom_data:
           placement: 3000
   warn_empty_modules:
     section_name: "WARNING: Empty modules"
-    description: "List of modules with no nodes, which were ignored in the analysis."
+    description: "List of empty modules, which were ignored in the analysis."
     plot_type: "table"
     pconfig:
       id: "warn_empty_modules_table"
@@ -129,7 +129,7 @@ custom_data:
   drugstone_link:
     id: "drugstone_link"
     section_name: "Drugstone Links"
-    description: "Using the links in this table you can see the modules visualized with the drugst.one api"
+    description: "Using the links in this table you can see the modules visualized with the Drugst.One api"
     plot_type: "table"
     pconfig:
       id: "download_links_table"
