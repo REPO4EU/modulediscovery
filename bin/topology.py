@@ -4,6 +4,7 @@ import graph_tool.all as gt
 import sys
 import argparse
 import logging
+import numpy
 
 logger = logging.getLogger()
 
@@ -49,6 +50,10 @@ def main(argv=None):
             shortest_paths = gt.shortest_distance(g, source=added_node, target=seeds)
             min_path_length = min(shortest_paths)
             max_dist_to_seed = max(max_dist_to_seed, min_path_length)
+
+        # set max_dist_to_seed to infinity if a node is not connected to any seed node
+        if max_dist_to_seed == numpy.iinfo(numpy.int32).max:
+            max_dist_to_seed = numpy.inf
     else:
         num_seeds = ""
         max_dist_to_seed = ""
