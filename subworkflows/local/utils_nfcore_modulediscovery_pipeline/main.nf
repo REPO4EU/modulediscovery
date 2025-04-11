@@ -16,6 +16,7 @@ include { completionSummary         } from '../../nf-core/utils_nfcore_pipeline'
 include { imNotification            } from '../../nf-core/utils_nfcore_pipeline'
 include { UTILS_NFCORE_PIPELINE     } from '../../nf-core/utils_nfcore_pipeline'
 include { UTILS_NEXTFLOW_PIPELINE   } from '../../nf-core/utils_nextflow_pipeline'
+include { logColours                } from '../../nf-core/utils_nfcore_pipeline'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -264,6 +265,7 @@ workflow PIPELINE_INITIALISATION {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+def module_empty = [:]
 workflow PIPELINE_COMPLETION {
 
     take:
@@ -274,10 +276,17 @@ workflow PIPELINE_COMPLETION {
     monochrome_logs // boolean: Disable ANSI colour codes in log output
     hook_url        //  string: hook URL for notifications
     multiqc_report  //  string: Path to MultiQC report
+    module_empty_status //  map: Empty/not empty status per disease module
+
 
     main:
     summary_params = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
     def multiqc_reports = multiqc_report.toList()
+
+    module_empty_status
+        .map{
+            id, status -> module_empty[id] = status
+        }
 
     //
     // Completion email and summary
@@ -295,6 +304,7 @@ workflow PIPELINE_COMPLETION {
             )
         }
 
+        logWarnings(monochrome_logs=monochrome_logs, module_empty=module_empty)
         completionSummary(monochrome_logs)
         if (hook_url) {
             imNotification(summary_params, hook_url)
@@ -463,5 +473,16 @@ def methodsDescriptionText(mqc_methods_yaml) {
     def description_html = engine.createTemplate(methods_text).make(meta)
 
     return description_html.toString()
+}
+
+def logWarnings(monochrome_logs=true, module_empty=[:]) {
+    def colors = logColours(monochrome_logs)
+
+    def module_empty_count = module_empty.count  { key, value -> value == true }
+    if (workflow.success) {
+        if (module_empty_count > 0) {
+            log.info "-${colors.purple}[$workflow.manifest.name]${colors.red} Please check MultiQC report: ${module_empty_count}/${module_empty.size()} disease modules were empty.${colors.reset}-"
+        }
+    }
 }
 

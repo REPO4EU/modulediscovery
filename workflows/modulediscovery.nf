@@ -126,6 +126,7 @@ workflow MODULEDISCOVERY {
     // Channels
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
+    ch_module_empty_status = Channel.empty()
 
     // Run network parser for  networks, supported by graph-tool
     GRAPHTOOLPARSER(ch_network, 'gt')
@@ -150,7 +151,6 @@ workflow MODULEDISCOVERY {
 
     INPUTCHECK(ch_seeds_network)
     ch_seeds = INPUTCHECK.out.seeds
-    INPUTCHECK.out.removed_seeds | view {meta, path -> log.warn("Removed seeds from $meta.id. Check multiqc report.") }
     ch_seeds_multiqc = INPUTCHECK.out.multiqc
         .map{ meta, path -> path }
         .collectFile(
@@ -225,6 +225,8 @@ workflow MODULEDISCOVERY {
     SAVEMODULES(ch_modules)
     ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
 
+    // Save status for workflow summary
+    ch_module_empty_status = ch_modules.map{meta, module -> [meta.id, meta.nodes == 0]}
 
     // Separate empty modules
     ch_modules_empty_not_empty = ch_modules
@@ -234,10 +236,9 @@ workflow MODULEDISCOVERY {
         }
     ch_modules_not_empty = ch_modules_empty_not_empty.not_empty
 
-    // Warning for empty modules
+    // Warning for empty modules in MultiQC report
     ch_modules_empty_not_empty
         .empty
-        .view {meta, module -> log.warn("$meta.id produced an empty output module.") }
         .map {meta, module -> "$meta.id\t$meta.nodes" }
         .collect()
         .map { tsv_data ->
@@ -526,8 +527,10 @@ workflow MODULEDISCOVERY {
         []
     )
 
-    emit:multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
-    versions       = ch_versions                 // channel: [ path(versions.yml) ]
+    emit:
+    module_empty_status = ch_module_empty_status      // channel: [id, boolean]
+    multiqc_report      = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
+    versions            = ch_versions                 // channel: [ path(versions.yml) ]
 
 }
 

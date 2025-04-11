@@ -50,8 +50,9 @@ workflow REPO4EU_MODULEDISCOVERY {
     ch_versions = ch_versions.mix(MODULEDISCOVERY.out.versions)
 
     emit:
-    multiqc_report = MODULEDISCOVERY.out.multiqc_report // channel: /path/to/multiqc_report.html
-    versions       = ch_versions                        // channel: [version1, version2, ...]
+    module_empty_status = MODULEDISCOVERY.out.module_empty_status // channel: [val(meta[id,network_id]), path(module_empty_status)]
+    multiqc_report      = MODULEDISCOVERY.out.multiqc_report // channel: /path/to/multiqc_report.html
+    versions            = ch_versions                        // channel: [version1, version2, ...]
 
 }
 /*
@@ -95,7 +96,8 @@ workflow {
         params.outdir,
         params.monochrome_logs,
         params.hook_url,
-        REPO4EU_MODULEDISCOVERY.out.multiqc_report
+        REPO4EU_MODULEDISCOVERY.out.multiqc_report,
+        REPO4EU_MODULEDISCOVERY.out.module_empty_status,
     )
 }
 
