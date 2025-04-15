@@ -136,6 +136,7 @@ workflow MODULEDISCOVERY {
     ch_network_multiqc = GRAPHTOOLPARSER.out.multiqc
         .map{ meta, path -> path }
         .collectFile(
+            cache: false,
             storeDir: "${params.outdir}/mqc_summaries",
             name: 'input_network_mqc.tsv',
             keepHeader: true
@@ -156,6 +157,7 @@ workflow MODULEDISCOVERY {
     ch_seeds_multiqc = INPUTCHECK.out.multiqc
         .map{ meta, path -> path }
         .collectFile(
+            cache: false,
             storeDir: "${params.outdir}/mqc_summaries",
             name: 'input_seeds_mqc.tsv',
             keepHeader: true
@@ -192,6 +194,7 @@ workflow MODULEDISCOVERY {
     ch_topology_multiqc = TOPOLOGY.out.topology
         .map{ meta, path -> path }
         .collectFile(
+            cache: false,
             storeDir: "${params.outdir}/mqc_summaries",
             name: 'topology_mqc.tsv',
             keepHeader: true
@@ -250,6 +253,7 @@ workflow MODULEDISCOVERY {
             multiqcTsvFromList(tsv_data, header)
         }
         .collectFile(
+            cache: false,
             storeDir: "${params.outdir}/mqc_summaries",
             name: "warn_empty_modules_mqc.tsv",
         ).set { ch_modules_empty_multiqc }
@@ -280,6 +284,7 @@ workflow MODULEDISCOVERY {
                 multiqcTsvFromList(tsv_data, header)
             }
             .collectFile(
+                cache: false,
                 storeDir: "${params.outdir}/mqc_summaries",
                 name: "warn_visualization_max_nodes_mqc.tsv",
             ).set { ch_visualization_multiqc }
@@ -312,6 +317,7 @@ workflow MODULEDISCOVERY {
                 multiqcTsvFromList(tsv_data, header)
             }
             .collectFile(
+                cache: false,
                 storeDir: "${params.outdir}/mqc_summaries",
                 name: "warn_drugstone_max_nodes_mqc.tsv",
             ).set { ch_drugstone_multiqc }
@@ -322,6 +328,7 @@ workflow MODULEDISCOVERY {
         ch_drugstone_export_multiqc = DRUGSTONEEXPORT.out.link
             .map{ meta, path -> path }
             .collectFile(
+                cache: false,
                 storeDir: "${params.outdir}/mqc_summaries",
                 name: 'drugstone_link_mqc.tsv',
                 keepHeader: true
@@ -403,6 +410,7 @@ workflow MODULEDISCOVERY {
                 DIGEST.out.multiqc
                 .map{ meta, path -> path }
                 .collectFile(
+                    cache: false,
                     storeDir: "${params.outdir}/mqc_summaries",
                     name: 'digest_mqc.tsv',
                     keepHeader: true)

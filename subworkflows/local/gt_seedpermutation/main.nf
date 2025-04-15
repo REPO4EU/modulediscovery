@@ -105,6 +105,7 @@ workflow GT_SEEDPERMUTATION {
     ch_multiqc_summary =  SEEDPERMUTATIONEVALUATION.out.multiqc_summary
         .map{ meta, path -> path }
         .collectFile(
+            cache: false,
             storeDir: "${params.outdir}/mqc_summaries",
             name: 'seed_permutation_mqc.tsv',
             keepHeader: true
@@ -114,6 +115,7 @@ workflow GT_SEEDPERMUTATION {
         .map{ meta, path -> path }
         .collectFile(
             item -> "  " + item.text,
+            cache: false,
             storeDir: "${params.outdir}/mqc_summaries",
             name: 'seed_permutation_jaccard_mqc.yaml',
             sort: true,

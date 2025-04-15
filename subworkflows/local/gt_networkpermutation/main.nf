@@ -96,6 +96,7 @@ workflow GT_NETWORKPERMUTATION {
     ch_multiqc_summary =  NETWORKPERMUTATIONEVALUATION.out.multiqc_summary
         .map{ meta, path -> path }
         .collectFile(
+            cache: false,
             storeDir: "${params.outdir}/mqc_summaries",
             name: 'network_permutation_mqc.tsv',
             keepHeader: true
@@ -105,6 +106,7 @@ workflow GT_NETWORKPERMUTATION {
         .map{ meta, path -> path }
         .collectFile(
             item -> "  " + item.text,
+            cache: false,
             storeDir: "${params.outdir}/mqc_summaries",
             name: 'network_permutation_jaccard_mqc.yaml',
             sort: true,
