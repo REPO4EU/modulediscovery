@@ -126,6 +126,7 @@ workflow MODULEDISCOVERY {
     // Channels
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
+    ch_seeds_empty_status = Channel.empty()
     ch_module_empty_status = Channel.empty()
     ch_visualization_skipped_status = Channel.empty()
     ch_drugstone_skipped_status = Channel.empty()
@@ -163,6 +164,12 @@ workflow MODULEDISCOVERY {
             keepHeader: true
         )
     ch_multiqc_files = ch_multiqc_files.mix(ch_seeds_multiqc)
+
+    // Save status for workflow summary
+    ch_seeds_empty_status = ch_seeds_network
+        .map{meta, seeds, network -> meta.id}
+        .join(INPUTCHECK.out.seeds.map{ meta, seeds -> [meta.id, seeds]}, by: 0, remainder: true)
+        .map{id, seeds -> [id, seeds == null] }
 
     // Add seeds modules to module channel
     // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module)]
@@ -547,6 +554,7 @@ workflow MODULEDISCOVERY {
     )
 
     emit:
+    seeds_empty_status              = ch_seeds_empty_status             // channel: [id, boolean]
     module_empty_status             = ch_module_empty_status            // channel: [id, boolean]
     visualization_skipped_status    = ch_visualization_skipped_status   // channel: [id, boolean]
     drugstone_skipped_status        = ch_drugstone_skipped_status       // channel: [id, boolean]

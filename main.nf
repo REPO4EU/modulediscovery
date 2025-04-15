@@ -50,6 +50,7 @@ workflow REPO4EU_MODULEDISCOVERY {
     ch_versions = ch_versions.mix(MODULEDISCOVERY.out.versions)
 
     emit:
+    seeds_empty_status              = MODULEDISCOVERY.out.seeds_empty_status             // channel: [id, boolean]
     module_empty_status             = MODULEDISCOVERY.out.module_empty_status           // channel: [id, boolean]
     visualization_skipped_status    = MODULEDISCOVERY.out.visualization_skipped_status  // channel: [id, boolean]
     drugstone_skipped_status        = MODULEDISCOVERY.out.drugstone_skipped_status      // channel: [id, boolean]
@@ -99,6 +100,7 @@ workflow {
         params.monochrome_logs,
         params.hook_url,
         REPO4EU_MODULEDISCOVERY.out.multiqc_report,
+        REPO4EU_MODULEDISCOVERY.out.seeds_empty_status,
         REPO4EU_MODULEDISCOVERY.out.module_empty_status,
         REPO4EU_MODULEDISCOVERY.out.visualization_skipped_status,
         REPO4EU_MODULEDISCOVERY.out.drugstone_skipped_status

@@ -265,6 +265,7 @@ workflow PIPELINE_INITIALISATION {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+def seeds_empty = [:]
 def module_empty = [:]
 def visualization_skipped = [:]
 def drugstone_skipped = [:]
@@ -278,6 +279,7 @@ workflow PIPELINE_COMPLETION {
     monochrome_logs // boolean: Disable ANSI colour codes in log output
     hook_url        //  string: hook URL for notifications
     multiqc_report  //  string: Path to MultiQC report
+    seeds_empty_status           //  map: Empty/not empty status per seed file - network file combination
     module_empty_status          //  map: Empty/not empty status per module
     visualization_skipped_status //  map: Skipped/not skipped status per module
     drugstone_skipped_status     //  map: Skipped/not skipped status per module
@@ -287,6 +289,10 @@ workflow PIPELINE_COMPLETION {
     summary_params = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
     def multiqc_reports = multiqc_report.toList()
 
+    seeds_empty_status
+        .map{
+            id, status -> seeds_empty[id] = status
+        }
     module_empty_status
         .map{
             id, status -> module_empty[id] = status
@@ -319,7 +325,7 @@ workflow PIPELINE_COMPLETION {
             )
         }
 
-        logWarnings(monochrome_logs=monochrome_logs, module_empty=module_empty, visualization_skipped=visualization_skipped, drugstone_skipped=drugstone_skipped)
+        logWarnings(monochrome_logs=monochrome_logs, seeds_empty=seeds_empty, module_empty=module_empty, visualization_skipped=visualization_skipped, drugstone_skipped=drugstone_skipped)
         completionSummary(monochrome_logs)
         if (hook_url) {
             imNotification(summary_params, hook_url)
@@ -490,14 +496,18 @@ def methodsDescriptionText(mqc_methods_yaml) {
     return description_html.toString()
 }
 
-def logWarnings(monochrome_logs=true, module_empty=[:], visualization_skipped=[:], drugstone_skipped=[:]) {
+def logWarnings(monochrome_logs=true, seeds_empty=[:], module_empty=[:], visualization_skipped=[:], drugstone_skipped=[:]) {
     def colors = logColours(monochrome_logs)
 
+    def seeds_empty_count = seeds_empty.count  { key, value -> value == true }
     def module_empty_count = module_empty.count  { key, value -> value == true }
     def visualization_skipped_count = visualization_skipped.count  { key, value -> value == true }
     def drugstone_skipped_count = drugstone_skipped.count  { key, value -> value == true }
 
     if (workflow.success) {
+        if (seeds_empty_count > 0) {
+            log.info "-${colors.purple}[$workflow.manifest.name]${colors.red} Please check MultiQC report: ${seeds_empty_count}/${seeds_empty.size()} combinations of seed files and network files did not have any overlapping nodes and were not used in subsequent processes.${colors.reset}-"
+        }
         if (module_empty_count > 0) {
             log.info "-${colors.purple}[$workflow.manifest.name]${colors.red} Please check MultiQC report: ${module_empty_count}/${module_empty.size()} modules were empty and not used in subsequent processes.${colors.reset}-"
         }
