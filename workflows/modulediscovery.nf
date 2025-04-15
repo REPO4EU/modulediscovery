@@ -127,6 +127,8 @@ workflow MODULEDISCOVERY {
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
     ch_module_empty_status = Channel.empty()
+    ch_visualization_skipped_status = Channel.empty()
+    ch_drugstone_skipped_status = Channel.empty()
 
     // Run network parser for  networks, supported by graph-tool
     GRAPHTOOLPARSER(ch_network, 'gt')
@@ -225,9 +227,6 @@ workflow MODULEDISCOVERY {
     SAVEMODULES(ch_modules)
     ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
 
-    // Save status for workflow summary
-    ch_module_empty_status = ch_modules.map{meta, module -> [meta.id, meta.nodes == 0]}
-
     // Separate empty modules
     ch_modules_empty_not_empty = ch_modules
         .branch{ meta, module ->
@@ -235,6 +234,11 @@ workflow MODULEDISCOVERY {
             not_empty: meta.nodes > 0
         }
     ch_modules_not_empty = ch_modules_empty_not_empty.not_empty
+
+    // Save status for workflow summary
+    ch_module_empty_status = ch_module_empty_status
+        .mix(ch_modules_empty_not_empty.empty.map {meta, module -> [meta.id, true] })
+        .mix(ch_modules_empty_not_empty.not_empty.map {meta, module -> [meta.id, false] })
 
     // Warning for empty modules in MultiQC report
     ch_modules_empty_not_empty
@@ -261,10 +265,14 @@ workflow MODULEDISCOVERY {
                 pass: true
             }
 
-        // Warning for too many nodes
+        // Save status for workflow summary
+        ch_visualization_skipped_status = ch_visualization_skipped_status
+            .mix(ch_visualization_input.fail.map {meta, module -> [meta.id, true] })
+            .mix(ch_visualization_input.pass.map {meta, module -> [meta.id, false] })
+
+        // MultiQC report warning for too many nodes
         ch_visualization_input
             .fail
-            .view {meta, module -> log.warn("$meta.id has more nodes than specified with --visualization_max_nodes (${meta.nodes} > ${params.visualization_max_nodes}). Skipping visualization.") }
             .map {meta, module -> "$meta.id\t$meta.nodes" }
             .collect()
             .map { tsv_data ->
@@ -289,10 +297,14 @@ workflow MODULEDISCOVERY {
                 pass: true
             }
 
-        // Warning for too many nodes
+        // Save status for workflow summary
+        ch_drugstone_skipped_status = ch_drugstone_skipped_status
+        .mix(ch_drugstone_export_input.fail.map {meta, module -> [meta.id, true] })
+        .mix(ch_drugstone_export_input.pass.map {meta, module -> [meta.id, false] })
+
+        // MultiQC report warning for too many nodes
         ch_drugstone_export_input
             .fail
-            .view {meta, module -> log.warn("$meta.id has more nodes than specified with --drugstone_max_nodes (${meta.nodes} > ${params.drugstone_max_nodes}). Skipping Drugst.One export.") }
             .map {meta, module -> "$meta.id\t$meta.nodes" }
             .collect()
             .map { tsv_data ->
@@ -452,7 +464,6 @@ workflow MODULEDISCOVERY {
                 fail: meta.nodes > params.drugstone_max_nodes
                 pass: true
             }
-        ch_drugstone_input.fail | view {meta, module -> log.warn("$meta.id has more nodes than specified with --drugstone_max_nodes (${meta.nodes} > ${params.drugstone_max_nodes}). Skipping Drugst.One drug prioritization.") }
 
         ch_drugstone_input = ch_drugstone_input.pass
             .combine(ch_algorithms_drugs)
@@ -528,9 +539,11 @@ workflow MODULEDISCOVERY {
     )
 
     emit:
-    module_empty_status = ch_module_empty_status      // channel: [id, boolean]
-    multiqc_report      = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
-    versions            = ch_versions                 // channel: [ path(versions.yml) ]
+    module_empty_status             = ch_module_empty_status            // channel: [id, boolean]
+    visualization_skipped_status    = ch_visualization_skipped_status   // channel: [id, boolean]
+    drugstone_skipped_status        = ch_drugstone_skipped_status       // channel: [id, boolean]
+    multiqc_report                  = MULTIQC.out.report.toList()       // channel: /path/to/multiqc_report.html
+    versions                        = ch_versions                       // channel: [ path(versions.yml) ]
 
 }
 

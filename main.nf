@@ -50,9 +50,11 @@ workflow REPO4EU_MODULEDISCOVERY {
     ch_versions = ch_versions.mix(MODULEDISCOVERY.out.versions)
 
     emit:
-    module_empty_status = MODULEDISCOVERY.out.module_empty_status // channel: [val(meta[id,network_id]), path(module_empty_status)]
-    multiqc_report      = MODULEDISCOVERY.out.multiqc_report // channel: /path/to/multiqc_report.html
-    versions            = ch_versions                        // channel: [version1, version2, ...]
+    module_empty_status             = MODULEDISCOVERY.out.module_empty_status           // channel: [id, boolean]
+    visualization_skipped_status    = MODULEDISCOVERY.out.visualization_skipped_status  // channel: [id, boolean]
+    drugstone_skipped_status        = MODULEDISCOVERY.out.drugstone_skipped_status      // channel: [id, boolean]
+    multiqc_report                  = MODULEDISCOVERY.out.multiqc_report                // channel: /path/to/multiqc_report.html
+    versions                        = ch_versions                                       // channel: [version1, version2, ...]
 
 }
 /*
@@ -98,6 +100,8 @@ workflow {
         params.hook_url,
         REPO4EU_MODULEDISCOVERY.out.multiqc_report,
         REPO4EU_MODULEDISCOVERY.out.module_empty_status,
+        REPO4EU_MODULEDISCOVERY.out.visualization_skipped_status,
+        REPO4EU_MODULEDISCOVERY.out.drugstone_skipped_status
     )
 }
 

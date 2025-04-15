@@ -266,6 +266,8 @@ workflow PIPELINE_INITIALISATION {
 */
 
 def module_empty = [:]
+def visualization_skipped = [:]
+def drugstone_skipped = [:]
 workflow PIPELINE_COMPLETION {
 
     take:
@@ -276,7 +278,9 @@ workflow PIPELINE_COMPLETION {
     monochrome_logs // boolean: Disable ANSI colour codes in log output
     hook_url        //  string: hook URL for notifications
     multiqc_report  //  string: Path to MultiQC report
-    module_empty_status //  map: Empty/not empty status per disease module
+    module_empty_status          //  map: Empty/not empty status per module
+    visualization_skipped_status //  map: Skipped/not skipped status per module
+    drugstone_skipped_status     //  map: Skipped/not skipped status per module
 
 
     main:
@@ -287,6 +291,17 @@ workflow PIPELINE_COMPLETION {
         .map{
             id, status -> module_empty[id] = status
         }
+
+    visualization_skipped_status
+        .map{
+            id, status -> visualization_skipped[id] = status
+        }
+
+    drugstone_skipped_status
+        .map{
+            id, status -> drugstone_skipped[id] = status
+        }
+
 
     //
     // Completion email and summary
@@ -304,7 +319,7 @@ workflow PIPELINE_COMPLETION {
             )
         }
 
-        logWarnings(monochrome_logs=monochrome_logs, module_empty=module_empty)
+        logWarnings(monochrome_logs=monochrome_logs, module_empty=module_empty, visualization_skipped=visualization_skipped, drugstone_skipped=drugstone_skipped)
         completionSummary(monochrome_logs)
         if (hook_url) {
             imNotification(summary_params, hook_url)
@@ -475,13 +490,22 @@ def methodsDescriptionText(mqc_methods_yaml) {
     return description_html.toString()
 }
 
-def logWarnings(monochrome_logs=true, module_empty=[:]) {
+def logWarnings(monochrome_logs=true, module_empty=[:], visualization_skipped=[:], drugstone_skipped=[:]) {
     def colors = logColours(monochrome_logs)
 
     def module_empty_count = module_empty.count  { key, value -> value == true }
+    def visualization_skipped_count = visualization_skipped.count  { key, value -> value == true }
+    def drugstone_skipped_count = drugstone_skipped.count  { key, value -> value == true }
+
     if (workflow.success) {
         if (module_empty_count > 0) {
-            log.info "-${colors.purple}[$workflow.manifest.name]${colors.red} Please check MultiQC report: ${module_empty_count}/${module_empty.size()} disease modules were empty.${colors.reset}-"
+            log.info "-${colors.purple}[$workflow.manifest.name]${colors.red} Please check MultiQC report: ${module_empty_count}/${module_empty.size()} modules were empty and not used in subsequent processes.${colors.reset}-"
+        }
+        if (visualization_skipped_count > 0) {
+            log.info "-${colors.purple}[$workflow.manifest.name]${colors.red} Please check MultiQC report: ${visualization_skipped_count}/${visualization_skipped.size()} modules were too large for visualization (> ${params.visualization_max_nodes} nodes). You can adjust the threshold with the '--visualization_max_nodes' parameter.${colors.reset}-"
+        }
+        if (drugstone_skipped_count > 0) {
+            log.info "-${colors.purple}[$workflow.manifest.name]${colors.red} Please check MultiQC report: ${drugstone_skipped_count}/${drugstone_skipped.size()} modules were too large for Drugst.One (> ${params.drugstone_max_nodes} nodes). You can adjust the threshold with the '--drugstone_max_nodes' parameter.${colors.reset}-"
         }
     }
 }
