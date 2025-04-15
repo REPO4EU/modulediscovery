@@ -76,11 +76,14 @@ workflow GT_NETWORKPERMUTATION {
         }
 
     // Join permuted modules with original modules
-    ch_evaluation = ch_modules
+    ch_evaluation = ch_modules.map{meta, module -> [meta.module_id, meta, module]}
         // Join with permuted modules
-        .join(ch_permuted_modules, by: 0, failOnDuplicate: true, failOnMismatch: true)
+        .join(
+            ch_permuted_modules.map{meta, permuted_modules -> [meta.module_id, permuted_modules]},
+            by: 0, failOnDuplicate: true, failOnMismatch: true
+        )
         // Prepare channel for evaluation
-        .multiMap{meta, module, permuted_modules ->
+        .multiMap{module_id, meta, module, permuted_modules ->
             module: [meta, module]
             permuted_modules: permuted_modules
         }
@@ -92,12 +95,20 @@ workflow GT_NETWORKPERMUTATION {
     ch_versions = ch_versions.mix(NETWORKPERMUTATIONEVALUATION.out.versions)
     ch_multiqc_summary =  NETWORKPERMUTATIONEVALUATION.out.multiqc_summary
         .map{ meta, path -> path }
-        .collectFile(name: 'network_permutation_mqc.tsv', keepHeader: true)
+        .collectFile(
+            cache: false,
+            storeDir: "${params.outdir}/mqc_summaries",
+            name: 'network_permutation_mqc.tsv',
+            keepHeader: true
+        )
     ch_multiqc_jaccard =
         NETWORKPERMUTATIONEVALUATION.out.multiqc_jaccard
         .map{ meta, path -> path }
         .collectFile(
-            item -> "  " + item.text, name: 'network_permutation_jaccard_mqc.yaml',
+            item -> "  " + item.text,
+            cache: false,
+            storeDir: "${params.outdir}/mqc_summaries",
+            name: 'network_permutation_jaccard_mqc.yaml',
             sort: true,
             seed: new File("$projectDir/assets/network_permutation_jaccard_header.yaml").text
         )

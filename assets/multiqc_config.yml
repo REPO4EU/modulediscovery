@@ -18,6 +18,9 @@ run_modules:
 
 custom_content:
   order:
+    - warn_empty_modules
+    - warn_visualization_max_nodes
+    - warn_drugstone_max_nodes
     - input
     - input_seeds
     - input_network
@@ -107,6 +110,32 @@ custom_data:
           format: "{:.2f}"
           scale: "RdYlGn-rev"
           placement: 3000
+  warn_empty_modules:
+    section_name: "WARNING: Empty modules"
+    description: "List of empty modules, which were ignored in the analysis."
+    plot_type: "table"
+    pconfig:
+      id: "warn_empty_modules_table"
+      title: "Empty modules"
+      namespace: "Empty modules"
+  warn_visualization_max_nodes:
+    section_name: "WARNING: Modules not visualized"
+    description: "List of modules with too many nodes for visualization.
+      The maximum number of nodes can be adjusted with the '--visualization_max_nodes' parameter."
+    plot_type: "table"
+    pconfig:
+      id: "warn_visualization_max_nodes_table"
+      title: "Too many nodes vor visualization."
+      namespace: "Too many nodes vor visualization."
+  warn_drugstone_max_nodes:
+    section_name: "WARNING: Modules too large for Drugst.One"
+    description: "List of modules with too many nodes for Drugst.One export and drug prioritization.
+      The maximum number of nodes can be adjusted with the '--drugstone_max_nodes' parameter."
+    plot_type: "table"
+    pconfig:
+      id: "warn_drugstone_max_nodes_table"
+      title: "Too many nodes vor Drugst.One."
+      namespace: "Too many nodes vor Drugst.One."
   input_seeds:
     parent_id: input
     parent_name: "Input"
@@ -115,11 +144,12 @@ custom_data:
     plot_type: "bargraph"
     pconfig:
       title: "Seeds"
-      format: "{:.0f}"
+      x_decimals: 0
+      y_decimals: 0
   drugstone_link:
     id: "drugstone_link"
     section_name: "Drugstone Links"
-    description: "Using the links in this table you can see the modules visualized with the drugst.one api"
+    description: "Using the links in this table you can see the modules visualized with the Drugst.One api"
     plot_type: "table"
     pconfig:
       id: "download_links_table"

@@ -104,12 +104,20 @@ workflow GT_SEEDPERMUTATION {
     ch_versions = ch_versions.mix(SEEDPERMUTATIONEVALUATION.out.versions)
     ch_multiqc_summary =  SEEDPERMUTATIONEVALUATION.out.multiqc_summary
         .map{ meta, path -> path }
-        .collectFile(name: 'seed_permutation_mqc.tsv', keepHeader: true)
+        .collectFile(
+            cache: false,
+            storeDir: "${params.outdir}/mqc_summaries",
+            name: 'seed_permutation_mqc.tsv',
+            keepHeader: true
+        )
     ch_multiqc_jaccard =
         SEEDPERMUTATIONEVALUATION.out.multiqc_jaccard
         .map{ meta, path -> path }
         .collectFile(
-            item -> "  " + item.text, name: 'seed_permutation_jaccard_mqc.yaml',
+            item -> "  " + item.text,
+            cache: false,
+            storeDir: "${params.outdir}/mqc_summaries",
+            name: 'seed_permutation_jaccard_mqc.yaml',
             sort: true,
             seed: new File("$projectDir/assets/seed_permutation_jaccard_header.yaml").text
         )

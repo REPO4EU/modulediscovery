@@ -37,7 +37,7 @@ def save_multiqc(g, stem):
         else:
             seen_edges.add(edge_tuple)
 
-    with open("input_network_mqc.tsv", "w") as file:
+    with open("input_network_multiqc.tsv", "w") as file:
         file.write(
             "Network\t"
             "nodes\t"

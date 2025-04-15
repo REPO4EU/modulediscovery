@@ -29,6 +29,8 @@ include { GT_SEEDPERMUTATION    } from '../subworkflows/local/gt_seedpermutation
 include { GT_NETWORKPERMUTATION } from '../subworkflows/local/gt_networkpermutation/main'
 include { GT_PROXIMITY          } from '../subworkflows/local/gt_proximity/main'
 
+include { readTsvAsListOfMaps   } from '../subworkflows/local/utils_nfcore_modulediscovery_pipeline/main'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -44,6 +46,7 @@ include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_modulediscovery_pipeline'
+include { multiqcTsvFromList     } from '../subworkflows/local/utils_nfcore_modulediscovery_pipeline'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -123,11 +126,23 @@ workflow MODULEDISCOVERY {
     // Channels
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
+    ch_seeds_empty_status = Channel.empty()
+    ch_module_empty_status = Channel.empty()
+    ch_visualization_skipped_status = Channel.empty()
+    ch_drugstone_skipped_status = Channel.empty()
 
     // Run network parser for  networks, supported by graph-tool
     GRAPHTOOLPARSER(ch_network, 'gt')
     ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
-    ch_multiqc_files = ch_multiqc_files.mix(GRAPHTOOLPARSER.out.multiqc)
+    ch_network_multiqc = GRAPHTOOLPARSER.out.multiqc
+        .map{ meta, path -> path }
+        .collectFile(
+            cache: false,
+            storeDir: "${params.outdir}/mqc_summaries",
+            name: 'input_network_mqc.tsv',
+            keepHeader: true
+        )
+    ch_multiqc_files = ch_multiqc_files.mix(ch_network_multiqc)
     ch_network_gt = GRAPHTOOLPARSER.out.network
 
 
@@ -140,11 +155,21 @@ workflow MODULEDISCOVERY {
 
     INPUTCHECK(ch_seeds_network)
     ch_seeds = INPUTCHECK.out.seeds
-    INPUTCHECK.out.removed_seeds | view {meta, path -> log.warn("Removed seeds from $meta.id. Check multiqc report.") }
     ch_seeds_multiqc = INPUTCHECK.out.multiqc
         .map{ meta, path -> path }
-        .collectFile(name: 'input_seeds_mqc.tsv', keepHeader: true)
+        .collectFile(
+            cache: false,
+            storeDir: "${params.outdir}/mqc_summaries",
+            name: 'input_seeds_mqc.tsv',
+            keepHeader: true
+        )
     ch_multiqc_files = ch_multiqc_files.mix(ch_seeds_multiqc)
+
+    // Save status for workflow summary
+    ch_seeds_empty_status = ch_seeds_network
+        .map{meta, seeds, network -> meta.id}
+        .join(INPUTCHECK.out.seeds.map{ meta, seeds -> [meta.id, seeds]}, by: 0, remainder: true)
+        .map{id, seeds -> [id, seeds == null] }
 
     // Add seeds modules to module channel
     // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module)]
@@ -170,6 +195,32 @@ workflow MODULEDISCOVERY {
     ch_versions = ch_versions.mix(NETWORKEXPANSION.out.versions)
 
 
+    // Topology evaluation
+    TOPOLOGY(ch_modules)
+    ch_versions = ch_versions.mix(TOPOLOGY.out.versions)
+    ch_topology_multiqc = TOPOLOGY.out.topology
+        .map{ meta, path -> path }
+        .collectFile(
+            cache: false,
+            storeDir: "${params.outdir}/mqc_summaries",
+            name: 'topology_mqc.tsv',
+            keepHeader: true
+        )
+    ch_multiqc_files = ch_multiqc_files.mix(ch_topology_multiqc)
+
+    // Add topology information to module metadata
+    // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), val(topology[nodes,edges]) ]
+    ch_topology = TOPOLOGY.out.topology
+        .map{meta, path -> [meta, readTsvAsListOfMaps(path)]}.transpose() // Parse topology information from tsv file
+        .map{meta, topology -> [meta, topology + ["nodes": topology["nodes"].toInteger(), "edges": topology["edges"].toInteger()]]} // Parse to integer
+        .map{meta, topology -> [meta, topology.subMap("nodes", "edges")]} // Select only nodes and edges
+
+    // channel: [ val(meta[id,module_id,amim,seeds_id,network_id,nodes,edges]), path(module) ]
+    ch_modules = ch_modules
+        .join(ch_topology, by: 0, failOnDuplicate: true, failOnMismatch: true) // Join topology information to module metadata
+        .map{meta, module, topology -> [meta + topology, module]}
+
+
     // Annotate with network properties
     // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module), path(network) ]
     ch_module_network = ch_modules
@@ -186,18 +237,110 @@ workflow MODULEDISCOVERY {
     SAVEMODULES(ch_modules)
     ch_versions = ch_versions.mix(SAVEMODULES.out.versions)
 
+    // Separate empty modules
+    ch_modules_empty_not_empty = ch_modules
+        .branch{ meta, module ->
+            empty: meta.nodes == 0
+            not_empty: meta.nodes > 0
+        }
+    ch_modules_not_empty = ch_modules_empty_not_empty.not_empty
+
+    // Save status for workflow summary
+    ch_module_empty_status = ch_module_empty_status
+        .mix(ch_modules_empty_not_empty.empty.map {meta, module -> [meta.id, true] })
+        .mix(ch_modules_empty_not_empty.not_empty.map {meta, module -> [meta.id, false] })
+
+    // Warning for empty modules in MultiQC report
+    ch_modules_empty_not_empty
+        .empty
+        .map {meta, module -> "$meta.id\t$meta.nodes" }
+        .collect()
+        .map { tsv_data ->
+            def header = ["Module\tNodes"]
+            multiqcTsvFromList(tsv_data, header)
+        }
+        .collectFile(
+            cache: false,
+            storeDir: "${params.outdir}/mqc_summaries",
+            name: "warn_empty_modules_mqc.tsv",
+        ).set { ch_modules_empty_multiqc }
+    ch_multiqc_files = ch_multiqc_files.mix(ch_modules_empty_multiqc)
+
+
+
     // Visualize modules
     if(!params.skip_visualization){
-        VISUALIZEMODULES(ch_modules, params.visualization_max_nodes)
+        ch_visualization_input = ch_modules_not_empty
+            .branch {meta, module ->
+                fail: meta.nodes > params.visualization_max_nodes
+                pass: true
+            }
+
+        // Save status for workflow summary
+        ch_visualization_skipped_status = ch_visualization_skipped_status
+            .mix(ch_visualization_input.fail.map {meta, module -> [meta.id, true] })
+            .mix(ch_visualization_input.pass.map {meta, module -> [meta.id, false] })
+
+        // MultiQC report warning for too many nodes
+        ch_visualization_input
+            .fail
+            .map {meta, module -> "$meta.id\t$meta.nodes" }
+            .collect()
+            .map { tsv_data ->
+                def header = ["Module\tNodes"]
+                multiqcTsvFromList(tsv_data, header)
+            }
+            .collectFile(
+                cache: false,
+                storeDir: "${params.outdir}/mqc_summaries",
+                name: "warn_visualization_max_nodes_mqc.tsv",
+            ).set { ch_visualization_multiqc }
+        ch_multiqc_files = ch_multiqc_files.mix(ch_visualization_multiqc)
+
+        VISUALIZEMODULES(ch_visualization_input.pass)
         ch_versions = ch_versions.mix(VISUALIZEMODULES.out.versions)
     }
 
     // Drugstone export
     if(!params.skip_drugstone_export){
-        DRUGSTONEEXPORT(ch_modules, id_space)
+        ch_drugstone_export_input = ch_modules_not_empty
+            .branch {meta, module ->
+                fail: meta.nodes > params.drugstone_max_nodes
+                pass: true
+            }
+
+        // Save status for workflow summary
+        ch_drugstone_skipped_status = ch_drugstone_skipped_status
+        .mix(ch_drugstone_export_input.fail.map {meta, module -> [meta.id, true] })
+        .mix(ch_drugstone_export_input.pass.map {meta, module -> [meta.id, false] })
+
+        // MultiQC report warning for too many nodes
+        ch_drugstone_export_input
+            .fail
+            .map {meta, module -> "$meta.id\t$meta.nodes" }
+            .collect()
+            .map { tsv_data ->
+                def header = ["Module\tNodes"]
+                multiqcTsvFromList(tsv_data, header)
+            }
+            .collectFile(
+                cache: false,
+                storeDir: "${params.outdir}/mqc_summaries",
+                name: "warn_drugstone_max_nodes_mqc.tsv",
+            ).set { ch_drugstone_multiqc }
+        ch_multiqc_files = ch_multiqc_files.mix(ch_drugstone_multiqc)
+
+        DRUGSTONEEXPORT(ch_drugstone_export_input.pass, id_space)
         ch_versions = ch_versions.mix(DRUGSTONEEXPORT.out.versions)
-        ch_multiqc_files = ch_multiqc_files
-            .mix(DRUGSTONEEXPORT.out.link.map{ meta, path -> path }.collectFile(name: 'drugstone_link_mqc.tsv', keepHeader: true))
+        ch_drugstone_export_multiqc = DRUGSTONEEXPORT.out.link
+            .map{ meta, path -> path }
+            .collectFile(
+                cache: false,
+                storeDir: "${params.outdir}/mqc_summaries",
+                name: 'drugstone_link_mqc.tsv',
+                keepHeader: true
+            )
+        ch_multiqc_files = ch_multiqc_files.mix(ch_drugstone_export_multiqc)
     }
 
     // Annotation and BIOPAX conversion
@@ -220,7 +363,7 @@ workflow MODULEDISCOVERY {
 
     if(!params.skip_evaluation){
 
-        GT2TSV_Modules(ch_modules)
+        GT2TSV_Modules(ch_modules_not_empty)
         GT2TSV_Network(ch_network_gt)
 
         // channel: [ val(meta), path(nodes) ]
@@ -237,14 +380,6 @@ workflow MODULEDISCOVERY {
             ch_overlap_input.nodes.collect()
         )
         ch_multiqc_files = ch_multiqc_files.mix(MODULEOVERLAP.out)
-
-        // Topology evaluation
-        TOPOLOGY(ch_modules)
-        ch_versions = ch_versions.mix(TOPOLOGY.out.versions)
-        ch_toplogy_multiqc = TOPOLOGY.out.multiqc
-            .map{ meta, path -> path }
-            .collectFile(name: 'topology_mqc.tsv', keepHeader: true)
-        ch_multiqc_files = ch_multiqc_files.mix(ch_toplogy_multiqc)
 
         // Overrepresentation analysis
         if(!params.skip_gprofiler){
@@ -281,7 +416,11 @@ workflow MODULEDISCOVERY {
             ch_multiqc_files = ch_multiqc_files.mix(
                 DIGEST.out.multiqc
                 .map{ meta, path -> path }
-                .collectFile(name: 'digest_mqc.tsv', keepHeader: true)
+                .collectFile(
+                    cache: false,
+                    storeDir: "${params.outdir}/mqc_summaries",
+                    name: 'digest_mqc.tsv',
+                    keepHeader: true)
             )
         }
 
@@ -335,6 +474,13 @@ workflow MODULEDISCOVERY {
             }
 
         ch_drugstone_input = SAVEMODULES.out.nodes_tsv
+            .filter{meta, module -> meta.nodes > 0} // Filter out empty modules
+            .branch {meta, module ->
+                fail: meta.nodes > params.drugstone_max_nodes
+                pass: true
+            }
+
+        ch_drugstone_input = ch_drugstone_input.pass
             .combine(ch_algorithms_drugs)
             .multiMap { meta, module, algorithm ->
                 module: [meta, module]
@@ -348,7 +494,11 @@ workflow MODULEDISCOVERY {
 
     // Drug prioritization - Proximity
     if(params.run_proximity){
-        GT_PROXIMITY(ch_network_gt, SAVEMODULES.out.nodes_tsv, ch_shortest_paths, proximity_dt)
+        GT_PROXIMITY(
+            ch_network_gt,
+            SAVEMODULES.out.nodes_tsv.filter{meta, module -> meta.nodes > 0}, // Filter out empty modules
+            ch_shortest_paths,
+            proximity_dt)
         ch_versions = ch_versions.mix(GT_PROXIMITY.out.versions)
     }
 
@@ -403,8 +553,13 @@ workflow MODULEDISCOVERY {
         []
     )
 
-    emit:multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
-    versions       = ch_versions                 // channel: [ path(versions.yml) ]
+    emit:
+    seeds_empty_status              = ch_seeds_empty_status             // channel: [id, boolean]
+    module_empty_status             = ch_module_empty_status            // channel: [id, boolean]
+    visualization_skipped_status    = ch_visualization_skipped_status   // channel: [id, boolean]
+    drugstone_skipped_status        = ch_drugstone_skipped_status       // channel: [id, boolean]
+    multiqc_report                  = MULTIQC.out.report.toList()       // channel: /path/to/multiqc_report.html
+    versions                        = ch_versions                       // channel: [ path(versions.yml) ]
 
 }
 
