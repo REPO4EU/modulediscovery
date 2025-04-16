@@ -8,6 +8,7 @@ include { GT_ROBUST             } from '../gt_robust'
 include { GT_ROBUSTBIASAWARE    } from '../gt_robust_bias_aware'
 include { GT_FIRSTNEIGHBOR      } from '../gt_firstneighbor'
 include { GT_RWR                } from '../gt_rwr'
+include { GT_TOPAS              } from '../gt_topas'
 include { MODULEPARSER          } from '../../../modules/local/moduleparser/main'
 
 workflow NETWORKEXPANSION {
@@ -67,6 +68,13 @@ workflow NETWORKEXPANSION {
         ch_versions = ch_versions.mix(GT_RWR.out.versions)
         ch_raw_modules = ch_raw_modules.mix(GT_RWR.out.module)
     }
+
+    if(!params.skip_topas){
+        GT_TOPAS(ch_seeds, ch_network)
+        ch_versions = ch_versions.mix(GT_TOPAS.out.versions)
+        ch_raw_modules = ch_raw_modules.mix(GT_TOPAS.out.module)
+    }
+
 
     // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module), path(seeds), path(network) ]
     ch_module_parser_input = ch_raw_modules

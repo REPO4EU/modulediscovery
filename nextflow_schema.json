@@ -94,6 +94,11 @@
                     "fa_icon": "fas fa-forward",
                     "description": "Flag for skipping DIAMOnD"
                 },
+                "skip_topas": {
+                    "type": "boolean",
+                    "description": "Flag for skipping TOPAS",
+                    "fa_icon": "fas fa-forward"
+                },
                 "diamond_n": {
                     "type": "integer",
                     "default": 200,

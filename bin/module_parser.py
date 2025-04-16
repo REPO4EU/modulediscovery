@@ -83,6 +83,21 @@ def filter_rwr(g, module, filter_column):
     return g
 
 
+def filter_topas(g, module, filter_column):
+    geneset = ()
+    with open(module, "r") as file:
+        for line in file.readlines():
+            if line.startswith("V1"):
+                continue
+            line = line.strip.split("\t")
+            for gene in line:
+                geneset.append(gene)
+    for gene in geneset:
+        v = gt.find_vertex(g, g.vp.name, gene)[0]
+        g.vp[filter_column][v] = True
+    return g
+        
+
 def filter_g(g, tool, module, seeds):
     """
     Filters a graph_tools Graph object based on a module of a given tool.
@@ -97,6 +112,8 @@ def filter_g(g, tool, module, seeds):
         g = filter_robust(g, module, filter_column)
     elif tool == "rwr":
         g = filter_rwr(g, module, filter_column)
+    elif tool == "topas":
+        g = filter_topas(g,module, filter_column)
     else:
         logger.critical(f"Unknown tool: {tool}")
         sys.exit(1)
@@ -168,7 +185,7 @@ def parse_args(argv=None):
         "-t",
         "--tool",
         help="The tool, that generated the module.",
-        choices=("diamond", "domino", "robust", "robust_bias_aware", "rwr"),
+        choices=("diamond", "domino", "robust", "robust_bias_aware", "rwr", "topas"),
     )
     parser.add_argument(
         "-m",
