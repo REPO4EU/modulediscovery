@@ -170,6 +170,7 @@ workflow MODULEDISCOVERY {
     ch_versions = ch_versions.mix(NETWORKEXPANSION.out.versions)
 
 
+
     // Annotate with network properties
     // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module), path(network) ]
     ch_module_network = ch_modules

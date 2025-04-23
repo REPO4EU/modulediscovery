@@ -8,6 +8,7 @@ include { GT_ROBUST             } from '../gt_robust'
 include { GT_ROBUSTBIASAWARE    } from '../gt_robust_bias_aware'
 include { GT_FIRSTNEIGHBOR      } from '../gt_firstneighbor'
 include { GT_RWR                } from '../gt_rwr'
+include { GT_SCA                } from '../gt_sca'
 include { MODULEPARSER          } from '../../../modules/local/moduleparser/main'
 
 workflow NETWORKEXPANSION {
@@ -66,6 +67,12 @@ workflow NETWORKEXPANSION {
         GT_RWR(ch_seeds, ch_network, rwr_scaling, rwr_symmetrical, rwr_r)
         ch_versions = ch_versions.mix(GT_RWR.out.versions)
         ch_raw_modules = ch_raw_modules.mix(GT_RWR.out.module)
+    }
+
+    if(!params.skip_sca){
+        GT_SCA(ch_seeds, ch_network)
+        ch_versions = ch_versions.mix(GT_SCA.out.versions)
+        ch_raw_modules = ch_raw_modules.mix(GT_SCA.out.module)
     }
 
     // channel: [ val(meta[id,module_id,amim,seeds_id,network_id]), path(module), path(seeds), path(network) ]
