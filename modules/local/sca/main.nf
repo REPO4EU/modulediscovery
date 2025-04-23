@@ -6,7 +6,7 @@ process SCA{
     tuple val(meta), path(seeds), path (network)
 
     output:
-    tuple val(meta), path("predicted_genelist.txt")   , emit: module
+    tuple val(meta), path("Predicted_genelist.txt")   , emit: module
     path "versions.yml"                               , emit: versions
 
 
