@@ -8,10 +8,10 @@ workflow GT_TOPAS {
 
     main:
 
-    ch_version = Channel.empty()
+    ch_versions = Channel.empty()
 
-    GRAPTHOOLPARSER(ch_network, "robust")
-    ch_version = ch_version.mix(GRAPHTOOLPARSER.out.versions)
+    GRAPHTOOLPARSER(ch_network, "robust")
+    ch_versions = ch_versions.mix(GRAPHTOOLPARSER.out.versions)
 
     ch_topas_input = ch_seeds
         .map{ meta, seeds -> [meta.network_id, meta, seeds]}
@@ -23,9 +23,9 @@ workflow GT_TOPAS {
             [meta, seeds, network]
         }
     TOPAS(ch_topas_input)
-    ch_version = ch_version.mix(TOPAS.out.versions.first())
+    ch_versions = ch_versions.mix(TOPAS.out.versions.first())
 
     emit:
     module   = TOPAS.out.module
-    versions = ch_version
+    versions = ch_versions
 }

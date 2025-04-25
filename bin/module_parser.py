@@ -84,14 +84,14 @@ def filter_rwr(g, module, filter_column):
 
 
 def filter_topas(g, module, filter_column):
-    geneset = ()
+    geneset = set()
     with open(module, "r") as file:
         for line in file.readlines():
             if line.startswith("V1"):
                 continue
-            line = line.strip.split("\t")
+            line = line.strip().split("\t")
             for gene in line:
-                geneset.append(gene)
+                geneset.add(gene)
     for gene in geneset:
         v = gt.find_vertex(g, g.vp.name, gene)[0]
         g.vp[filter_column][v] = True

@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 
-source('TOPAS.R')
+source('/root/hiwi_tum/modulediscovery/bin/TOPAS.R')
 
 library("optparse")
 option_list = list(
