@@ -1,7 +1,7 @@
 process TOPAS{
     tag "$meta.id"
     label 'process_single'
-    container 'community.wave.seqera.io/library/r-dnet_r-base_r-dosnow_r-igraph_pruned:03e60a99a8a266a6'
+    container 'docker.io/motan04/topas:latest'
 
     input:
     tuple val(meta), path(seeds), path(network)
