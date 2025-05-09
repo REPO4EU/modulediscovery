@@ -1,6 +1,6 @@
 {
-    "name": "REPO4EU/modulediscovery",
-    "homePage": "https://github.com/REPO4EU/modulediscovery",
+    "name": "nf-core/diseasemodulediscovery",
+    "homePage": "https://github.com/nf-core/diseasemodulediscovery",
     "repos": {
         "https://github.com/nf-core/modules.git": {
             "modules": {

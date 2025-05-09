@@ -1,4 +1,4 @@
-# REPO4EU/modulediscovery: Citations
+# nf-core/diseasemodulediscovery: Citations
 
 ## [nf-core](https://pubmed.ncbi.nlm.nih.gov/32055031/)
 
