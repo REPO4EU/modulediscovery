@@ -25,10 +25,11 @@ template:
   author: REPO4EU
   description: A pipeline for network-based disease module identification
   force: false
-  is_nfcore: false
-  name: modulediscovery
-  org: REPO4EU
+  is_nfcore: true
+  name: diseasemodulediscovery
+  org: nf-core
   outdir: .
   skip_features:
     - igenomes
+    - fastqc
   version: 1.0dev

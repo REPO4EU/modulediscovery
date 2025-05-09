@@ -1,9 +1,11 @@
 #!/usr/bin/env nextflow
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    REPO4EU/modulediscovery
+    nf-core/diseasemodulediscovery
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/REPO4EU/modulediscovery
+    Github : https://github.com/nf-core/diseasemodulediscovery
+    Website: https://nf-co.re/diseasemodulediscovery
+    Slack  : https://nfcore.slack.com/channels/diseasemodulediscovery
 ----------------------------------------------------------------------------------------
 */
 
@@ -13,9 +15,9 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { MODULEDISCOVERY  } from './workflows/modulediscovery'
-include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_modulediscovery_pipeline'
-include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_modulediscovery_pipeline'
+include { DISEASEMODULEDISCOVERY  } from './workflows/diseasemodulediscovery'
+include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_diseasemodulediscovery_pipeline'
+include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_diseasemodulediscovery_pipeline'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     NAMED WORKFLOWS FOR PIPELINE
@@ -25,7 +27,7 @@ include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_modu
 //
 // WORKFLOW: Run main analysis pipeline depending on type of input
 //
-workflow REPO4EU_MODULEDISCOVERY {
+workflow NFCORE_DISEASEMODULEDISCOVERY {
 
     take:
     samplesheet // channel: samplesheet read in from --input
@@ -35,11 +37,11 @@ workflow REPO4EU_MODULEDISCOVERY {
     //
     // WORKFLOW: Run pipeline
     //
-    MODULEDISCOVERY (
+    DISEASEMODULEDISCOVERY (
         samplesheet
     )
     emit:
-    multiqc_report = MODULEDISCOVERY.out.multiqc_report // channel: /path/to/multiqc_report.html
+    multiqc_report = DISEASEMODULEDISCOVERY.out.multiqc_report // channel: /path/to/multiqc_report.html
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -65,7 +67,7 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
-    REPO4EU_MODULEDISCOVERY (
+    NFCORE_DISEASEMODULEDISCOVERY (
         PIPELINE_INITIALISATION.out.samplesheet
     )
     //
@@ -78,7 +80,7 @@ workflow {
         params.outdir,
         params.monochrome_logs,
         params.hook_url,
-        REPO4EU_MODULEDISCOVERY.out.multiqc_report
+        NFCORE_DISEASEMODULEDISCOVERY.out.multiqc_report
     )
 }
 
