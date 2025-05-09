@@ -1,18 +1,25 @@
-# REPO4EU/modulediscovery
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/nf-core-diseasemodulediscovery_logo_dark.png">
+    <img alt="nf-core/diseasemodulediscovery" src="docs/images/nf-core-diseasemodulediscovery_logo_light.png">
+  </picture>
+</h1>
 
-[![GitHub Actions CI Status](https://github.com/REPO4EU/modulediscovery/actions/workflows/ci.yml/badge.svg)](https://github.com/REPO4EU/modulediscovery/actions/workflows/ci.yml)
-[![GitHub Actions Linting Status](https://github.com/REPO4EU/modulediscovery/actions/workflows/linting.yml/badge.svg)](https://github.com/REPO4EU/modulediscovery/actions/workflows/linting.yml)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.XXXXXXX)
+[![GitHub Actions CI Status](https://github.com/nf-core/diseasemodulediscovery/actions/workflows/ci.yml/badge.svg)](https://github.com/nf-core/diseasemodulediscovery/actions/workflows/ci.yml)
+[![GitHub Actions Linting Status](https://github.com/nf-core/diseasemodulediscovery/actions/workflows/linting.yml/badge.svg)](https://github.com/nf-core/diseasemodulediscovery/actions/workflows/linting.yml)[![AWS CI](https://img.shields.io/badge/CI%20tests-full%20size-FF9900?labelColor=000000&logo=Amazon%20AWS)](https://nf-co.re/diseasemodulediscovery/results)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.XXXXXXX)
 [![nf-test](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)
 
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A524.04.2-23aa62.svg)](https://www.nextflow.io/)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
-[![Launch on Seqera Platform](https://img.shields.io/badge/Launch%20%F0%9F%9A%80-Seqera%20Platform-%234256e7)](https://cloud.seqera.io/launch?pipeline=https://github.com/REPO4EU/modulediscovery)
+[![Launch on Seqera Platform](https://img.shields.io/badge/Launch%20%F0%9F%9A%80-Seqera%20Platform-%234256e7)](https://cloud.seqera.io/launch?pipeline=https://github.com/nf-core/diseasemodulediscovery)
+
+[![Get help on Slack](http://img.shields.io/badge/slack-nf--core%20%23diseasemodulediscovery-4A154B?labelColor=000000&logo=slack)](https://nfcore.slack.com/channels/diseasemodulediscovery)[![Follow on Twitter](http://img.shields.io/badge/twitter-%40nf__core-1DA1F2?labelColor=000000&logo=twitter)](https://twitter.com/nf_core)[![Follow on Mastodon](https://img.shields.io/badge/mastodon-nf__core-6364ff?labelColor=FFFFFF&logo=mastodon)](https://mstdn.science/@nf_core)[![Watch on YouTube](http://img.shields.io/badge/youtube-nf--core-FF0000?labelColor=000000&logo=youtube)](https://www.youtube.com/c/nf-core)
 
 ## Introduction
 
-**REPO4EU/modulediscovery** is a bioinformatics pipeline for network medicine hypothesis generation, designed for identifying active/disease modules. Developed and maintained by the [RePo4EU](https://repo4.eu/) consortium, it aims to characterize the molecular mechanisms of diseases by analyzing the local neighborhood of disease-associated genes or proteins (seeds) within the interactome. This approach can help identify potential drug targets for drug repurposing.
+**nf-core/diseasemodulediscovery** is a bioinformatics pipeline for network medicine hypothesis generation, designed for identifying active/disease modules. Developed and maintained by the [RePo4EU](https://repo4.eu/) consortium, it aims to characterize the molecular mechanisms of diseases by analyzing the local neighborhood of disease-associated genes or proteins (seeds) within the interactome. This approach can help identify potential drug targets for drug repurposing.
 
 ![REPO4EU/modulediscovery metro map](docs/images/REPO4EU_modulediscovery_metro_map.png)
 
@@ -40,38 +47,12 @@
 > [!NOTE]
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
 
-### Setup
-
-Clone the repository:
-
-```bash
-git clone https://github.com/REPO4EU/modulediscovery.git
-cd modulediscovery
-```
-
-Install required software e.g. via conda (docker not included):
-
-```bash
-conda env create -n modulediscovery -f environment.yaml
-conda activate modulediscovery
-```
-
-The pipeline should be run from outside of the code repository since nextflow, by default, will write into the execution directory.
-
-Run with included test data:
-
-```bash
-nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
-   -profile <docker/singularity>,test \
-   --outdir <OUTDIR>
-```
-
 ### Running the pipeline
 
 Now, you can run the pipeline using:
 
 ```bash
-nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
+nextflow run nf-core/diseasemodulediscovery \
    -profile <docker/singularity> \
    --seeds <SEED_FILE> \
    --network <NETWORK_FILE> \
@@ -83,11 +64,17 @@ This will run the pipeline based on the provided `<SEED_FILE>` and `<NETWORK_FIL
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
 
-For more details and further functionality, please refer to the [usage documentation](docs/usage.md) and run the pipeline with the `--help` flag.
+For more details and further functionality, please refer to the [usage documentation](https://nf-co.re/diseasemodulediscovery/usage) and the [parameter documentation](https://nf-co.re/diseasemodulediscovery/parameters).
+
+## Pipeline output
+
+To see the results of an example test run with a full size dataset refer to the [results](https://nf-co.re/diseasemodulediscovery/results) tab on the nf-core website pipeline page.
+For more details about the output files and reports, please refer to the
+[output documentation](https://nf-co.re/diseasemodulediscovery/output).
 
 ## Credits
 
-REPO4EU/modulediscovery was originally written by the [RePo4EU](https://repo4.eu/) consortium.
+nf-core/diseasemodulediscovery was originally written by the [RePo4EU](https://repo4.eu/) consortium.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
@@ -102,17 +89,18 @@ We thank the following people for their extensive assistance in the development 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
 
 If you want to include an additional module identification approach, please see [this guide](docs/contributing.md).
+For further information or help, don't hesitate to get in touch on the [Slack `#diseasemodulediscovery` channel](https://nfcore.slack.com/channels/diseasemodulediscovery) (you can join with [this invite](https://nf-co.re/join/slack)).
 
 ## Citations
 
 <!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
-<!-- If you use REPO4EU/modulediscovery for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
+<!-- If you use nf-core/diseasemodulediscovery for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
 
 <!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
 
 An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
 
-This pipeline uses code and infrastructure developed and maintained by the [nf-core](https://nf-co.re) community, reused here under the [MIT license](https://github.com/nf-core/tools/blob/main/LICENSE).
+You can cite the `nf-core` publication as follows:
 
 > **The nf-core framework for community-curated bioinformatics pipelines.**
 >

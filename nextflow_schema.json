@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://raw.githubusercontent.com/REPO4EU/modulediscovery/main/nextflow_schema.json",
-    "title": "REPO4EU/modulediscovery pipeline parameters",
+    "$id": "https://raw.githubusercontent.com/nf-core/diseasemodulediscovery/main/nextflow_schema.json",
+    "title": "nf-core/diseasemodulediscovery pipeline parameters",
     "description": "A pipeline for network-based disease module identification",
     "type": "object",
     "$defs": {

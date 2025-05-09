@@ -1,17 +1,19 @@
-# REPO4EU/modulediscovery: Usage
+# nf-core/diseasemodulediscovery: Usage
+
+## :warning: Please read this documentation on the nf-core website: [https://nf-co.re/diseasemodulediscovery/usage](https://nf-co.re/diseasemodulediscovery/usage)
 
 > _Documentation of pipeline parameters is generated automatically from the pipeline schema and can no longer be found in markdown files._
 
 ## Introduction
 
-**REPO4EU/modulediscovery** is a bioinformatics pipeline for network medicine hypothesis generation, designed for identifying active/disease modules. Developed and maintained by the [RePo4EU](https://repo4.eu/) consortium, it aims to characterize the molecular mechanisms of diseases by analyzing the local neighborhood of disease-associated genes or proteins (seeds) within the interactome. This approach can help identify potential drug targets for drug repurposing.
+**nf-core/diseasemodulediscovery** is a bioinformatics pipeline for network medicine hypothesis generation, designed for identifying active/disease modules. Developed and maintained by the [RePo4EU](https://repo4.eu/) consortium, it aims to characterize the molecular mechanisms of diseases by analyzing the local neighborhood of disease-associated genes or proteins (seeds) within the interactome. This approach can help identify potential drug targets for drug repurposing.
 
 ## Running the pipeline
 
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run <PATH_TO_REPO>/modulediscovery/main.nf \
+nextflow run run nf-core/diseasemodulediscovery \
    -profile docker \
    --seeds ./seeds.txt \
    --network ./ppi.csv \
@@ -46,7 +48,7 @@ Pipeline settings can be provided in a `yaml` or `json` file via `-params-file <
 The above pipeline run specified with a params file in yaml format:
 
 ```bash
-nextflow run REPO4EU/modulediscovery -profile docker -params-file params.yaml
+nextflow run nf-core/diseasemodulediscovery -profile docker -params-file params.yaml
 ```
 
 with:
@@ -165,14 +167,14 @@ nextflow run <PATH_TO_REPO>/modulediscovery/main.nf --help
 When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and stores it as a cached version. When running the pipeline after this, it will always use the cached version if available - even if the pipeline has been updated since. To make sure that you're running the latest version of the pipeline, make sure that you regularly update the cached version of the pipeline:
 
 ```bash
-nextflow pull REPO4EU/modulediscovery
+nextflow pull nf-core/diseasemodulediscovery
 ```
 
 ### Reproducibility
 
 It is a good idea to specify the pipeline version when running the pipeline on your data. This ensures that a specific version of the pipeline code and software are used when you run your pipeline. If you keep using the same tag, you'll be running the same version of the pipeline, even if there have been changes to the code since.
 
-First, go to the [REPO4EU/modulediscovery releases page](https://github.com/REPO4EU/modulediscovery/releases) and find the latest pipeline version - numeric only (eg. `1.3.1`). Then specify this when running the pipeline with `-r` (one hyphen) - eg. `-r 1.3.1`. Of course, you can switch to another version by changing the number after the `-r` flag.
+First, go to the [nf-core/diseasemodulediscovery releases page](https://github.com/nf-core/diseasemodulediscovery/releases) and find the latest pipeline version - numeric only (eg. `1.3.1`). Then specify this when running the pipeline with `-r` (one hyphen) - eg. `-r 1.3.1`. Of course, you can switch to another version by changing the number after the `-r` flag.
 
 This version number will be logged in reports when you run the pipeline, so that you'll know what you used when you look back in the future. For example, at the bottom of the MultiQC reports.
 
